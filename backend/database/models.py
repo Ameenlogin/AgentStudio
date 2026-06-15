@@ -4,17 +4,18 @@ from sqlalchemy.orm import relationship
 from database.database import Base
 
 
-from config.keys import NVIDIA_API_KEYS as _KEYS, BASE_URL as _BASE_URL, DEFAULT_MODEL as _MODEL
-
-_K = (_KEYS + ["", "", ""])[:3]
+# Non-secret defaults always ship. The API key column defaults to empty so a
+# fresh install boots keyless and prompts the user in-app; main.py overlays an
+# optional local config/keys.py if present.
+from config.defaults import BASE_URL as _BASE_URL, DEFAULT_MODEL as _MODEL
 
 
 class Setting(Base):
     __tablename__ = "settings"
     id = Column(Integer, primary_key=True, index=True)
-    api_key = Column(String, nullable=True, default=_K[0])
-    api_key_2 = Column(String, nullable=True, default=_K[1])
-    api_key_3 = Column(String, nullable=True, default=_K[2])
+    api_key = Column(String, nullable=True, default="")
+    api_key_2 = Column(String, nullable=True, default="")
+    api_key_3 = Column(String, nullable=True, default="")
     base_url = Column(String, default=_BASE_URL)
     model_name = Column(String, default=_MODEL)
     temperature = Column(Float, default=0.6)

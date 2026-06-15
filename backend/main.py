@@ -50,11 +50,18 @@ with Session(engine) as session:
     if not row:
         row = Setting()
         session.add(row)
-    # Single-key setup: wire in the one NVIDIA key + a valid model. Clear any
-    # legacy extra keys so the app runs cleanly on one key at ~40 RPM.
-    from config.keys import NVIDIA_API_KEYS as _KEYS, BASE_URL as _BASE_URL, DEFAULT_MODEL as _MODEL
-    if not (row.api_key or "").strip():
-        row.api_key = (list(_KEYS) + [""])[0]
+    # Non-secret defaults always ship; the API key is optional and stays local.
+    # A fresh install boots with NO key — the UI then prompts the user to add
+    # their NVIDIA NIM key in Settings (in-app onboarding).
+    from config.defaults import BASE_URL as _BASE_URL, DEFAULT_MODEL as _MODEL
+    try:
+        from config.keys import NVIDIA_API_KEYS as _KEYS  # optional, gitignored
+    except Exception:
+        _KEYS = []
+    # Ignore blanks and the example placeholder so a copied template never seeds.
+    _KEYS = [k for k in (_KEYS or []) if k and k.strip() and "YOUR_KEY" not in k]
+    if not (row.api_key or "").strip() and _KEYS:
+        row.api_key = _KEYS[0]
     row.api_key_2 = ""
     row.api_key_3 = ""
     if not (row.base_url or "").strip():
