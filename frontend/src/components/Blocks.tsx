@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -482,28 +482,29 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
       {live && <div className="ac-progress" />}
 
       <div className="ac-screen">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={shown}
-            className="ac-window"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18 }}
-          >
-            <div className="ac-window-head">
-              <Meta.icon className="w-3.5 h-3.5" style={{ color: Meta.accent }} />
-              <span>{Meta.name}</span>
-              <span className="ac-window-count">{groups[shown].length}</span>
-            </div>
-            <div className="ac-window-body">
-              {shown === 'terminal' && <TerminalApp tools={groups.terminal} live={live} />}
-              {shown === 'files' && <FilesApp tools={groups.files} />}
-              {shown === 'editor' && <EditorApp tools={groups.editor} />}
-              {shown === 'browser' && <BrowserApp tools={groups.browser} live={live} />}
-            </div>
-          </motion.div>
-        </AnimatePresence>
+        {/* A fixed-size "monitor": the screen height never changes, so streaming
+            output and app-switches scroll INSIDE it instead of resizing the box
+            and shaking the page. Keying on `shown` remounts (a clean fade-in)
+            without an empty-screen gap. */}
+        <motion.div
+          key={shown}
+          className="ac-window"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.18 }}
+        >
+          <div className="ac-window-head">
+            <Meta.icon className="w-3.5 h-3.5" style={{ color: Meta.accent }} />
+            <span>{Meta.name}</span>
+            <span className="ac-window-count">{groups[shown].length}</span>
+          </div>
+          <div className="ac-window-body">
+            {shown === 'terminal' && <TerminalApp tools={groups.terminal} live={live} />}
+            {shown === 'files' && <FilesApp tools={groups.files} />}
+            {shown === 'editor' && <EditorApp tools={groups.editor} />}
+            {shown === 'browser' && <BrowserApp tools={groups.browser} live={live} />}
+          </div>
+        </motion.div>
       </div>
 
       <div className="ac-dock">
@@ -536,35 +537,43 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
-// ONE Agent Computer per message. Every tool action — no matter how the model
-// interleaves it with thinking and prose — is folded into a single static box
-// that opens once, runs the work inside, and auto-closes when the task is done.
-// (Previously each contiguous run of tools spawned its own box, which is what
-// produced multiple "computers" stacked down the message.)
+// Three clean zones per message, in a fixed order:
+//   1. Thinking (the reasoning chain, with its connecting rail) — ABOVE
+//   2. The single Agent Computer (ALL tool actions folded into one box) — MIDDLE
+//   3. The final answer — BELOW
+// Reordering into zones (rather than following the model's interleaving) keeps
+// the layout stable: the computer never gets shoved around by late "Thought
+// process" blocks, the reasoning always reads above it, and the answer below.
+// The rail lives only behind the thinking steps, so it never crosses the
+// full-width computer box.
 export default function Blocks({ blocks, streaming }: { blocks: Block[]; streaming: boolean }) {
+  const lastIdx = blocks.length - 1;
   const allTools = blocks.filter((b) => b.type === 'tool') as ToolBlock[];
-  const firstToolIdx = blocks.findIndex((b) => b.type === 'tool');
-  const items: ReactNode[] = [];
+  const thinking = blocks
+    .map((b, i) => ({ b, i }))
+    .filter((x) => x.b.type === 'thinking');
+  const answers = blocks
+    .map((b, i) => ({ b, i }))
+    .filter((x) => x.b.type === 'text');
 
-  blocks.forEach((b, i) => {
-    if (b.type === 'tool') {
-      // Render the single computer at the first tool; fold the rest into it.
-      if (i === firstToolIdx) {
-        items.push(<AgentComputer key="agent-computer" tools={allTools} live={streaming} />);
-      }
-      return;
-    }
-    const isLast = i === blocks.length - 1;
-    if (b.type === 'thinking') {
-      items.push(<Thinking key={i} block={b} live={streaming && isLast} />);
-    } else {
-      items.push(
-        <div key={i} className="answer">
-          <Markdown text={b.text} />
-          {streaming && isLast && <span className="caret" />}
+  return (
+    <div className="timeline">
+      {thinking.length > 0 && (
+        <div className="think-rail">
+          {thinking.map(({ b, i }) => (
+            <Thinking key={i} block={b as ThinkBlock} live={streaming && i === lastIdx} />
+          ))}
         </div>
-      );
-    }
-  });
-  return <div className="timeline">{items}</div>;
+      )}
+
+      {allTools.length > 0 && <AgentComputer key="agent-computer" tools={allTools} live={streaming} />}
+
+      {answers.map(({ b, i }) => (
+        <div key={i} className="answer">
+          <Markdown text={(b as { text: string }).text} />
+          {streaming && i === lastIdx && <span className="caret" />}
+        </div>
+      ))}
+    </div>
+  );
 }
