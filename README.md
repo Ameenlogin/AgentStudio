@@ -2,9 +2,9 @@
 
 # ✳️ Agent Studio
 
-### Turn a **free NVIDIA API key** into your own private AI coding agent.
+### Turn a **free NVIDIA NIM API key** into your own private, autonomous coding agent.
 
-**One command to install. One command to run.** No accounts, no subscriptions, no cloud — it all runs on your own Mac or Windows PC.
+**One command to install. One command to run.** No accounts, no subscriptions, no cloud bills — it all runs on your own Mac or Windows PC. Watch it think, write code, run it, and even drive a **real Chrome browser** — live, inside an on-screen **Agent Computer**.
 
 <br/>
 
@@ -92,6 +92,20 @@ Most “AI chats” just talk. **Agent Studio acts.** Give it a goal and it beco
 You watch the whole thing live — its reasoning, every file it touches, every command it runs — streamed into a clean timeline. It writes code, runs it, fixes its own bugs, searches the web, edits PDFs and zips, and hands you finished work.
 
 It’s like having **Claude Code / Cursor-style superpowers**, but **local, free, and powered by your own NVIDIA key.**
+
+---
+
+## 🖥️ The Agent Computer
+
+Watch the agent work inside a single, self-contained **mini-computer** right in the chat — a macOS-style desktop with **Terminal, Files, Editor, and a real Browser**. It opens when work begins, switches apps as the agent acts, and **auto-closes the moment the task is done** (one click to re-open).
+
+<div align="center">
+<img src="docs/screenshots/agent-computer.png" width="760" alt="The Agent Computer — Terminal, Files, Editor, and a real Chrome browser in one box" />
+</div>
+
+- **One box, not a wall of cards** — every command, file write, and browser click streams into the same window.
+- **A real browser tab** — when the agent drives Chrome it shows the live page screenshot, the URL bar, and a scrubbable strip of each action (click, type, navigate) with live animations.
+- **Live, honest output** — no fake skeletons; you see the actual terminal output, the actual code, the actual page.
 
 ---
 

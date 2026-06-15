@@ -6,9 +6,10 @@ setlocal enableextensions
 cd /d "%~dp0"
 
 echo.
-echo   ============================================================
-echo      AGENT STUDIO   ^|   Windows Launcher
-echo   ============================================================
+echo   +========================================================+
+echo   ^|   * AGENT STUDIO  -  Windows Launcher                  ^|
+echo   +========================================================+
+echo   First run sets things up - keep this window open a moment.
 echo.
 
 REM --- pick a Python 3.10+ ---
@@ -63,11 +64,11 @@ REM Open the browser as soon as the server answers (background health poll).
 start "" /b powershell -NoProfile -WindowStyle Hidden -Command "for($i=0;$i -lt 60;$i++){Start-Sleep -Seconds 1; try{ if((Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8000/api/health' -TimeoutSec 2).StatusCode -eq 200){ Start-Process 'http://127.0.0.1:8000'; break } }catch{} }"
 
 echo.
-echo   ============================================================
-echo      AGENT STUDIO is starting at http://127.0.0.1:8000
-echo      Your browser opens automatically when ready.
-echo      To STOP: press Ctrl+C here, or close this window.
-echo   ============================================================
+echo   +========================================================+
+echo   ^|   OK Starting at  http://127.0.0.1:8000                ^|
+echo   ^|   Your browser opens automatically when ready.         ^|
+echo   ^|   To STOP: press Ctrl+C here, or close this window.    ^|
+echo   +========================================================+
 echo.
 
 cd backend
