@@ -41,6 +41,25 @@ def download(path: str = Query(...), db: Session = Depends(get_db)):
     return FileResponse(p, filename=os.path.basename(p), media_type="application/octet-stream")
 
 
+@router.get("/read")
+def read_text(path: str = Query(...), db: Session = Depends(get_db)):
+    """Return a text file's contents (capped) for the Agent Computer previewer."""
+    _sync_workspace(db)
+    try:
+        p = resolve(path)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    if not os.path.isfile(p):
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        size = os.path.getsize(p)
+        with open(p, "r", encoding="utf-8", errors="replace") as f:
+            content = f.read(200_000)
+        return {"path": rel(p), "size": size, "content": content, "truncated": size > 200_000}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/list")
 def list_files(path: str = ".", db: Session = Depends(get_db)):
     _sync_workspace(db)

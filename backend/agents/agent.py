@@ -396,6 +396,7 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
     # instead of handing back a half-finished answer. Bounded so it can't loop.
     MAX_CONTINUATIONS = 6
     continuations = 0
+    did_tool_work = False   # did the agent actually run any tools this task?
 
     for step in range(1, max_steps + 1):
         if not agent_id:
@@ -441,9 +442,16 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
                     "wrote — just keep going seamlessly until the answer is complete."})
                 continue
             if not full_text.strip() and not agent_id:
-                yield _ev({"type": "content",
-                           "delta": "I finished without producing a visible answer. "
-                                    "Could you rephrase or add a bit more detail?"})
+                if did_tool_work:
+                    # Completion gate: the agent went quiet after doing real work.
+                    # Force a final summary so the user ALWAYS gets the best answer
+                    # rather than a blank turn or a half-finished result.
+                    async for ev in _final_summary(client, convo, temperature, tag):
+                        yield ev
+                else:
+                    yield _ev({"type": "content",
+                               "delta": "I finished without producing a visible answer. "
+                                        "Could you rephrase or add a bit more detail?"})
             yield _ev({"type": "done", **tag})
             return
 
@@ -500,6 +508,7 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
             meta = TOOL_META.get(name, {"label": name, "icon": "wrench", "kind": "read"})
             calls.append({"call_id": call_id, "name": name, "args": args, "meta": meta})
 
+        did_tool_work = True
         results_by_id: dict[str, str] = {}
 
         # ---- Phase 1: parallel read-only tool calls ------------------------
@@ -595,6 +604,30 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
                "delta": f"\n\n_(Reached the {max_steps}-step limit. Ask me to continue if needed.)_",
                **tag})
     yield _ev({"type": "done", **tag})
+
+
+async def _final_summary(client, convo, temperature, tag):
+    """Guaranteed final answer (the task-monitor's closing step).
+
+    When the agent stops calling tools but didn't write a closing message even
+    though it did real work, we ask it once more — tools off — to produce the
+    tight, Claude-Code-style summary, so the user is never left with a blank or
+    half-finished turn. Streams content events; falls back to a terse 'Done.'."""
+    prompt = list(convo) + [{"role": "system", "content":
+        "The task is complete. Write the FINAL answer now in tight, Claude-Code style: "
+        "a one-line result, the key files as paths, how to run it, and anything notable. "
+        "Base it strictly on the work above. Do NOT call any tools and do NOT repeat steps."}]
+    produced = False
+    try:
+        async for chunk in client.stream_guarded(prompt, tools=None,
+                                                 temperature=min(temperature, 0.5), thinking=False):
+            if chunk.choices and chunk.choices[0].delta.content:
+                produced = True
+                yield _ev({"type": "content", "delta": chunk.choices[0].delta.content, **tag})
+    except Exception:
+        pass
+    if not produced:
+        yield _ev({"type": "content", "delta": "Done — the task completed successfully.", **tag})
 
 
 async def _run_simple(client, pool, messages, temperature, model_name):
