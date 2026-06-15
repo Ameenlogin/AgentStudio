@@ -59,26 +59,45 @@ if [ ! -f dist/index.html ]; then
   fi
 fi
 
-# --- install the `agent` command --------------------------------------------
+# --- install the `agentstudio` command --------------------------------------
 mkdir -p "$BIN_DIR"
-cp "$DEST/bin/agent" "$BIN_DIR/agent"
-chmod +x "$BIN_DIR/agent"
+cp "$DEST/bin/agentstudio" "$BIN_DIR/agentstudio"
+chmod +x "$BIN_DIR/agentstudio"
 
-# ensure ~/.local/bin is on PATH for future shells
+# Remove a stale `agent` shim from an older Agent Studio install (only if ours).
+if [ -f "$BIN_DIR/agent" ] && grep -q "AGENT_STUDIO_HOME" "$BIN_DIR/agent" 2>/dev/null; then
+  rm -f "$BIN_DIR/agent"
+fi
+# Also offer the short `agent` name — but ONLY if no other tool already uses it.
+ALIAS_NOTE=""
+if ! command -v agent >/dev/null 2>&1; then
+  cp "$DEST/bin/agentstudio" "$BIN_DIR/agent"
+  chmod +x "$BIN_DIR/agent"
+  ALIAS_NOTE='  (short alias also works: agent run)'
+fi
+
+# Ensure ~/.local/bin is on PATH for future shells.
+NEEDS_NEW_SHELL=0
 case ":${PATH}:" in
   *":$BIN_DIR:"*) : ;;
   *)
+    NEEDS_NEW_SHELL=1
     for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile"; do
       [ -e "$rc" ] || continue
       grep -q 'AgentStudio: PATH' "$rc" 2>/dev/null && continue
       printf '\n# AgentStudio: PATH\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$rc"
     done
-    export PATH="$BIN_DIR:$PATH"
     ;;
 esac
 
 printf '\n  ===========================================================\n'
 printf '    Installed!  Start Agent Studio with:\n\n'
-printf '        agent run\n\n'
-printf '    (If "agent" is not found, open a NEW terminal first.)\n'
+printf '        agentstudio run\n'
+[ -n "$ALIAS_NOTE" ] && printf '      %s\n' "$ALIAS_NOTE"
+printf '\n'
+if [ "$NEEDS_NEW_SHELL" = "1" ]; then
+  printf '    First time: open a NEW terminal (or run:  source ~/.zshrc )\n'
+  printf '    so the command is found — or run it right now with:\n\n'
+  printf '        %s/agentstudio run\n' "$BIN_DIR"
+fi
 printf '  ===========================================================\n\n'

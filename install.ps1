@@ -62,9 +62,16 @@ if (-not (Test-Path "dist\index.html")) {
   }
 }
 
-# --- install the `agent` command --------------------------------------------
+# --- install the `agentstudio` command --------------------------------------
 New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
-Copy-Item (Join-Path $Dest "bin\agent.cmd") (Join-Path $BinDir "agent.cmd") -Force
+Copy-Item (Join-Path $Dest "bin\agentstudio.cmd") (Join-Path $BinDir "agentstudio.cmd") -Force
+
+# Offer the short `agent` name only if no other tool already uses it.
+$alias = ""
+if (-not (Get-Command agent -ErrorAction SilentlyContinue)) {
+  Copy-Item (Join-Path $Dest "bin\agentstudio.cmd") (Join-Path $BinDir "agent.cmd") -Force
+  $alias = "  (short alias also works: agent run)"
+}
 
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($userPath -notlike "*$BinDir*") {
@@ -75,7 +82,8 @@ Write-Host ""
 Write-Host "  ==========================================================="
 Write-Host "    Installed!  Open a NEW terminal and run:"
 Write-Host ""
-Write-Host "        agent run"
+Write-Host "        agentstudio run"
+if ($alias) { Write-Host "      $alias" }
 Write-Host ""
 Write-Host "  ==========================================================="
 Write-Host ""

@@ -1,9 +1,6 @@
 @echo off
-REM Agent Studio command-line launcher (Windows).
-REM Installed on your PATH by install.ps1. Usage:
-REM   agent run        start Agent Studio and open it in your browser
-REM   agent install    update to the latest version and re-setup
-REM   agent stop       stop a running instance (frees port 8000)
+REM Agent Studio command-line launcher (Windows). Installed as `agentstudio`
+REM (and `agent` if that name is free). Usage: agentstudio [run|install|stop]
 setlocal
 if "%AGENT_STUDIO_HOME%"=="" (set "REPO=%USERPROFILE%\AgentStudio") else (set "REPO=%AGENT_STUDIO_HOME%")
 
@@ -22,7 +19,7 @@ if /i "%ACT%"=="install" goto upd
 if /i "%ACT%"=="update"  goto upd
 if /i "%ACT%"=="upgrade" goto upd
 if /i "%ACT%"=="stop"    goto stop
-echo Usage: agent [run^|install^|stop]
+echo Usage: agentstudio [run^|install^|stop]
 exit /b 1
 
 :run

@@ -36,15 +36,27 @@ curl -fsSL https://raw.githubusercontent.com/Ameenlogin/AgentStudio/main/install
 irm https://raw.githubusercontent.com/Ameenlogin/AgentStudio/main/install.ps1 | iex
 ```
 
-That's it — no downloading, no unzipping, no clicking through folders. It installs everything and adds an **`agent`** command. From then on, anywhere in your terminal:
+That's it — no downloading, no unzipping, no clicking through folders. It installs everything and adds an **`agentstudio`** command. **Open a new terminal**, then anywhere:
 
 ```bash
-agent run        # ▶️  start Agent Studio (your browser opens automatically)
-agent install    # ⬆️  update to the latest version
-agent stop       # ⏹️  stop it
+agentstudio run        # ▶️  start Agent Studio (your browser opens automatically)
+agentstudio install    # ⬆️  update to the latest version
+agentstudio stop       # ⏹️  stop it
+agentstudio where      # 📁  show where it's installed
 ```
 
-> Your browser opens to **http://127.0.0.1:8000** on its own. The first launch sets everything up; after that, `agent run` starts in seconds.
+> Your browser opens to **http://127.0.0.1:8000** on its own. After the first setup, `agentstudio run` starts in seconds.
+> The short **`agent`** command also works *if that name isn't already taken* on your machine.
+
+### 🧭 All the ways to run it
+
+| Command | What it does |
+|---------|--------------|
+| `agentstudio run` *(or `start`)* | Start the app + open the browser |
+| `agentstudio install` *(or `update`)* | Update to the latest version |
+| `agentstudio stop` | Stop a running instance (frees port 8000) |
+| `agentstudio where` | Print the install folder |
+| **Prefer not to use a terminal?** | Download the repo and **double-click** `START.command` (macOS) or `START.bat` (Windows) — or `install`/`run` for the two-step version |
 
 ---
 
