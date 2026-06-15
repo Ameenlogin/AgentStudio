@@ -31,7 +31,8 @@ from services.api_pool import APIPool
 # Idle (inter-chunk) timeouts. These must be larger than a reasoning model's
 # normal think-pause or we would kill healthy streams ("Stream interrupted").
 CHUNK_STALL_TIMEOUT = 30.0   # mid-stream silence that means a dead connection
-FIRST_CHUNK_TIMEOUT = 45.0   # first-token budget (reasoning off → tokens start fast)
+FIRST_CHUNK_TIMEOUT = 60.0   # first-token budget — headroom for a big MoE (Kimi
+                             # 1T) to warm up under NIM load without false trips
 MAX_BREAKER_RETRIES = 2      # alternate-endpoint retries before giving up
 
 # Models that don't accept the NIM ``chat_template_kwargs={"thinking": …}`` kwarg

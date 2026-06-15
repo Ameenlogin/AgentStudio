@@ -16,9 +16,11 @@ fi
 
 case "${1:-run}" in
   run|start|"")           exec bash "$REPO/run.command" ;;
-  install|update|upgrade) exec bash "$REPO/install.sh" ;;
+  install|update|upgrade)
+                          echo "Updating Agent Studio (pulling latest from GitHub + rebuilding the UI)..."
+                          exec bash "$REPO/install.sh" ;;
   stop)                   lsof -ti tcp:8000 2>/dev/null | xargs kill -9 2>/dev/null; echo "Agent Studio stopped." ;;
   where|dir)              echo "$REPO" ;;
-  -h|--help|help)         echo "Usage: agentstudio [run|start|install|stop|where]" ;;
-  *) echo "Unknown command: $1"; echo "Usage: agentstudio [run|start|install|stop|where]"; exit 1 ;;
+  -h|--help|help)         echo "Usage: agentstudio [run|update|stop|where]" ;;
+  *) echo "Unknown command: $1"; echo "Usage: agentstudio [run|update|stop|where]"; exit 1 ;;
 esac

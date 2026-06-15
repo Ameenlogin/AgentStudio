@@ -46,17 +46,18 @@ cd "$DEST/backend"
 venv/bin/python -m pip install --upgrade pip -q --disable-pip-version-check
 venv/bin/python -m pip install -r requirements.txt -q --disable-pip-version-check
 
-# --- frontend (build if no prebuilt UI) -------------------------------------
+# --- frontend (ALWAYS rebuild so `agentstudio update` actually ships new UI) -
+# Building only when dist was missing meant an update pulled new source but kept
+# serving the OLD prebuilt bundle — the #1 reason the UI looked unchanged after
+# updating. Rebuild every run (npm is fast when nothing changed).
 cd "$DEST/frontend"
-if [ ! -f dist/index.html ]; then
-  if command -v node >/dev/null 2>&1; then
-    say "Building the user interface ..."
-    [ -d node_modules ] || npm install --silent
-    npm run build
-  else
-    say "Note: Node.js not found and no prebuilt UI shipped."
-    say "      Install Node.js (https://nodejs.org) and run 'agent install' to build it."
-  fi
+if command -v node >/dev/null 2>&1; then
+  say "Building the user interface ..."
+  npm install --silent
+  npm run build
+elif [ ! -f dist/index.html ]; then
+  say "Note: Node.js not found and no prebuilt UI shipped."
+  say "      Install Node.js (https://nodejs.org), then run 'agentstudio update' to build it."
 fi
 
 # --- install the `agentstudio` command --------------------------------------

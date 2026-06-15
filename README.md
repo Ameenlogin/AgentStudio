@@ -40,13 +40,23 @@ That's it — no downloading, no unzipping, no clicking through folders. It inst
 
 ```bash
 agentstudio run        # ▶️  start Agent Studio (your browser opens automatically)
-agentstudio install    # ⬆️  update to the latest version
+agentstudio update     # ⬆️  update to the latest version (pull + rebuild)
 agentstudio stop       # ⏹️  stop it
 agentstudio where      # 📁  show where it's installed
 ```
 
 > Your browser opens to **http://127.0.0.1:8000** on its own. After the first setup, `agentstudio run` starts in seconds.
 > The short **`agent`** command also works *if that name isn't already taken* on your machine.
+
+### 🔄 Update to the latest version
+
+Already installed? Pull the newest version with **one command**:
+
+```bash
+agentstudio update
+```
+
+This fetches the latest code from GitHub, reinstalls the backend, and **rebuilds the UI** so new features and speed-ups take effect right away. (Short alias: `agent update`; on Windows the command is identical.) Then start it again with `agentstudio run`.
 
 ### 🧭 All the ways to run it
 

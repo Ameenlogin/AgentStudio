@@ -17,6 +17,11 @@ SUMMARY_TURN_THRESHOLD = 20   # messages (excl. system) before we summarize
 KEEP_RECENT = 8               # most-recent messages always kept verbatim
 TOOL_RESULT_CAP = 1500        # chars to keep from an *old* tool result
 
+# Internal housekeeping (summarization) always runs on a FAST model regardless of
+# the model the user picked for the actual work — so a slow chat model (e.g. Kimi)
+# never stalls mid-task on this background call. Falls back to the work model.
+_FAST_AUX_MODEL = "openai/gpt-oss-120b"
+
 
 def _msg_text(m: dict) -> str:
     c = m.get("content")
@@ -81,9 +86,19 @@ async def summarize_history(convo: list[dict], client) -> list[dict] | None:
         {"role": "user", "content": joined},
     ]
 
+    # Use a fast auxiliary client for this background call when possible.
+    aux = client
+    try:
+        if getattr(client, "pool", None) is not None:
+            from services.kimi_client import KimiClient
+            aux = KimiClient(pool=client.pool, base_url=client.base_url,
+                             model_name=_FAST_AUX_MODEL, max_tokens=2048)
+    except Exception:
+        aux = client
+
     try:
         summary_parts: list[str] = []
-        async for chunk in client.stream_guarded(prompt, tools=None, temperature=0.3, thinking=False):
+        async for chunk in aux.stream_guarded(prompt, tools=None, temperature=0.3, thinking=False):
             if chunk.choices and chunk.choices[0].delta.content:
                 summary_parts.append(chunk.choices[0].delta.content)
         summary = "".join(summary_parts).strip()

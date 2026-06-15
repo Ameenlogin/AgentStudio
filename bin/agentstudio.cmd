@@ -27,6 +27,7 @@ call "%REPO%\run.bat"
 exit /b
 
 :upd
+echo Updating Agent Studio (pulling latest from GitHub + rebuilding the UI)...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%REPO%\install.ps1"
 exit /b
 

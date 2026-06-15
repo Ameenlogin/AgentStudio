@@ -49,17 +49,16 @@ if (-not (Test-Path $VenvPy)) { & cmd /c "$PY -m venv venv" }
 & $VenvPy -m pip install --upgrade pip -q --disable-pip-version-check
 & $VenvPy -m pip install -r requirements.txt -q --disable-pip-version-check
 
-# --- frontend (build if no prebuilt UI) -------------------------------------
+# --- frontend (ALWAYS rebuild so `agentstudio update` actually ships new UI) -
+# Building only when dist was missing meant an update kept serving the OLD UI.
 Set-Location (Join-Path $Dest "frontend")
-if (-not (Test-Path "dist\index.html")) {
-  if (Get-Command node -ErrorAction SilentlyContinue) {
-    Write-Host "  Building the user interface ..."
-    if (-not (Test-Path "node_modules")) { npm install --silent }
-    npm run build
-  } else {
-    Write-Host "  Note: Node.js not found and no prebuilt UI shipped."
-    Write-Host "        Install Node.js (https://nodejs.org) and run 'agent install' to build it."
-  }
+if (Get-Command node -ErrorAction SilentlyContinue) {
+  Write-Host "  Building the user interface ..."
+  npm install --silent
+  npm run build
+} elseif (-not (Test-Path "dist\index.html")) {
+  Write-Host "  Note: Node.js not found and no prebuilt UI shipped."
+  Write-Host "        Install Node.js (https://nodejs.org), then run 'agentstudio update' to build it."
 }
 
 # --- install the `agentstudio` command --------------------------------------
