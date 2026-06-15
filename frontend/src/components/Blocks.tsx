@@ -46,14 +46,20 @@ function clip(code: string, max = 48): string {
 }
 
 // ── Code Block ──────────────────────────────────────────────────────────────
-function CodeBlock({ children, lang }: { children: string; lang?: string }) {
+function CodeBlock({ children, lang, collapsible = true }: { children: string; lang?: string; collapsible?: boolean }) {
   const [copied, setCopied] = useState(false);
+  const lineCount = children.split('\n').length;
+  const COLLAPSE_AT = 14;
+  const [expanded, setExpanded] = useState(!collapsible || lineCount <= COLLAPSE_AT);
   const copy = () => {
     navigator.clipboard.writeText(children).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     });
   };
+  // Long code is never dumped into the chat — show a short head and let the user
+  // expand. (Inside the Agent Computer's Editor we pass collapsible=false.)
+  const shown = expanded ? children : children.split('\n').slice(0, 12).join('\n');
   return (
     <div className="code-block">
       <div className="code-block-header">
@@ -64,7 +70,12 @@ function CodeBlock({ children, lang }: { children: string; lang?: string }) {
             : <><Copy className="w-3 h-3" /> Copy</>}
         </button>
       </div>
-      <pre><code>{children}</code></pre>
+      <pre><code>{shown}</code></pre>
+      {!expanded && (
+        <button className="code-block-more" onClick={() => setExpanded(true)}>
+          Show {lineCount - 12} more lines
+        </button>
+      )}
     </div>
   );
 }
@@ -255,7 +266,7 @@ function EditorApp({ tools }: { tools: ToolBlock[] }) {
             )}
           </div>
           {cur.code
-            ? <CodeBlock lang={cur.lang}>{clip(cur.code, 600)}</CodeBlock>
+            ? <CodeBlock lang={cur.lang} collapsible={false}>{clip(cur.code, 600)}</CodeBlock>
             : <div className="ac-empty">{cur.block.result || 'Saved.'}</div>}
         </div>
       )}
