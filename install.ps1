@@ -53,9 +53,23 @@ Write-Host "  * Python ($PY)$(if($HasNode){'   * Node ' + (node --version)})" -F
 Write-Host ""
 
 # --- clone or update ---------------------------------------------------------
+# ALWAYS land on the exact latest main. PowerShell does NOT throw on a native
+# command's non-zero exit, so a failed `git pull --ff-only` (diverged/force-pushed
+# main, or a shallow history that can't fast-forward) used to be silently ignored —
+# the #1 reason a Windows box "installed" but kept serving OUTDATED code. Fetching
+# then hard-resetting to origin/main guarantees the newest source every time.
+# Untracked files (workspace\, keys.py, dist\ — all gitignored) are preserved.
 $fetchMsg = if (Test-Path (Join-Path $Dest ".git")) { "Updating Agent Studio" } else { "Downloading Agent Studio" }
 $sw = Start-Step $fetchMsg
-if (Test-Path (Join-Path $Dest ".git")) { git -C $Dest pull --ff-only } else { git clone --depth 1 $RepoUrl $Dest }
+if (Test-Path (Join-Path $Dest ".git")) {
+  git -C $Dest fetch --depth 1 origin main
+  if ($LASTEXITCODE -ne 0) { git -C $Dest fetch origin main }
+  git -C $Dest reset --hard FETCH_HEAD
+  if ($LASTEXITCODE -ne 0) { throw "Could not update to the latest version (git reset failed). Check your connection and try again." }
+} else {
+  git clone --depth 1 $RepoUrl $Dest
+  if ($LASTEXITCODE -ne 0) { throw "Could not download Agent Studio (git clone failed). Check your connection." }
+}
 Stop-Step $sw
 
 # --- backend (venv + packages) ----------------------------------------------

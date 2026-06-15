@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes } from 'lucide-react';
+import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes, Heart } from 'lucide-react';
 import { api } from '../lib/api';
+
+// Where the heart "Support Creator" link sends people.
+const SUPPORT_URL = 'https://pages.razorpay.com/pl_T1zknR655GpRoS/view';
 
 const DEFAULTS = {
   base_url: 'https://integrate.api.nvidia.com/v1',
@@ -73,9 +76,20 @@ export default function Settings() {
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="h-16 px-6 flex items-center justify-between border-b border-[var(--color-border-soft)] sticky top-0 bg-[var(--color-bg)]/80 backdrop-blur z-10">
         <span className="font-display font-semibold text-[15px]">Settings</span>
-        <button onClick={() => setS({ ...DEFAULTS, api_key: s.api_key, api_key_2: s.api_key_2, api_key_3: s.api_key_3 })} className="flex items-center gap-1.5 text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition">
-          <RotateCcw className="w-3.5 h-3.5" /> Reset defaults
-        </button>
+        <div className="flex items-center gap-4">
+          <a
+            href={SUPPORT_URL}
+            target="_blank"
+            rel="noreferrer"
+            title="Support the creator"
+            className="flex items-center gap-1.5 text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition"
+          >
+            <Heart className="w-3.5 h-3.5 text-[var(--color-red)] fill-[var(--color-red)]" /> Support Creator
+          </a>
+          <button onClick={() => setS({ ...DEFAULTS, api_key: s.api_key, api_key_2: s.api_key_2, api_key_3: s.api_key_3 })} className="flex items-center gap-1.5 text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] transition">
+            <RotateCcw className="w-3.5 h-3.5" /> Reset defaults
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 px-6 py-6">
@@ -215,6 +229,21 @@ export default function Settings() {
               </button>
             </div>
           </Card>
+
+          <div className="lg:col-span-2">
+            <a
+              href={SUPPORT_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 rounded-2xl border border-[var(--color-copper)]/30 bg-[var(--color-copper-wash)] p-5 transition hover:border-[var(--color-copper)] hover:shadow-[var(--shadow-card)]"
+            >
+              <Heart className="w-6 h-6 flex-shrink-0 text-[var(--color-red)] fill-[var(--color-red)]" />
+              <span className="flex flex-col">
+                <span className="text-sm font-display font-semibold text-[var(--color-text)]">Support Creator</span>
+                <span className="text-xs text-[var(--color-muted)]">Agent Studio is free &amp; open source. If it helps you, please support the creator — it keeps the project alive. 💖</span>
+              </span>
+            </a>
+          </div>
 
           <div className="pb-10 pt-1 lg:col-span-2">
             <button

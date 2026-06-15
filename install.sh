@@ -82,7 +82,17 @@ printf '\n'
 
 # ── Step functions (each runs inside step's spinner) ─────────────────────────
 do_fetch() {
-  if [ -d "$DEST/.git" ]; then git -C "$DEST" pull --ff-only || true; else git clone --depth 1 "$REPO_URL" "$DEST"; fi
+  # ALWAYS land on the exact latest main. A plain `git pull --ff-only` silently
+  # does nothing when the local shallow history can't fast-forward (diverged or
+  # force-pushed main), which left some machines stuck on stale code. Fetching
+  # then hard-resetting to origin/main guarantees the newest source every time.
+  # Untracked files (workspace/, keys.py, dist/ — all gitignored) are preserved.
+  if [ -d "$DEST/.git" ]; then
+    git -C "$DEST" fetch --depth 1 origin main || git -C "$DEST" fetch origin main
+    git -C "$DEST" reset --hard FETCH_HEAD
+  else
+    git clone --depth 1 "$REPO_URL" "$DEST"
+  fi
 }
 do_venv() {
   cd "$DEST/backend"; [ -x venv/bin/python ] || "$PY" -m venv venv

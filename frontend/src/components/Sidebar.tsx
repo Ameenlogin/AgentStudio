@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Settings as Cog, MessageSquare, Trash2, Cpu, PanelLeftClose, PanelLeft, Puzzle } from 'lucide-react';
+import { Plus, Settings as Cog, MessageSquare, Trash2, Cpu, PanelLeftClose, PanelLeft, Puzzle, Heart } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Message } from '../store/useStore';
 import { api } from '../lib/api';
 import AgentOrb from './AgentOrb';
 import SkillsModal from './SkillsModal';
+
+// Where the heart "Support Creator" link sends people.
+const SUPPORT_URL = 'https://pages.razorpay.com/pl_T1zknR655GpRoS/view';
 
 export default function Sidebar() {
   const {
@@ -147,6 +150,15 @@ export default function Sidebar() {
         >
           <Cog className="w-4 h-4" /> Settings
         </button>
+        <a
+          href={SUPPORT_URL}
+          target="_blank"
+          rel="noreferrer"
+          title="Support the creator"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--color-muted)] hover:bg-[var(--color-elevated)]/60 hover:text-[var(--color-text)] transition"
+        >
+          <Heart className="w-4 h-4 text-[var(--color-red)] fill-[var(--color-red)]" /> Support Creator
+        </a>
       </div>
 
       <SkillsModal open={showSkills} onClose={() => setShowSkills(false)} />

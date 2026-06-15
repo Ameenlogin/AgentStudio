@@ -18,6 +18,14 @@
 ![local](https://img.shields.io/badge/runs-100%25%20local-orange)
 ![models](https://img.shields.io/badge/models-Kimi%20K2%20%2B%205%20more-D97757)
 
+<br/>
+
+### 💖 Support the Creator
+
+Agent Studio is **free & open source**. If it helps you, **please support the creator** — it keeps the project alive and growing.
+
+### 👉 [**❤️ Support Creator**](https://pages.razorpay.com/pl_T1zknR655GpRoS/view)
+
 </div>
 
 ---
@@ -197,6 +205,15 @@ agentstudio run  ─►  local server (FastAPI, :8000)  ─►  your browser UI 
 ---
 
 <div align="center">
+
+## 💖 Support the Creator
+
+Agent Studio is **free & open source** and built with love. If it saves you time, **please support the creator** — every bit helps keep it alive and improving.
+
+### 👉 [**❤️ Support Creator**](https://pages.razorpay.com/pl_T1zknR655GpRoS/view)
+
+<br/>
+
 <sub>
 
 ⭐ **Star this repo if it helped you!**

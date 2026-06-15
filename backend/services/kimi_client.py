@@ -31,8 +31,13 @@ from services.api_pool import APIPool
 # Idle (inter-chunk) timeouts. These must be larger than a reasoning model's
 # normal think-pause or we would kill healthy streams ("Stream interrupted").
 CHUNK_STALL_TIMEOUT = 30.0   # mid-stream silence that means a dead connection
-FIRST_CHUNK_TIMEOUT = 60.0   # first-token budget — headroom for a big MoE (Kimi
-                             # 1T) to warm up under NIM load without false trips
+FIRST_CHUNK_TIMEOUT = 90.0   # first-token budget. Kimi K2.6 (1T MoE) on NVIDIA NIM
+                             # can be slow to warm up under load — measured first
+                             # tokens ranged from ~14s when warm to 70s+ when the
+                             # endpoint is cold/busy. A 60s budget falsely tripped
+                             # the breaker on a slow-but-alive Kimi stream (it felt
+                             # "not working"); 90s gives the big model room to start
+                             # while still catching a genuinely dead socket.
 MAX_BREAKER_RETRIES = 2      # alternate-endpoint retries before giving up
 
 # Models that don't accept the NIM ``chat_template_kwargs={"thinking": …}`` kwarg
