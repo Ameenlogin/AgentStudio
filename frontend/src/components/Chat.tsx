@@ -35,11 +35,18 @@ const MODELS = [
   { id: 'qwen/qwen3-next-80b-a3b-instruct',           short: 'Qwen3 Next 80B',caps: ['coding','reasoning'] },
 ];
 
+const EFFORTS = [
+  { id: 'medium', label: 'Medium', desc: 'Fast and balanced — the everyday default' },
+  { id: 'high',   label: 'High',   desc: 'Plans ahead, weighs edge cases, and verifies before finishing' },
+  { id: 'max',    label: 'Max',    desc: 'Deepest reasoning + rigorous self-verification. Best quality, takes longer' },
+] as const;
+
 // Streamlined live status: just "Thinking…" (or the running tool's label) — no
 // inline icon, since the message's spark already spins while the agent works.
 function LiveStatus({ blocks, pending }: { blocks: Block[]; pending: boolean }) {
+  const effort = useStore((s) => s.effort);
   const last = blocks[blocks.length - 1];
-  let label = 'Thinking';
+  let label = effort === 'max' ? 'Thinking deeply' : effort === 'high' ? 'Thinking hard' : 'Thinking';
   if (pending) {
     label = 'Awaiting your approval';
   } else if (last?.type === 'tool' && (last as ToolBlock).status === 'running') {
@@ -67,6 +74,7 @@ export default function Chat() {
     showSwarmPanel, toggleSwarmPanel,
     setSwarmPlan, updateSwarmWorker, resetSwarm,
     skills, composerInsert, setComposerInsert,
+    effort, setEffort,
   } = useStore();
 
   const [input, setInput]         = useState('');
@@ -197,7 +205,7 @@ export default function Chat() {
       const res = await fetch(api('/api/chat/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, model_name: selectedModel, skill }),
+        body: JSON.stringify({ messages: history, model_name: selectedModel, skill, effort }),
         signal: ctrl.signal,
       });
 
@@ -489,8 +497,27 @@ export default function Chat() {
               className="flex-1 bg-transparent resize-none outline-none px-1 py-1.5 text-[14px] placeholder:text-[var(--color-faint)] min-h-[36px] leading-relaxed"
             />
 
-            {/* Mode picker + Model picker + send */}
+            {/* Effort toggle + Mode picker + Model picker + send */}
             <div className="relative flex items-center gap-1 flex-shrink-0">
+              {/* Effort — how hard the agent works (Medium / High / Max) */}
+              <div className="flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-elevated)] p-0.5" title="Effort — how hard the agent thinks and works">
+                {EFFORTS.map((e) => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    onClick={() => setEffort(e.id)}
+                    title={e.desc}
+                    className={`px-2 py-1 rounded-md text-[11px] font-medium transition ${
+                      effort === e.id
+                        ? 'bg-[var(--color-copper)] text-white shadow-sm'
+                        : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'
+                    }`}
+                  >
+                    {e.label}
+                  </button>
+                ))}
+              </div>
+
               {/* Working mode */}
               <div className="relative">
                 <button
@@ -603,7 +630,7 @@ export default function Chat() {
 
           <p className="text-center text-[10.5px] text-[var(--color-faint)] mt-1.5">
             <ModeIcon className="w-2.5 h-2.5 inline-block mr-1 -mt-0.5 text-[var(--color-copper)]" />
-            {activeMode.label} mode · {activeMode.desc}
+            {activeMode.label} mode · <span className="capitalize">{effort}</span> effort · {activeMode.desc}
           </p>
         </div>
       </div>

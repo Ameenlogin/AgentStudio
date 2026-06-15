@@ -147,6 +147,30 @@ _AGENT_SYSTEM = (
 )
 
 
+# ── Effort levels ────────────────────────────────────────────────────────────
+# The composer's effort toggle (Medium / High / Max) governs how hard the agent
+# works. Higher effort = deeper reasoning, more steps, lower temperature (more
+# precise) and more token head-room to think — at the cost of more model calls,
+# which the API pool paces under the rate limit automatically.
+_HIGH_SUFFIX = (
+    "\n\nEFFORT: HIGH. Plan before you act — outline the approach and consider the "
+    "edge cases, then verify your work (run or inspect it) before the final answer. "
+    "Favor correctness and completeness over speed."
+)
+_MAX_SUFFIX = (
+    "\n\nEFFORT: MAXIMUM — do your best work. Reason step by step in depth and choose "
+    "the BEST solution, not the first that works. Anticipate edge cases and failure "
+    "modes, and self-verify rigorously: run it, read the output, fix what's wrong, and "
+    "only finish when the result is correct and complete. Take the steps you need; do "
+    "not cut corners. Quality and correctness come before speed."
+)
+_EFFORT = {
+    "medium": {"steps_mult": 1.0, "temp": None, "max_tokens": 16384, "suffix": ""},
+    "high":   {"steps_mult": 1.6, "temp": 0.45, "max_tokens": 24576, "suffix": _HIGH_SUFFIX},
+    "max":    {"steps_mult": 2.4, "temp": 0.35, "max_tokens": 32768, "suffix": _MAX_SUFFIX},
+}
+
+
 def _status_ev(pool):
     return _ev({
         "type": "swarm_status",
@@ -160,7 +184,7 @@ def _status_ev(pool):
 async def run_agent(messages, *, api_keys, base_url, model_name,
                     temperature=0.6, system_prompt=None, max_steps=50,
                     tools_enabled=True, permission_mode="ask", swarm_mode="auto",
-                    skill=None):
+                    skill=None, effort="medium"):
     valid_keys = [k for k in api_keys if k and k.strip()]
     if not valid_keys:
         yield _ev({"type": "error",
@@ -168,7 +192,15 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
         return
 
     pool = APIPool(valid_keys, base_url)
-    client = KimiClient(pool=pool, base_url=base_url, model_name=model_name)
+
+    # Resolve the effort level into concrete knobs once, then apply everywhere.
+    eff = _EFFORT.get((effort or "medium").lower(), _EFFORT["medium"])
+    eff_steps = min(int((max_steps or 50) * eff["steps_mult"]), 400)
+    eff_temp = eff["temp"] if eff["temp"] is not None else temperature
+    base_prompt = (system_prompt or _AGENT_SYSTEM) + eff["suffix"]
+
+    client = KimiClient(pool=pool, base_url=base_url, model_name=model_name,
+                        max_tokens=eff["max_tokens"])
 
     # -- EXPLICIT SKILL INVOCATION (/skill …) ---------------------------------
     # The user invoked a skill by name. Inject its full guide into the system
@@ -185,14 +217,20 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
         else:
             active = (f"\n\n(The user tried to invoke a skill '{skill}', but no matching "
                       f"skill is installed. Proceed normally and mention this.)")
-        convo = [{"role": "system", "content": _compose_system(system_prompt or _AGENT_SYSTEM) + active}]
+        convo = [{"role": "system", "content": _compose_system(base_prompt) + active}]
         convo.extend(messages)
-        async for ev in agentic_loop(client, pool, convo, AVAILABLE_TOOLS, temperature,
-                                     max_steps, permission_mode):
+        async for ev in agentic_loop(client, pool, convo, AVAILABLE_TOOLS, eff_temp,
+                                     eff_steps, permission_mode):
             yield ev
         return
 
     mode = router.classify(messages) if tools_enabled else "simple"
+
+    # High/Max effort: only trivial chit-chat stays on the instant path; any real
+    # question gets the full reasoning loop so the effort setting is actually felt.
+    if effort in ("high", "max") and mode == "simple" and tools_enabled \
+            and not router.is_trivial(messages):
+        mode = "agentic"
 
     # -- FAST PATH ------------------------------------------------------------
     if mode == "simple":
@@ -211,20 +249,20 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
         from agents.orchestrator import run_swarm
         async for ev in run_swarm(
             messages, client=client, pool=pool, model_name=model_name,
-            temperature=temperature, system_prompt=system_prompt,
-            max_steps=max_steps, permission_mode=permission_mode,
+            temperature=eff_temp, system_prompt=base_prompt,
+            max_steps=eff_steps, permission_mode=permission_mode,
         ):
             yield ev
         return
 
     # -- AGENTIC PATH ---------------------------------------------------------
-    base_system = _compose_system(system_prompt or _AGENT_SYSTEM)
+    base_system = _compose_system(base_prompt)
     convo = [{"role": "system", "content": base_system}]
     convo.extend(messages)
 
     tools = AVAILABLE_TOOLS if tools_enabled else None
-    async for ev in agentic_loop(client, pool, convo, tools, temperature,
-                                 max_steps, permission_mode):
+    async for ev in agentic_loop(client, pool, convo, tools, eff_temp,
+                                 eff_steps, permission_mode):
         yield ev
 
 

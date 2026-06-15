@@ -1,8 +1,10 @@
 """Smart API key pool with sliding-window rate tracking, health-aware key
 rotation and multi-endpoint (region) routing.
 
-Core guarantee (unchanged): each key is held to ~38 RPM via a 60s sliding
-window so we never actually trip a 429. On top of that:
+Core guarantee: each key is held to a safety cap (SAFE_RPM = 36) via a 60s
+sliding window — deliberately under NVIDIA's 40 RPM/key limit so a key never
+reaches 40/40 in a minute and we never trip a 429, even on High/Max effort
+where the agent makes more calls. On top of that:
 
   • Health-aware rotation — `acquire()` hands out the *healthiest* key with the
     most head-room instead of a blind round-robin, and steers away from any key
@@ -18,6 +20,10 @@ import asyncio
 from collections import deque
 from dataclasses import dataclass, field
 from openai import AsyncOpenAI
+
+# Safety cap per key: stay comfortably below NVIDIA's 40 RPM/key hard limit so a
+# key never reaches 40/40 in any 60s window (no 429s, even at Max effort).
+SAFE_RPM = 36
 
 
 # ── Endpoint (region) health ──────────────────────────────────────────────────
@@ -79,7 +85,7 @@ class AgentSlot:
     """One API key slot with its own rate tracker and health state."""
     key: str
     router: EndpointRouter
-    rpm_limit: int = 40  # NVIDIA NIM hard limit; sliding window self-throttles
+    rpm_limit: int = SAFE_RPM  # safety cap under NVIDIA's 40 RPM/key; window self-throttles
     _clients: dict = field(default_factory=dict)
     _timestamps: deque = field(default_factory=deque)
     _deprioritized_until: float = 0.0
@@ -146,7 +152,7 @@ class AgentSlot:
 class APIPool:
     """Pool across N API keys with health-aware rotation + endpoint routing."""
 
-    def __init__(self, keys: list[str], base_url: str, rpm_per_key: int = 40):
+    def __init__(self, keys: list[str], base_url: str, rpm_per_key: int = SAFE_RPM):
         self.router = EndpointRouter(base_url)
         self.slots = [
             AgentSlot(key=k, router=self.router, rpm_limit=rpm_per_key)

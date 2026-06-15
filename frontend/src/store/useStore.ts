@@ -29,6 +29,15 @@ export interface ConversationMeta { id: number; title: string; updated_at?: stri
 
 export interface SkillMeta { name: string; display: string; description: string; }
 
+export type Effort = 'medium' | 'high' | 'max';
+const loadEffort = (): Effort => {
+  try {
+    const v = localStorage.getItem('agentstudio.effort');
+    if (v === 'medium' || v === 'high' || v === 'max') return v;
+  } catch { /* ignore */ }
+  return 'medium';
+};
+
 export interface PermissionRequest {
   id: string;
   call_id: string;
@@ -97,6 +106,9 @@ interface State {
   setSkills: (s: SkillMeta[]) => void;
   composerInsert: string | null;        // sidebar → composer (e.g. "/design ")
   setComposerInsert: (v: string | null) => void;
+
+  effort: Effort;                       // Medium | High | Max — how hard the agent works
+  setEffort: (e: Effort) => void;
 
   swarmStatus: SwarmStatus | null;
   setSwarmStatus: (s: SwarmStatus | null) => void;
@@ -200,6 +212,12 @@ export const useStore = create<State>((set) => ({
   setSkills: (skills) => set({ skills }),
   composerInsert: null,
   setComposerInsert: (composerInsert) => set({ composerInsert }),
+
+  effort: loadEffort(),
+  setEffort: (effort) => {
+    try { localStorage.setItem('agentstudio.effort', effort); } catch { /* ignore */ }
+    set({ effort });
+  },
 
   swarmStatus: null,
   setSwarmStatus: (s) => set({ swarmStatus: s }),

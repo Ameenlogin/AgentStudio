@@ -5,14 +5,16 @@ import { useStore } from '../store/useStore';
 import type { Message } from '../store/useStore';
 import { api } from '../lib/api';
 import AgentOrb from './AgentOrb';
+import SkillsModal from './SkillsModal';
 
 export default function Sidebar() {
   const {
     view, setView, newChat, conversations, setConversations,
     currentId, setCurrentId, loadMessages, swarmStatus, selectedModel,
-    skills, setSkills, setComposerInsert,
+    skills, setSkills,
   } = useStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [showSkills, setShowSkills] = useState(false);
 
   const refresh = () => {
     fetch(api('/api/conversations/')).then((r) => r.json()).then(setConversations).catch(() => {});
@@ -26,20 +28,6 @@ export default function Sidebar() {
     const t = setInterval(refresh, 4000);
     return () => clearInterval(t);
   }, []);
-
-  // Drop "/<skill> " into the composer and jump to chat.
-  const useSkill = (name: string) => { setComposerInsert('/' + name + ' '); setView('chat'); };
-
-  const installSkill = async () => {
-    const url = window.prompt('Install a skill from a public GitHub repo URL:\n(e.g. https://github.com/owner/skill-repo)');
-    if (!url) return;
-    try {
-      await fetch(api('/api/skills/install'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }),
-      });
-    } catch {}
-    refreshSkills();
-  };
 
   const open = async (id: number) => {
     const d = await fetch(api(`/api/conversations/${id}`)).then((r) => r.json());
@@ -131,42 +119,6 @@ export default function Sidebar() {
         </AnimatePresence>
       </nav>
 
-      {/* Skills — installed expertise packs. Click one to use it in chat via
-          "/<name> …", or install more from any public GitHub repo. */}
-      <div className="px-3 pt-2 pb-1 border-t border-[var(--color-border-soft)]">
-        <div className="flex items-center justify-between px-1 mb-1">
-          <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-faint)] flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3 text-[var(--color-copper)]" /> Skills
-          </div>
-          <button
-            onClick={installSkill}
-            title="Install a skill from a GitHub repo"
-            className="text-[var(--color-faint)] hover:text-[var(--color-copper)] hover:bg-[var(--color-elevated)] rounded-md p-0.5 transition"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        <div className="max-h-44 overflow-y-auto space-y-0.5">
-          {skills.length === 0 && (
-            <div className="text-[11px] text-[var(--color-faint)] px-1 py-1.5 leading-snug">
-              No skills yet. Add one with <span className="text-[var(--color-copper)]">+</span>.
-            </div>
-          )}
-          {skills.map((s) => (
-            <button
-              key={s.name}
-              onClick={() => useSkill(s.name)}
-              title={s.description || s.display || s.name}
-              className="group w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-[12.5px] text-[var(--color-muted)] hover:bg-[var(--color-elevated)] hover:text-[var(--color-text)] transition"
-            >
-              <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-copper)]" />
-              <span className="truncate flex-1">{s.display || s.name}</span>
-              <span className="opacity-0 group-hover:opacity-100 text-[10px] font-mono text-[var(--color-faint)] flex-shrink-0">/{s.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="p-3 border-t border-[var(--color-border-soft)] space-y-2">
         {swarmStatus && swarmStatus.total_rpm > 0 && (
           <div className="flex items-center gap-2 px-2 py-1.5 bg-[var(--color-copper-wash)] border border-[var(--color-copper)]/15 rounded-lg text-[10px] text-[var(--color-copper-lo)] font-mono font-semibold">
@@ -179,6 +131,15 @@ export default function Sidebar() {
           <span className="truncate" title={selectedModel}>{modelShort}</span>
         </div>
         <button
+          onClick={() => setShowSkills(true)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--color-muted)] hover:bg-[var(--color-elevated)]/60 hover:text-[var(--color-text)] transition"
+        >
+          <Sparkles className="w-4 h-4 text-[var(--color-copper)]" /> Skills
+          {skills.length > 0 && (
+            <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-[var(--color-copper-wash)] text-[var(--color-copper-lo)]">{skills.length}</span>
+          )}
+        </button>
+        <button
           onClick={() => setView('settings')}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition ${
             view === 'settings' ? 'bg-[var(--color-elevated)] text-[var(--color-text)] shadow-[var(--shadow-card)]' : 'text-[var(--color-muted)] hover:bg-[var(--color-elevated)]/60 hover:text-[var(--color-text)]'
@@ -187,6 +148,8 @@ export default function Sidebar() {
           <Cog className="w-4 h-4" /> Settings
         </button>
       </div>
+
+      <SkillsModal open={showSkills} onClose={() => setShowSkills(false)} />
     </aside>
   );
 }

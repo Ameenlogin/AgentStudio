@@ -82,6 +82,16 @@ _TRIVIAL = {
 }
 
 
+def is_trivial(messages: list[dict]) -> bool:
+    """A greeting / acknowledgement / one-or-two-word message — the only kind
+    that should stay on the instant path even at High/Max effort."""
+    last_user = next((m for m in reversed(messages) if m.get("role") == "user"), None)
+    if not last_user:
+        return True
+    low = (last_user.get("content") or "").strip().lower().strip(" .!?")
+    return low in _TRIVIAL or len(low.split()) <= 3
+
+
 def classify(messages: list[dict]) -> str:
     """Return 'simple' or 'agentic' for the latest user message in context."""
     # last user turn

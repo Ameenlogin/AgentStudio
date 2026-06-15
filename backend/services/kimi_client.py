@@ -65,10 +65,12 @@ class KimiClient:
     """Wraps either a single key or an APIPool for rate-limit-aware requests."""
 
     def __init__(self, *, api_key: str = "", base_url: str = "https://integrate.api.nvidia.com/v1",
-                 model_name: str = "moonshotai/kimi-k2.6", pool: APIPool | None = None):
+                 model_name: str = "moonshotai/kimi-k2.6", pool: APIPool | None = None,
+                 max_tokens: int = 16384):
         self.model_name = model_name
         self.pool = pool
         self.base_url = base_url
+        self.max_tokens = max_tokens
         if not pool:
             self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
         else:
@@ -80,7 +82,7 @@ class KimiClient:
             "messages": messages,
             "temperature": temperature,
             "stream": True,
-            "max_tokens": 16384,
+            "max_tokens": self.max_tokens,
         }
         if tools:
             kwargs["tools"] = tools
