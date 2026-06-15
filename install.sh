@@ -46,6 +46,11 @@ cd "$DEST/backend"
 venv/bin/python -m pip install --upgrade pip -q --disable-pip-version-check
 venv/bin/python -m pip install -r requirements.txt -q --disable-pip-version-check
 
+# Real Chrome for the agent's browser tools (Playwright). Best-effort: a failed
+# download must not block the install — browser tools prompt to retry if missing.
+say "Installing the agent's Chrome browser (Playwright) ..."
+venv/bin/python -m playwright install chromium || say "(Chromium download failed; run 'playwright install chromium' later)"
+
 # --- frontend (ALWAYS rebuild so `agentstudio update` actually ships new UI) -
 # Building only when dist was missing meant an update pulled new source but kept
 # serving the OLD prebuilt bundle — the #1 reason the UI looked unchanged after

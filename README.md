@@ -121,6 +121,7 @@ Switch models anytime from the composer — all served free through NVIDIA NIM:
 | “Build a website / app / script” | Plans it, writes the files, runs it, fixes errors, hands you a working project |
 | “Fix this huge codebase / WordPress plugin” | Pages through **large files**, greps to the exact spot, and **patches** precisely — even **inside a `.zip`** without unpacking |
 | “Research X and write me notes” | Searches the web, reads pages, and writes the document |
+| “Log in and do X on this site” | Drives a **real Chrome** browser — navigates, clicks, types, fills forms, scrolls, switches tabs, and reads the page; you can finish a login/2FA in a visible window and it keeps the session |
 | “Turn this into a PDF / zip it up” | Creates PDFs from text/Markdown and packages downloadable archives |
 | “Analyze this data / database” | Runs real Python (pandas, sqlite, …) and installs any library it needs |
 
@@ -169,11 +170,13 @@ agentstudio run  ─►  local server (FastAPI, :8000)  ─►  your browser UI 
 - [Python 3.10+](https://www.python.org/downloads/) *(Windows: tick “Add python.exe to PATH”)*
 - A free **NVIDIA NIM API key** → [build.nvidia.com](https://build.nvidia.com)
 - *(Node.js only if you build the UI from source — the installer handles it.)*
+- *(First setup also downloads a private Chromium (~100 MB) for the agent’s real-browser tools — automatic, one time.)*
 
 ## 🩹 Troubleshooting
 
 - **`agentstudio` not found** — open a **new** terminal after installing (or run `source ~/.zshrc`) so your PATH refreshes.
 - **Browser didn’t open** — visit **http://127.0.0.1:8000** manually.
+- **Agent’s browser won’t launch** — run `playwright install chromium` once inside `backend/` (with the venv active); the install scripts do this automatically.
 - **“API key not configured”** — add your NVIDIA key in **Settings**.
 - **Port 8000 busy** — `agentstudio run` frees it automatically.
 

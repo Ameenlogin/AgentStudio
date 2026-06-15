@@ -41,7 +41,7 @@ if [ ! -x "venv/bin/python" ]; then
   "$PY" -m venv venv || { printf '  [ERROR] Could not create venv.\n'; read -r -p "Press Return."; exit 1; }
 fi
 VENV_PY="$DIR/backend/venv/bin/python"
-if ! "$VENV_PY" -c 'import uvicorn, fastapi, openai, sqlalchemy, pypdf, fpdf, lxml, bs4, requests' >/dev/null 2>&1; then
+if ! "$VENV_PY" -c 'import uvicorn, fastapi, openai, sqlalchemy, pypdf, fpdf, lxml, bs4, requests, playwright' >/dev/null 2>&1; then
   printf '        Installing backend packages (first run, ~30s)...\n'
   "$VENV_PY" -m pip install --upgrade pip -q --disable-pip-version-check
   "$VENV_PY" -m pip install -r requirements.txt --disable-pip-version-check \
@@ -49,6 +49,8 @@ if ! "$VENV_PY" -c 'import uvicorn, fastapi, openai, sqlalchemy, pypdf, fpdf, lx
 else
   printf '        Backend packages already installed.\n'
 fi
+# Ensure the agent's Chrome (Playwright) is present — fast no-op when installed.
+"$VENV_PY" -m playwright install chromium >/dev/null 2>&1 || true
 printf '        OK\n'
 
 # --- user interface ----------------------------------------------------------

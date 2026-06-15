@@ -47,6 +47,8 @@ printf '  [4/5] Installing backend packages (~30s)...\n'
 "$VENV_PY" -m pip install -r requirements.txt --disable-pip-version-check \
   || { printf '  [ERROR] pip install failed (check internet).\n'; read -r -p "Press Return."; exit 1; }
 printf '        Backend packages installed.\n'
+printf '        Installing the agent Chrome browser (Playwright)...\n'
+"$VENV_PY" -m playwright install chromium || printf '        (Chromium download failed; run it later with: playwright install chromium)\n'
 
 # 5) frontend
 printf '  [5/5] Installing and building frontend (~60s)...\n'

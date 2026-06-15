@@ -49,6 +49,10 @@ if (-not (Test-Path $VenvPy)) { & cmd /c "$PY -m venv venv" }
 & $VenvPy -m pip install --upgrade pip -q --disable-pip-version-check
 & $VenvPy -m pip install -r requirements.txt -q --disable-pip-version-check
 
+# Real Chrome for the agent's browser tools (Playwright). Best-effort.
+Write-Host "  Installing the agent's Chrome browser (Playwright) ..."
+try { & $VenvPy -m playwright install chromium } catch { Write-Host "  (Chromium download failed; run 'playwright install chromium' later)" }
+
 # --- frontend (ALWAYS rebuild so `agentstudio update` actually ships new UI) -
 # Building only when dist was missing meant an update kept serving the OLD UI.
 Set-Location (Join-Path $Dest "frontend")
