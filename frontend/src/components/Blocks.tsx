@@ -4,7 +4,9 @@ import ReactMarkdown from 'react-markdown';
 import {
   ChevronRight, Check, Copy, Download,
   FileText, FilePlus, FilePen, Folder, FolderPlus, Search, Terminal, Globe, Link as LinkIcon, Wrench,
-  Trash2, Archive, FolderTree, Files, FileDiff, GitBranch, ListChecks, Monitor, FileCode2
+  Trash2, Archive, FolderTree, Files, FileDiff, GitBranch, ListChecks, Monitor, FileCode2,
+  MousePointerClick, Keyboard, Camera, Eye, ScanText, AppWindow, Upload, Timer, Save, Power,
+  RotateCw, ArrowLeft, ArrowRight, Move, Loader2
 } from 'lucide-react';
 import type { Block, ToolBlock, ThinkBlock } from '../store/useStore';
 import { api } from '../lib/api';
@@ -16,6 +18,10 @@ const ICONS: Record<string, any> = {
   trash: Trash2, copy: Copy, download: Download, archive: Archive,
   'folder-tree': FolderTree, 'files': Files, 'diff': FileDiff, 'git-branch': GitBranch,
   'list-checks': ListChecks,
+  // Browser actions
+  'mouse-pointer': MousePointerClick, keyboard: Keyboard, camera: Camera, eye: Eye,
+  scan: ScanText, 'app-window': AppWindow, upload: Upload, timer: Timer, save: Save,
+  power: Power, refresh: RotateCw, 'arrow-left': ArrowLeft, 'arrow-right': ArrowRight, move: Move,
 };
 
 function downloadablePath(b: ToolBlock): string | null {
@@ -190,11 +196,40 @@ const APP_ORDER: AppId[] = ['terminal', 'files', 'editor', 'browser'];
 const TERMINAL_TOOLS = ['run_command', 'python_exec', 'install_package', 'start_process', 'read_process', 'stop_process', 'list_processes'];
 const EDITOR_TOOLS = ['write_file', 'append_file', 'edit_file', 'patch_file', 'apply_patch', 'batch_write_files', 'zip_write', 'zip_edit', 'zip_remove', 'pdf_create', 'create_zip'];
 
+// Real-Chrome control tools (kind "system") and the lightweight web tools both
+// live in the Browser app.
+const isBrowserTool = (t: ToolBlock) =>
+  t.name.startsWith('browser_') || t.kind === 'system' || t.kind === 'web';
+
 function appOf(t: ToolBlock): AppId {
+  if (isBrowserTool(t)) return 'browser';
   if (TERMINAL_TOOLS.includes(t.name)) return 'terminal';
   if (EDITOR_TOOLS.includes(t.name)) return 'editor';
-  if (t.kind === 'web') return 'browser';
   return 'files';
+}
+
+// Pull a screenshot path out of a browser tool result ("IMAGE: <relpath>").
+function shotPath(t: ToolBlock): string | null {
+  const m = (t.result || '').match(/^IMAGE:\s*(.+?)\s*$/m);
+  return m ? m[1] : null;
+}
+// The page URL a browser action touched (explicit arg, else parsed from result).
+function browserUrl(t: ToolBlock): string {
+  const a = t.args as any;
+  if (a?.url) return String(a.url);
+  const m = (t.result || '').match(/—\s*(https?:\/\/\S+)/);
+  if (m) return m[1];
+  if (a?.query) return `search · ${a.query}`;
+  return '';
+}
+// Result text minus the status header line and the IMAGE: marker.
+function browserText(t: ToolBlock): string {
+  return (t.result || '')
+    .replace(/^IMAGE:.*$/m, '')
+    .replace(/^●.*$/m, '')
+    .replace(/^\[\d+ tab\(s\) open\]$/m, '')
+    .replace(/^--- (PAGE TEXT|ACCESSIBILITY TREE) ---$/m, '')
+    .trim();
 }
 
 function TerminalApp({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
@@ -306,36 +341,78 @@ function FilesApp({ tools }: { tools: ToolBlock[] }) {
   );
 }
 
-function BrowserApp({ tools }: { tools: ToolBlock[] }) {
+function BrowserApp({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
   const [sel, setSel] = useState(tools.length - 1);
+  const filmRef = useRef<HTMLDivElement>(null);
+  // Follow the latest action while the agent is working; let the user scrub when idle.
   useEffect(() => { setSel(tools.length - 1); }, [tools.length]);
+  useEffect(() => {
+    if (filmRef.current) filmRef.current.scrollLeft = filmRef.current.scrollWidth;
+  }, [tools.length]);
+
   const idx = Math.min(Math.max(sel, 0), tools.length - 1);
   const cur = tools[idx];
-  const a = (cur?.args || {}) as any;
-  const url = a.url || (a.query ? `search · ${a.query}` : 'about:blank');
-  const loading = cur?.status === 'running';
-  const body = cur ? (cur.result || (loading ? 'Loading…' : '')) : '';
+  const loading = live && cur?.status === 'running';
+
+  // The page view: the selected action's screenshot, or the most recent one before it.
+  let shot: string | null = cur ? shotPath(cur) : null;
+  if (!shot) {
+    for (let i = idx; i >= 0; i--) { const s = shotPath(tools[i]); if (s) { shot = s; break; } }
+  }
+  // Carry the last known URL forward (an action like "click" has no URL of its own).
+  let url = cur ? browserUrl(cur) : '';
+  if (!url) {
+    for (let i = idx; i >= 0; i--) { const u = browserUrl(tools[i]); if (u) { url = u; break; } }
+  }
+  const text = cur ? browserText(cur) : '';
+  // Click/type actions get a target-reticle overlay on the screenshot.
+  const isPointer = cur && ['mouse-pointer', 'keyboard'].includes(cur.icon);
+
   return (
     <div className="ac-browser">
       <div className="ac-urlbar">
         <span className="ac-url-ctrls">
-          <ChevronRight className="w-3 h-3 rotate-180" /><ChevronRight className="w-3 h-3" />
+          <ArrowLeft className="w-3 h-3" /><ArrowRight className="w-3 h-3" /><RotateCw className="w-3 h-3" />
         </span>
-        <span className={`ac-url ${loading ? 'loading' : ''}`}><Globe className="w-3 h-3" /> {String(url)}</span>
+        <span className={`ac-url ${loading ? 'loading' : ''}`}>
+          {loading ? <Loader2 className="w-3 h-3 ac-spin" /> : <Globe className="w-3 h-3" />}
+          {url || 'about:blank'}
+        </span>
       </div>
+
+      <div className="ac-viewport">
+        {shot ? (
+          <div className="ac-shot-wrap">
+            <img className="ac-shot" src={api(`/api/files/raw?path=${encodeURIComponent(shot)}`)} alt="page" />
+            {loading && isPointer && <span className="ac-reticle" />}
+            {loading && <span className="ac-scanline" />}
+          </div>
+        ) : (
+          <pre className="ac-page">{text || (loading ? 'Loading…' : '(no page captured yet)')}</pre>
+        )}
+        {shot && text && <pre className="ac-page ac-page-under">{text}</pre>}
+      </div>
+
       {tools.length > 1 && (
-        <div className="ac-tabsrow">
+        <div className="ac-film" ref={filmRef}>
           {tools.map((t, i) => {
-            const u = (t.args as any).url || (t.args as any).query || t.label;
+            const Ic = ICONS[t.icon] || Globe;
+            const running = t.status === 'running';
+            const err = t.status === 'error';
             return (
-              <button key={t.id} className={`ac-btab ${i === idx ? 'on' : ''}`} onClick={() => setSel(i)} title={String(u)}>
-                {String(u).replace(/^https?:\/\//, '').slice(0, 28)}
+              <button
+                key={t.id}
+                className={`ac-film-item ${i === idx ? 'on' : ''} ${running ? 'run' : ''} ${err ? 'err' : ''}`}
+                onClick={() => setSel(i)}
+                title={`${t.label}${url ? '' : ''}`}
+              >
+                <Ic className="w-3 h-3" />
+                <span className="ac-film-label">{t.label}</span>
               </button>
             );
           })}
         </div>
       )}
-      <pre className="ac-page">{body || '(no content)'}</pre>
     </div>
   );
 }
@@ -348,6 +425,7 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
   const [active, setActive] = useState<AppId>(lastApp);
   const [picked, setPicked] = useState(false);
   const [closed, setClosed] = useState(false);
+  const autoClosed = useRef(false);
   useEffect(() => { if (!picked) setActive(lastApp); }, [lastApp, picked]);
 
   const shown: AppId = groups[active].length ? active : lastApp;
@@ -355,6 +433,17 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
   const runningCount = tools.filter((t) => t.status === 'running').length;
   const done = !live && runningCount === 0;
   const actions = `${tools.length} action${tools.length !== 1 ? 's' : ''}`;
+
+  // Open while working, then auto-close shortly after the task finishes — one box,
+  // opened once and put away when done (re-openable, and it won't auto-close again
+  // once the user has re-opened it).
+  useEffect(() => {
+    if (done && !autoClosed.current) {
+      autoClosed.current = true;
+      const t = setTimeout(() => setClosed(true), 2600);
+      return () => clearTimeout(t);
+    }
+  }, [done]);
 
   if (closed) {
     return (
@@ -367,7 +456,7 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
 
   return (
     <motion.div
-      className="agent-computer"
+      className={`agent-computer ${live ? 'working' : ''} ${done ? 'done' : ''}`}
       initial={{ opacity: 0, scale: 0.985, y: 4 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
@@ -379,8 +468,9 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
           <span className="tl-dot tl-green" />
         </span>
         <span className="ac-title"><Monitor className="w-3.5 h-3.5" /> Agent Computer</span>
-        <span className="ac-meta">
-          {done ? '✓ Finished' : <><span className="ac-live-dot" /> Working</>} · {actions}
+        <span className={`ac-meta ${done ? 'fin' : ''}`}>
+          {done ? <><Check className="w-3.5 h-3.5" /> Finished</> : <><span className="ac-live-dot" /> Working</>}
+          <span className="ac-meta-sep">·</span> {actions}
         </span>
       </div>
 
@@ -389,6 +479,7 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
         <strong>{Meta.name}</strong>
         <span>File</span><span>Edit</span><span>View</span><span>Go</span>
       </div>
+      {live && <div className="ac-progress" />}
 
       <div className="ac-screen">
         <AnimatePresence mode="wait">
@@ -409,7 +500,7 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
               {shown === 'terminal' && <TerminalApp tools={groups.terminal} live={live} />}
               {shown === 'files' && <FilesApp tools={groups.files} />}
               {shown === 'editor' && <EditorApp tools={groups.editor} />}
-              {shown === 'browser' && <BrowserApp tools={groups.browser} />}
+              {shown === 'browser' && <BrowserApp tools={groups.browser} live={live} />}
             </div>
           </motion.div>
         </AnimatePresence>
@@ -445,21 +536,23 @@ function AgentComputer({ tools, live }: { tools: ToolBlock[]; live: boolean }) {
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
+// ONE Agent Computer per message. Every tool action — no matter how the model
+// interleaves it with thinking and prose — is folded into a single static box
+// that opens once, runs the work inside, and auto-closes when the task is done.
+// (Previously each contiguous run of tools spawned its own box, which is what
+// produced multiple "computers" stacked down the message.)
 export default function Blocks({ blocks, streaming }: { blocks: Block[]; streaming: boolean }) {
+  const allTools = blocks.filter((b) => b.type === 'tool') as ToolBlock[];
+  const firstToolIdx = blocks.findIndex((b) => b.type === 'tool');
   const items: ReactNode[] = [];
-  let i = 0;
-  while (i < blocks.length) {
-    const b = blocks[i];
+
+  blocks.forEach((b, i) => {
     if (b.type === 'tool') {
-      const start = i;
-      const group: ToolBlock[] = [];
-      while (i < blocks.length && blocks[i].type === 'tool') {
-        group.push(blocks[i] as ToolBlock);
-        i++;
+      // Render the single computer at the first tool; fold the rest into it.
+      if (i === firstToolIdx) {
+        items.push(<AgentComputer key="agent-computer" tools={allTools} live={streaming} />);
       }
-      const live = streaming && i === blocks.length;
-      items.push(<AgentComputer key={`ac-${start}`} tools={group} live={live} />);
-      continue;
+      return;
     }
     const isLast = i === blocks.length - 1;
     if (b.type === 'thinking') {
@@ -472,7 +565,6 @@ export default function Blocks({ blocks, streaming }: { blocks: Block[]; streami
         </div>
       );
     }
-    i++;
-  }
+  });
   return <div className="timeline">{items}</div>;
 }

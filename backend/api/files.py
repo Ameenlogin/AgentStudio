@@ -1,5 +1,6 @@
 import os
 import shutil
+import mimetypes
 from fastapi import APIRouter, UploadFile, File, Query, HTTPException, Depends
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -39,6 +40,21 @@ def download(path: str = Query(...), db: Session = Depends(get_db)):
     if not os.path.isfile(p):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(p, filename=os.path.basename(p), media_type="application/octet-stream")
+
+
+@router.get("/raw")
+def raw(path: str = Query(...), db: Session = Depends(get_db)):
+    """Serve a file inline with its real content-type — used by the Agent Computer
+    to render browser screenshots (and other images) inside the timeline."""
+    _sync_workspace(db)
+    try:
+        p = resolve(path)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    if not os.path.isfile(p):
+        raise HTTPException(status_code=404, detail="File not found")
+    media, _ = mimetypes.guess_type(p)
+    return FileResponse(p, media_type=media or "application/octet-stream")
 
 
 @router.get("/read")

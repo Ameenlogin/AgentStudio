@@ -6,9 +6,10 @@ setlocal enableextensions
 cd /d "%~dp0"
 
 echo.
-echo   ============================================================
-echo      AGENT STUDIO   ^|   Windows Launcher
-echo   ============================================================
+echo   +========================================================+
+echo   ^|   * AGENT STUDIO  -  Windows Launcher                  ^|
+echo   +========================================================+
+echo   First run sets things up - keep this window open a moment.
 echo.
 
 REM --- pick a Python 3.10+ ---
@@ -29,7 +30,7 @@ if not exist "backend\venv\Scripts\python.exe" (
   %PY% -m venv backend\venv || ( echo   [ERROR] Could not create venv. & pause & exit /b 1 )
 )
 set "VENV_PY=%~dp0backend\venv\Scripts\python.exe"
-"%VENV_PY%" -c "import uvicorn, fastapi, openai, sqlalchemy, pypdf, fpdf, lxml, bs4, requests" >nul 2>nul
+"%VENV_PY%" -c "import uvicorn, fastapi, openai, sqlalchemy, pypdf, fpdf, lxml, bs4, requests, playwright" >nul 2>nul
 if errorlevel 1 (
   echo         Installing backend packages (first run, ~30s)...
   "%VENV_PY%" -m pip install --upgrade pip -q --disable-pip-version-check
@@ -37,6 +38,8 @@ if errorlevel 1 (
 ) else (
   echo         Backend packages already installed.
 )
+REM Ensure the agent's Chrome (Playwright) is present - fast no-op when installed.
+"%VENV_PY%" -m playwright install chromium >nul 2>nul
 echo         OK
 
 REM --- user interface ---
@@ -61,11 +64,11 @@ REM Open the browser as soon as the server answers (background health poll).
 start "" /b powershell -NoProfile -WindowStyle Hidden -Command "for($i=0;$i -lt 60;$i++){Start-Sleep -Seconds 1; try{ if((Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8000/api/health' -TimeoutSec 2).StatusCode -eq 200){ Start-Process 'http://127.0.0.1:8000'; break } }catch{} }"
 
 echo.
-echo   ============================================================
-echo      AGENT STUDIO is starting at http://127.0.0.1:8000
-echo      Your browser opens automatically when ready.
-echo      To STOP: press Ctrl+C here, or close this window.
-echo   ============================================================
+echo   +========================================================+
+echo   ^|   OK Starting at  http://127.0.0.1:8000                ^|
+echo   ^|   Your browser opens automatically when ready.         ^|
+echo   ^|   To STOP: press Ctrl+C here, or close this window.    ^|
+echo   +========================================================+
 echo.
 
 cd backend

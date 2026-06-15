@@ -1,13 +1,14 @@
 @echo off
 REM Agent Studio - first-time setup for Windows (double-click this file).
 REM Equivalent of install.command on macOS. START.bat does this too.
-setlocal enableextensions
+setlocal enableextensions enabledelayedexpansion
 cd /d "%~dp0"
 
 echo.
-echo   ==========================================================
-echo     AGENT STUDIO  ^|  First-Time Installation (Windows)
-echo   ==========================================================
+echo   +========================================================+
+echo   ^|   * AGENT STUDIO  -  First-Time Installation (Windows) ^|
+echo   +========================================================+
+echo   Setting things up - keep this window open, it takes a minute.
 echo.
 
 REM 1) Python 3.10+ (prefer the py launcher, then python)
@@ -19,42 +20,53 @@ if not defined PY (
   echo   Install from https://www.python.org/downloads/  ^(tick "Add python.exe to PATH"^).
   pause & exit /b 1
 )
-echo   [1/5] Python found. OK
-
-REM 2) Node.js
 where node >nul 2>nul || (
   echo   [ERROR] Node.js not found. Install from https://nodejs.org
   pause & exit /b 1
 )
-echo   [2/5] Node.js found. OK
+echo   * Python and Node.js found.
+echo.
 
-REM 3) Python virtual environment
-echo   [3/5] Creating Python virtual environment...
-if exist "backend\venv\Scripts\python.exe" (
-  echo         Already exists, skipping.
-) else (
-  %PY% -m venv backend\venv || ( echo   [ERROR] venv creation failed. & pause & exit /b 1 )
-  echo         Created.
-)
 set "VENV_PY=%~dp0backend\venv\Scripts\python.exe"
 
-REM 4) Backend packages
-echo   [4/5] Installing backend packages (~30s)...
+echo   -^> [1/4] Creating the Python environment ...
+if not exist "backend\venv\Scripts\python.exe" (
+  %PY% -m venv backend\venv || ( echo   [ERROR] venv creation failed. & pause & exit /b 1 )
+)
 "%VENV_PY%" -m pip install --upgrade pip -q --disable-pip-version-check
-"%VENV_PY%" -m pip install -r backend\requirements.txt --disable-pip-version-check || ( echo   [ERROR] pip install failed (check internet). & pause & exit /b 1 )
-echo         Backend packages installed.
+call :bar 25
 
-REM 5) Frontend
-echo   [5/5] Installing and building the user interface (~60s)...
+echo   -^> [2/4] Installing backend packages ...
+"%VENV_PY%" -m pip install -r backend\requirements.txt -q --disable-pip-version-check || ( echo   [ERROR] pip install failed (check internet). & pause & exit /b 1 )
+call :bar 50
+
+echo   -^> [3/4] Installing the agent's Chrome browser ...
+"%VENV_PY%" -m playwright install chromium >nul 2>nul || echo         (Chromium download deferred; the agent will retry on first use.)
+call :bar 75
+
+echo   -^> [4/4] Building the user interface ...
 pushd frontend
-call npm install || ( echo   [ERROR] npm install failed. & popd & pause & exit /b 1 )
+call npm install --silent || ( echo   [ERROR] npm install failed. & popd & pause & exit /b 1 )
 call npm run build || ( echo   [ERROR] frontend build failed. & popd & pause & exit /b 1 )
 popd
-echo         User interface built.
+call :bar 100
 
 echo.
-echo   ==========================================================
-echo     Installation COMPLETE!  Now double-click  run.bat
-echo   ==========================================================
+echo   +========================================================+
+echo   ^|   OK Installation complete!  Double-click  run.bat     ^|
+echo   +========================================================+
 echo.
 pause
+exit /b 0
+
+REM ── progress bar: call :bar ^<percent^> ───────────────────────────────────
+:bar
+set /a _pct=%1
+set /a _fill=_pct/5
+set "_b="
+for /l %%i in (1,1,20) do (
+  if %%i leq !_fill! (set "_b=!_b!#") else (set "_b=!_b!-")
+)
+echo      [!_b!] !_pct!%%
+echo.
+goto :eof

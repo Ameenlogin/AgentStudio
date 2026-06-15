@@ -2,9 +2,9 @@
 
 # ✳️ Agent Studio
 
-### Turn a **free NVIDIA API key** into your own private AI coding agent.
+### Turn a **free NVIDIA NIM API key** into your own private, autonomous coding agent.
 
-**One command to install. One command to run.** No accounts, no subscriptions, no cloud — it all runs on your own Mac or Windows PC.
+**One command to install. One command to run.** No accounts, no subscriptions, no cloud bills — it all runs on your own Mac or Windows PC. Watch it think, write code, run it, and even drive a **real Chrome browser** — live, inside an on-screen **Agent Computer**.
 
 <br/>
 
@@ -95,6 +95,20 @@ It’s like having **Claude Code / Cursor-style superpowers**, but **local, free
 
 ---
 
+## 🖥️ The Agent Computer
+
+Watch the agent work inside a single, self-contained **mini-computer** right in the chat — a macOS-style desktop with **Terminal, Files, Editor, and a real Browser**. It opens when work begins, switches apps as the agent acts, and **auto-closes the moment the task is done** (one click to re-open).
+
+<div align="center">
+<img src="docs/screenshots/agent-computer.png" width="760" alt="The Agent Computer — Terminal, Files, Editor, and a real Chrome browser in one box" />
+</div>
+
+- **One box, not a wall of cards** — every command, file write, and browser click streams into the same window.
+- **A real browser tab** — when the agent drives Chrome it shows the live page screenshot, the URL bar, and a scrubbable strip of each action (click, type, navigate) with live animations.
+- **Live, honest output** — no fake skeletons; you see the actual terminal output, the actual code, the actual page.
+
+---
+
 ## 🤖 Pick any of 6 top models
 
 Switch models anytime from the composer — all served free through NVIDIA NIM:
@@ -121,6 +135,7 @@ Switch models anytime from the composer — all served free through NVIDIA NIM:
 | “Build a website / app / script” | Plans it, writes the files, runs it, fixes errors, hands you a working project |
 | “Fix this huge codebase / WordPress plugin” | Pages through **large files**, greps to the exact spot, and **patches** precisely — even **inside a `.zip`** without unpacking |
 | “Research X and write me notes” | Searches the web, reads pages, and writes the document |
+| “Log in and do X on this site” | Drives a **real Chrome** browser — navigates, clicks, types, fills forms, scrolls, switches tabs, and reads the page; you can finish a login/2FA in a visible window and it keeps the session |
 | “Turn this into a PDF / zip it up” | Creates PDFs from text/Markdown and packages downloadable archives |
 | “Analyze this data / database” | Runs real Python (pandas, sqlite, …) and installs any library it needs |
 
@@ -169,11 +184,13 @@ agentstudio run  ─►  local server (FastAPI, :8000)  ─►  your browser UI 
 - [Python 3.10+](https://www.python.org/downloads/) *(Windows: tick “Add python.exe to PATH”)*
 - A free **NVIDIA NIM API key** → [build.nvidia.com](https://build.nvidia.com)
 - *(Node.js only if you build the UI from source — the installer handles it.)*
+- *(First setup also downloads a private Chromium (~100 MB) for the agent’s real-browser tools — automatic, one time.)*
 
 ## 🩹 Troubleshooting
 
 - **`agentstudio` not found** — open a **new** terminal after installing (or run `source ~/.zshrc`) so your PATH refreshes.
 - **Browser didn’t open** — visit **http://127.0.0.1:8000** manually.
+- **Agent’s browser won’t launch** — run `playwright install chromium` once inside `backend/` (with the venv active); the install scripts do this automatically.
 - **“API key not configured”** — add your NVIDIA key in **Settings**.
 - **Port 8000 busy** — `agentstudio run` frees it automatically.
 

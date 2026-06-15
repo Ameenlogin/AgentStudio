@@ -20,6 +20,16 @@ from tools.archive_tools import (
 )
 from tools.pdf_tools import pdf_read, pdf_info, pdf_create
 from tools.data_tools import python_exec, python_exec_stream, install_package
+from tools.browser_tools import (
+    browser_launch, browser_goto, browser_back, browser_forward, browser_reload,
+    browser_click, browser_click_at, browser_type, browser_type_at, browser_fill,
+    browser_select_option, browser_hover, browser_drag, browser_scroll, browser_key_press,
+    browser_get_content, browser_get_accessibility_tree, browser_screenshot,
+    browser_find_element, browser_wait_for_selector, browser_wait_for_text,
+    browser_wait_for_navigation, browser_new_tab, browser_switch_tab, browser_close_tab,
+    browser_list_tabs, browser_upload_file, browser_save_session, browser_load_session,
+    browser_close,
+)
 from services import skills as _skills
 
 
@@ -148,6 +158,73 @@ AVAILABLE_TOOLS = [
         {"n": {"type": "integer", "description": "Number of commits (default 10)."}}, []),
     _fn("git_commit", "Stage all changes and commit with a message.",
         {"message": _S}, ["message"]),
+    # ── Real Chrome browser (Playwright) ─────────────────────────────────────
+    # Drives an actual Chromium: JS-heavy sites, logins, clicking, forms, scraping
+    # behind auth. Prefer fetch_url/scrape for simple static pages; use the browser
+    # when a page needs JavaScript, interaction, or a signed-in session.
+    _fn("browser_launch", "Launch a real Chrome browser (persistent session, cookies survive). "
+        "Set headless=false for a VISIBLE window so the user can complete a login / 2FA / CAPTCHA, "
+        "then continue. Optionally open a URL.",
+        {"url": {"type": "string", "description": "Optional URL to open on launch."},
+         "headless": {"type": "boolean", "description": "false = visible window (for manual login). Default true."}}, []),
+    _fn("browser_goto", "Navigate the browser to a URL (launches Chrome automatically if needed).",
+        {"url": _S, "wait_until": {"type": "string", "description": "load | domcontentloaded | networkidle (default load)."}}, ["url"]),
+    _fn("browser_back", "Go back to the previous page.", {}, []),
+    _fn("browser_forward", "Go forward to the next page.", {}, []),
+    _fn("browser_reload", "Reload the current page.", {}, []),
+    _fn("browser_click", "Click an element by CSS or text selector.",
+        {"selector": {"type": "string", "description": "CSS selector or text= / role= selector."}}, ["selector"]),
+    _fn("browser_click_at", "Vision-grounded click at viewport pixel coordinates (from browser_get_accessibility_tree).",
+        {"x": {"type": "integer"}, "y": {"type": "integer"}}, ["x", "y"]),
+    _fn("browser_type", "Focus an element and type text; set submit=true to press Enter after.",
+        {"selector": _S, "text": _S, "submit": {"type": "boolean", "description": "Press Enter after typing."}}, ["selector", "text"]),
+    _fn("browser_type_at", "Vision-grounded typing: click coordinates then type (optionally submit).",
+        {"x": {"type": "integer"}, "y": {"type": "integer"}, "text": _S, "submit": {"type": "boolean"}}, ["x", "y", "text"]),
+    _fn("browser_fill", "Set a form field's value (no submit).", {"selector": _S, "text": _S}, ["selector", "text"]),
+    _fn("browser_select_option", "Choose an option in a <select> dropdown.",
+        {"selector": _S, "value": _S}, ["selector", "value"]),
+    _fn("browser_hover", "Hover the mouse over an element (reveals menus/tooltips).", {"selector": _S}, ["selector"]),
+    _fn("browser_drag", "Drag from one element to another.",
+        {"source": _S, "target": _S}, ["source", "target"]),
+    _fn("browser_scroll", "Scroll the page.",
+        {"direction": {"type": "string", "description": "down | up | left | right (default down)."},
+         "amount": {"type": "integer", "description": "Pixels to scroll (default 600)."}}, []),
+    _fn("browser_key_press", "Press a key or chord, e.g. 'Enter', 'Escape', 'Tab', 'Control+A'.",
+        {"key": _S}, ["key"]),
+    _fn("browser_get_content", "Return the readable text of the current page (the model's eyes). "
+        "Pass a selector to read just one region.",
+        {"selector": {"type": "string", "description": "Optional CSS selector to read only a region."},
+         "max_chars": {"type": "integer", "description": "Max characters (default 9000)."}}, []),
+    _fn("browser_get_accessibility_tree", "Return a compact accessibility tree (roles + labels) PLUS the screen "
+        "coordinates of interactive elements — a fast, text-only alternative to a screenshot for deciding what to click.", {}, []),
+    _fn("browser_screenshot", "Capture the page (or one element) to a PNG saved in the workspace; it renders inline "
+        "in the timeline. Use full_page=true for the whole document, or `highlight` to outline a selector.",
+        {"selector": {"type": "string", "description": "Optional element selector to capture just that element."},
+         "full_page": {"type": "boolean", "description": "Capture the entire scrollable page."},
+         "highlight": {"type": "string", "description": "Optional selector to outline before capture."}}, []),
+    _fn("browser_find_element", "Find an element by visible text or selector; reports if it exists and its click coordinates.",
+        {"text": {"type": "string", "description": "Visible text or a CSS selector."}}, ["text"]),
+    _fn("browser_wait_for_selector", "Wait until an element matching a selector reaches a state.",
+        {"selector": _S, "timeout": {"type": "integer", "description": "Seconds (default 15)."},
+         "state": {"type": "string", "description": "visible | hidden | attached | detached (default visible)."}}, ["selector"]),
+    _fn("browser_wait_for_text", "Wait until specific text appears on the page.",
+        {"text": _S, "timeout": {"type": "integer", "description": "Seconds (default 15)."}}, ["text"]),
+    _fn("browser_wait_for_navigation", "Wait for the page to settle (network idle) after an action.",
+        {"timeout": {"type": "integer", "description": "Seconds (default 15)."}}, []),
+    _fn("browser_new_tab", "Open a new browser tab (optionally at a URL) and switch to it.",
+        {"url": {"type": "string", "description": "Optional URL to open."}}, []),
+    _fn("browser_switch_tab", "Switch the active tab by index (see browser_list_tabs).",
+        {"index": {"type": "integer"}}, ["index"]),
+    _fn("browser_close_tab", "Close a tab by index (default the current tab).",
+        {"index": {"type": "integer", "description": "Tab index; omit for the current tab."}}, []),
+    _fn("browser_list_tabs", "List open browser tabs with their titles and URLs.", {}, []),
+    _fn("browser_upload_file", "Attach a workspace file to a file <input> for an upload form.",
+        {"selector": _S, "path": {"type": "string", "description": "Workspace file path to upload."}}, ["selector", "path"]),
+    _fn("browser_save_session", "Save the current cookies/storage so a logged-in session can be restored later.",
+        {"name": {"type": "string", "description": "Session name (default 'default')."}}, []),
+    _fn("browser_load_session", "Restore cookies from a previously saved session (then reload to apply).",
+        {"name": {"type": "string", "description": "Session name (default 'default')."}}, []),
+    _fn("browser_close", "Close the browser and free its resources.", {}, []),
 ]
 
 _DISPATCH = {
@@ -201,6 +278,37 @@ _DISPATCH = {
     "git_diff":         lambda a: git_diff(a.get("path", "")),
     "git_log":          lambda a: git_log(a.get("n", 10)),
     "git_commit":       lambda a: git_commit(a.get("message", "auto commit")),
+    # ── Browser (Playwright) ────────────────────────────────────────────────
+    "browser_launch":   lambda a: browser_launch(a.get("url", ""), a.get("headless", True)),
+    "browser_goto":     lambda a: browser_goto(a.get("url", ""), a.get("wait_until", "load")),
+    "browser_back":     lambda a: browser_back(),
+    "browser_forward":  lambda a: browser_forward(),
+    "browser_reload":   lambda a: browser_reload(),
+    "browser_click":    lambda a: browser_click(a.get("selector", "")),
+    "browser_click_at": lambda a: browser_click_at(a.get("x", 0), a.get("y", 0)),
+    "browser_type":     lambda a: browser_type(a.get("selector", ""), a.get("text", ""), a.get("submit", False)),
+    "browser_type_at":  lambda a: browser_type_at(a.get("x", 0), a.get("y", 0), a.get("text", ""), a.get("submit", False)),
+    "browser_fill":     lambda a: browser_fill(a.get("selector", ""), a.get("text", "")),
+    "browser_select_option": lambda a: browser_select_option(a.get("selector", ""), a.get("value", "")),
+    "browser_hover":    lambda a: browser_hover(a.get("selector", "")),
+    "browser_drag":     lambda a: browser_drag(a.get("source", ""), a.get("target", "")),
+    "browser_scroll":   lambda a: browser_scroll(a.get("direction", "down"), a.get("amount", 600)),
+    "browser_key_press":lambda a: browser_key_press(a.get("key", "")),
+    "browser_get_content": lambda a: browser_get_content(a.get("selector", ""), a.get("max_chars", 9000)),
+    "browser_get_accessibility_tree": lambda a: browser_get_accessibility_tree(),
+    "browser_screenshot": lambda a: browser_screenshot(a.get("selector", ""), a.get("full_page", False), a.get("highlight", "")),
+    "browser_find_element": lambda a: browser_find_element(a.get("text", "")),
+    "browser_wait_for_selector": lambda a: browser_wait_for_selector(a.get("selector", ""), a.get("timeout", 15), a.get("state", "visible")),
+    "browser_wait_for_text": lambda a: browser_wait_for_text(a.get("text", ""), a.get("timeout", 15)),
+    "browser_wait_for_navigation": lambda a: browser_wait_for_navigation(a.get("timeout", 15)),
+    "browser_new_tab":  lambda a: browser_new_tab(a.get("url", "")),
+    "browser_switch_tab": lambda a: browser_switch_tab(a.get("index", 0)),
+    "browser_close_tab": lambda a: browser_close_tab(a.get("index", -1)),
+    "browser_list_tabs": lambda a: browser_list_tabs(),
+    "browser_upload_file": lambda a: browser_upload_file(a.get("selector", ""), a.get("path", "")),
+    "browser_save_session": lambda a: browser_save_session(a.get("name", "default")),
+    "browser_load_session": lambda a: browser_load_session(a.get("name", "default")),
+    "browser_close":    lambda a: browser_close(),
 }
 
 # UI hints: icon + accent "kind" per tool. kind drives both color and whether
@@ -256,9 +364,42 @@ TOOL_META = {
     "git_diff":         {"label": "Git diff",         "icon": "git-branch",  "kind": "read"},
     "git_log":          {"label": "Git log",          "icon": "git-branch",  "kind": "read"},
     "git_commit":       {"label": "Git commit",       "icon": "git-branch",  "kind": "write"},
+    # ── Browser (Playwright) — kind "system": gated in "ask" mode like write/shell ──
+    "browser_launch":               {"label": "Launch browser",   "icon": "globe",         "kind": "system"},
+    "browser_goto":                 {"label": "Open URL",         "icon": "globe",         "kind": "system"},
+    "browser_back":                 {"label": "Go back",          "icon": "arrow-left",    "kind": "system"},
+    "browser_forward":              {"label": "Go forward",       "icon": "arrow-right",   "kind": "system"},
+    "browser_reload":               {"label": "Reload page",      "icon": "refresh",       "kind": "system"},
+    "browser_click":                {"label": "Click",            "icon": "mouse-pointer", "kind": "system"},
+    "browser_click_at":             {"label": "Click at",         "icon": "mouse-pointer", "kind": "system"},
+    "browser_type":                 {"label": "Type",             "icon": "keyboard",      "kind": "system"},
+    "browser_type_at":              {"label": "Type at",          "icon": "keyboard",      "kind": "system"},
+    "browser_fill":                 {"label": "Fill field",       "icon": "keyboard",      "kind": "system"},
+    "browser_select_option":        {"label": "Select option",    "icon": "mouse-pointer", "kind": "system"},
+    "browser_hover":                {"label": "Hover",            "icon": "mouse-pointer", "kind": "system"},
+    "browser_drag":                 {"label": "Drag",             "icon": "move",          "kind": "system"},
+    "browser_scroll":               {"label": "Scroll",           "icon": "mouse-pointer", "kind": "system"},
+    "browser_key_press":            {"label": "Press key",        "icon": "keyboard",      "kind": "system"},
+    "browser_get_content":          {"label": "Read page",        "icon": "eye",           "kind": "system"},
+    "browser_get_accessibility_tree":{"label": "Read a11y tree",  "icon": "scan",          "kind": "system"},
+    "browser_screenshot":           {"label": "Screenshot",       "icon": "camera",        "kind": "system"},
+    "browser_find_element":         {"label": "Find element",     "icon": "search",        "kind": "system"},
+    "browser_wait_for_selector":    {"label": "Wait for element", "icon": "timer",         "kind": "system"},
+    "browser_wait_for_text":        {"label": "Wait for text",    "icon": "timer",         "kind": "system"},
+    "browser_wait_for_navigation":  {"label": "Wait for load",    "icon": "timer",         "kind": "system"},
+    "browser_new_tab":              {"label": "New tab",          "icon": "app-window",    "kind": "system"},
+    "browser_switch_tab":           {"label": "Switch tab",       "icon": "app-window",    "kind": "system"},
+    "browser_close_tab":            {"label": "Close tab",        "icon": "app-window",    "kind": "system"},
+    "browser_list_tabs":            {"label": "List tabs",        "icon": "app-window",    "kind": "system"},
+    "browser_upload_file":          {"label": "Upload file",      "icon": "upload",        "kind": "system"},
+    "browser_save_session":         {"label": "Save session",     "icon": "save",          "kind": "system"},
+    "browser_load_session":         {"label": "Load session",     "icon": "save",          "kind": "system"},
+    "browser_close":                {"label": "Close browser",    "icon": "power",         "kind": "system"},
 }
 
 # Which tool kinds require user approval when permission_mode == "ask".
+# "system" covers real-Chrome browser control (browser_*): launching and driving a
+# live browser can submit forms / act on logged-in sites, so it is gated too.
 RISKY_KINDS = {"write", "shell", "system"}
 
 # Read-only tool kinds are side-effect-free and therefore safe to run
