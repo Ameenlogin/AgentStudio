@@ -80,9 +80,27 @@ export default function Chat() {
   const [uploads, setUploads]     = useState<{ name: string; path: string }[]>([]);
   const [uploading, setUploading] = useState(0);   // count of files currently uploading
   const endRef  = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickRef  = useRef(true);   // is the view pinned to the bottom?
+  const prevBusy  = useRef(false);
   const taRef   = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Sticky-bottom scrolling. While the agent streams we only follow the output
+  // if the user is already at the bottom — the moment they scroll up they're
+  // free to read (thinking, the computer, anything) with NO interference. We
+  // only ever pull them down on their own send, or once when the run finishes
+  // and the final message is ready.
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  };
+  const scrollToBottom = (smooth = false) => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+  };
 
   const loadSettings = () =>
     fetch(api('/api/settings/')).then(r => r.json()).then(d => {
@@ -103,7 +121,13 @@ export default function Chat() {
   };
 
   useEffect(() => { loadSettings(); }, []);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
+  // Follow streaming output ONLY while pinned to the bottom (instant, no jank).
+  useEffect(() => { if (stickRef.current) scrollToBottom(false); }, [messages]);
+  // When a run finishes, gently pull down to the ready final message — once.
+  useEffect(() => {
+    if (prevBusy.current && !busy) { stickRef.current = true; requestAnimationFrame(() => scrollToBottom(true)); }
+    prevBusy.current = busy;
+  }, [busy]);
 
   // Sidebar → composer: when a skill is clicked, drop "/<name> " into the box.
   useEffect(() => {
@@ -178,6 +202,7 @@ export default function Chat() {
 
   const send = async (text: string) => {
     if (!text.trim() || busy) return;
+    stickRef.current = true;   // a fresh send always jumps to the bottom
     let full = text.trim();
 
     // A leading "/<skill> …" explicitly invokes that skill for this turn.
@@ -342,7 +367,7 @@ export default function Chat() {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto">
         {empty ? (
           <div className="relative h-full flex flex-col items-center justify-center px-6">
             <div className="absolute inset-0 dot-grid pointer-events-none" />

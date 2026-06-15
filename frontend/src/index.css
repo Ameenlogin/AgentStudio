@@ -439,9 +439,15 @@ body {
 .md strong { color: var(--color-text); font-weight: 600; }
 .md blockquote { border-left: 2.5px solid var(--color-copper); margin: 0 0 0.7em; padding-left: 0.95em; color: var(--color-muted); font-style: italic; }
 .md code:not(pre code) { font-family: var(--font-mono); font-size: 0.85em; background: var(--color-copper-wash); border: 1px solid #EEDDD3; padding: 0.12em 0.42em; border-radius: 5px; color: var(--color-copper-lo); }
-.md table { border-collapse: collapse; width: 100%; margin: 0 0 0.7em; font-size: 0.9em; }
-.md th,.md td { border: 1px solid var(--color-border); padding: 0.45em 0.65em; text-align: left; }
-.md th { background: var(--color-panel); font-weight: 600; }
+.md h4 { font-family: var(--font-display); font-weight: 600; font-size: 1em; margin: 1em 0 0.4em; }
+.md hr { border: none; border-top: 1px solid var(--color-border); margin: 1.15em 0; }
+.md table { border-collapse: collapse; width: 100%; margin: 0.2em 0 0.85em; font-size: 0.9em; }
+.md th,.md td { border: 1px solid var(--color-border); padding: 0.45em 0.7em; text-align: left; vertical-align: top; }
+.md th { background: var(--color-panel); font-weight: 600; color: var(--color-text); }
+.md tr:nth-child(even) td { background: color-mix(in srgb, var(--color-panel) 45%, transparent); }
+.md ul ul,.md ol ol,.md ul ol,.md ol ul { margin: 0.18em 0 0.18em; }
+.md input[type="checkbox"] { margin-right: 0.5em; accent-color: var(--color-copper); transform: translateY(1px); }
+.md li.task-list-item { list-style: none; margin-left: -1.1em; }
 .md pre { margin: 0; }
 
 /* Code block inside md */
