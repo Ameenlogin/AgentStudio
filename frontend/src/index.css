@@ -528,6 +528,55 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
   animation: caret-blink 0.9s ease-in-out infinite;
 }
 
+/* ── Terminal box (live command / code execution, Claude-Code style) ─────── */
+.terminal {
+  margin: 8px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: #1E1C19;
+  box-shadow: var(--shadow-card);
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  background: #2A2824;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.tl-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.tl-red { background: #ED6A5E; }
+.tl-amber { background: #F4BF50; }
+.tl-green { background: #61C554; }
+.terminal-title {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.terminal-body {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: #D6CFC0;
+  background: #1E1C19;
+  padding: 11px 13px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.terminal-body .cursor::after {
+  content: "▋";
+  color: var(--color-copper);
+  animation: caret-blink 0.9s ease-in-out infinite;
+}
+
 /* ── Cache hit badge (transparency: answered from memory) ───────────────── */
 .cache-badge {
   display: inline-flex;

@@ -175,15 +175,47 @@ function codePreview(b: ToolBlock): { code: string; lang: string } | null {
   return null;
 }
 
+// Cap a long inline preview so a big file doesn't blow up the timeline.
+function clip(code: string, max = 48): string {
+  const lines = code.split('\n');
+  return lines.length > max ? lines.slice(0, max).join('\n') + `\n… (+${lines.length - max} more lines)` : code;
+}
+
+// Terminal-style box: a command's live/streamed output, shown transparently so
+// the user can watch the work happen (like Claude Code / a real terminal).
+function TerminalBox({ title, body, live }: { title: string; body: string; live: boolean }) {
+  const ref = useRef<HTMLPreElement>(null);
+  useEffect(() => { if (live && ref.current) ref.current.scrollTop = ref.current.scrollHeight; }, [body, live]);
+  return (
+    <div className="terminal">
+      <div className="terminal-bar">
+        <span className="tl-dot tl-red" /><span className="tl-dot tl-amber" /><span className="tl-dot tl-green" />
+        <span className="terminal-title">{title}</span>
+      </div>
+      <pre ref={ref} className="terminal-body">{body}{live && <span className="cursor" />}</pre>
+    </div>
+  );
+}
+
 function Tool({ block }: { block: ToolBlock }) {
   const [open, setOpen] = useState(false);
   const Icon = ICONS[block.icon] || Wrench;
   const color = KIND_COLOR[block.kind] || 'var(--color-muted)';
   const dlPath = block.status === 'done' ? downloadablePath(block) : null;
   const preview = codePreview(block);
-  const showLive = block.status === 'running' && !!block.stream;
-
   const a = block.args as any;
+
+  const running = block.status === 'running';
+  const isTerminal = block.kind === 'shell';   // run_command / python / install / start-stop process
+  const WRITE_CODE = ['write_file', 'append_file', 'zip_write', 'apply_patch', 'edit_file', 'python_exec'];
+  const showCode = !!preview && WRITE_CODE.includes(block.name);
+  const termTitle =
+    a.command ||
+    (block.name === 'python_exec' ? 'python' : '') ||
+    (block.name === 'install_package' ? `pip install ${a.package || ''}` : '') ||
+    a.path || block.label;
+  const termBody = running ? (block.stream || '') : (block.result || block.stream || '');
+
   const summary =
     a.path || a.command || a.query || a.url || a.src || a.output || a.inner ||
     (a.paths ? `${(a.paths as any[]).length} files` : '') ||
@@ -234,8 +266,13 @@ function Tool({ block }: { block: ToolBlock }) {
           </div>
         </div>
 
-        {showLive && (
-          <pre className="tool-stream tool-stream-live">{block.stream}<span className="cursor" /></pre>
+        {/* Transparent execution: file writes reveal the code being written, and
+            shell / python runs stream into a live terminal box. */}
+        {showCode && preview && (
+          <div className="mt-1.5"><CodeBlock lang={preview.lang}>{clip(preview.code)}</CodeBlock></div>
+        )}
+        {isTerminal && (termBody || running) && (
+          <TerminalBox title={termTitle} body={termBody} live={running} />
         )}
 
         <AnimatePresence initial={false}>
@@ -249,12 +286,11 @@ function Tool({ block }: { block: ToolBlock }) {
             >
               <div className="pt-1.5">
                 {metaArgs && <div className="text-[11px] text-[var(--color-faint)] font-mono mb-2">{metaArgs}</div>}
-                {preview && <div className="mb-2"><CodeBlock lang={preview.lang}>{preview.code}</CodeBlock></div>}
-                {(block.result || block.status !== 'running') && (
+                {!isTerminal && (block.result || block.status !== 'running') && (
                   <div>
                     <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--color-faint)] font-semibold mb-1">Output</div>
                     <pre className="tool-result-pre">
-                      {block.result || (block.status === 'running' ? '⟳ running…' : '(no output)')}
+                      {block.result || (running ? '⟳ running…' : '(no output)')}
                     </pre>
                   </div>
                 )}

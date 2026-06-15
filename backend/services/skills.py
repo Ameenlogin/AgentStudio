@@ -87,7 +87,15 @@ def list_skills() -> list[dict]:
         folder = os.path.join(SKILLS_DIR, name)
         if not os.path.isdir(folder):
             continue
-        guide = _guide_path(folder)
+        # A real skill must declare itself with a SKILL.md manifest. This is what
+        # stops an ordinary cloned repo (which only has a README) from being
+        # mistaken for an installed skill and cluttering the Skills list.
+        guide = None
+        for n in ("SKILL.md", "skill.md"):
+            p = os.path.join(folder, n)
+            if os.path.isfile(p):
+                guide = p
+                break
         if not guide:
             continue
         m = _meta(guide)
@@ -180,9 +188,13 @@ def skills_prompt() -> str:
     if not skills:
         return ""
     lines = [
-        "SKILLS — reusable expertise packs. Before a task that matches one, call "
-        "read_skill('<name>') and follow its guidance. If the user pastes a GitHub "
-        "repo URL, install it as a skill with install_skill('<url>') and follow it.",
+        "SKILLS — reusable expertise packs the user has installed. Before a task that "
+        "clearly matches one, call read_skill('<name>') and follow its guidance. "
+        "IMPORTANT: do NOT install skills on your own. Only call install_skill when the "
+        "user EXPLICITLY asks to add or install a skill. A GitHub URL the user wants you "
+        "to work on (clone, fix, build, review, run) is an ordinary coding task — clone "
+        "it with `git clone` via run_command and work in the clone; never treat it as a "
+        "skill to install.",
         "Available skills:",
     ]
     for s in skills:

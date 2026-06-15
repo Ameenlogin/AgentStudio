@@ -11,6 +11,7 @@ from tools.file_tools import (
 )
 from tools.git_tools import git_status, git_diff, git_log, git_commit
 from tools.shell_tools import run_command, run_command_stream
+from tools.process_tools import start_process, read_process, stop_process, list_processes
 from tools.web_tools import (
     web_search, fetch_url, scrape, extract_links, http_request, download_file,
 )
@@ -73,6 +74,14 @@ AVAILABLE_TOOLS = [
         {"code": {"type": "string", "description": "Python source to run."}}, ["code"]),
     _fn("install_package", "pip-install Python package(s) into the app environment so you can use them (e.g. lxml, pandas, pillow, playwright). Use when a needed library is missing.",
         {"package": {"type": "string", "description": "Package spec, e.g. 'pandas' or 'lxml beautifulsoup4'."}}, ["package"]),
+    _fn("start_process", "Start a LONG-RUNNING command in the background (dev server, watcher, `npm run dev`, `python -m http.server`) without blocking. Returns a handle and the first lines of output. Use this instead of run_command for anything that does not exit on its own.",
+        {"command": {"type": "string", "description": "The command to launch, e.g. 'npm run dev' or 'python app.py'."}}, ["command"]),
+    _fn("read_process", "Read the latest output and status (running/exited) of a background process started with start_process.",
+        {"id": {"type": "string", "description": "Process handle, e.g. 'proc1'."},
+         "lines": {"type": "integer", "description": "How many recent lines to return (default 80)."}}, ["id"]),
+    _fn("stop_process", "Stop a background process started with start_process (terminates its whole process group).",
+        {"id": {"type": "string", "description": "Process handle, e.g. 'proc1'."}}, ["id"]),
+    _fn("list_processes", "List background processes started this session and whether each is still running.", {}, []),
     # ── Web + scraping ─────────────────────────────────────────────────────────
     _fn("web_search", "Search the web and return the top results.", {"query": _S}, ["query"]),
     _fn("fetch_url", "Fetch a web page and return its readable text.", {"url": _S}, ["url"]),
@@ -159,6 +168,10 @@ _DISPATCH = {
     "run_command":      lambda a: run_command(a.get("command", "")),
     "python_exec":      lambda a: python_exec(a.get("code", "")),
     "install_package":  lambda a: install_package(a.get("package", "")),
+    "start_process":    lambda a: start_process(a.get("command", "")),
+    "read_process":     lambda a: read_process(a.get("id", ""), a.get("lines", 80)),
+    "stop_process":     lambda a: stop_process(a.get("id", "")),
+    "list_processes":   lambda a: list_processes(),
     "web_search":       lambda a: web_search(a.get("query", "")),
     "fetch_url":        lambda a: fetch_url(a.get("url", "")),
     "scrape":           lambda a: scrape(a.get("url", ""), a.get("selector", ""), a.get("attr", "")),
@@ -210,6 +223,10 @@ TOOL_META = {
     "run_command":      {"label": "Run command",      "icon": "terminal",     "kind": "shell"},
     "python_exec":      {"label": "Run Python",       "icon": "terminal",     "kind": "shell"},
     "install_package":  {"label": "Install package",  "icon": "download",     "kind": "shell"},
+    "start_process":    {"label": "Start process",    "icon": "terminal",     "kind": "shell"},
+    "read_process":     {"label": "Read process",     "icon": "terminal",     "kind": "read"},
+    "stop_process":     {"label": "Stop process",     "icon": "terminal",     "kind": "shell"},
+    "list_processes":   {"label": "List processes",   "icon": "terminal",     "kind": "read"},
     "web_search":       {"label": "Web search",       "icon": "globe",        "kind": "web"},
     "fetch_url":        {"label": "Fetch page",       "icon": "link",         "kind": "web"},
     "scrape":           {"label": "Scrape page",      "icon": "globe",        "kind": "web"},
