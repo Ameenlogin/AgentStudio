@@ -25,6 +25,7 @@ Execution modes (chosen by ``router``):
 import json
 import asyncio
 import datetime
+import hashlib
 import os
 from services.kimi_client import KimiClient, extract_reasoning
 from services.api_pool import APIPool
@@ -114,8 +115,16 @@ _AGENT_SYSTEM = (
     "work by running it. If a tool errors, read the error and try a different approach "
     "— do not give up or claim a capability is unavailable.\n"
     "- When asked to package or zip results, produce the artifact and confirm its "
-    "path so the user can download it.\n"
-    "- When finished, give a short, clear summary of what you did and produced.\n"
+    "path so the user can download it.\n\n"
+    "KNOWING WHEN TO STOP (critical):\n"
+    "- Produce each deliverable exactly ONCE. After you write a report, file, or "
+    "answer, STOP — do not regenerate it, re-read it 'to double-check', or restate "
+    "the same content again.\n"
+    "- Never repeat a tool call you have already made with the same arguments — you "
+    "already have that result earlier in the conversation.\n"
+    "- The instant the task is complete, end your turn with a short final summary and "
+    "NO further tool calls. Do not keep going after you are done; silence is correct "
+    "when there is nothing new to do.\n"
     "Keep responses tight, well-formatted, and free of filler."
 )
 
@@ -132,8 +141,7 @@ def _status_ev(pool):
 
 async def run_agent(messages, *, api_keys, base_url, model_name,
                     temperature=0.6, system_prompt=None, max_steps=50,
-                    tools_enabled=True, permission_mode="ask", swarm_mode="auto",
-                    council=False):
+                    tools_enabled=True, permission_mode="ask", swarm_mode="auto"):
     valid_keys = [k for k in api_keys if k and k.strip()]
     if not valid_keys:
         yield _ev({"type": "error",
@@ -142,14 +150,6 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
 
     pool = APIPool(valid_keys, base_url)
     client = KimiClient(pool=pool, base_url=base_url, model_name=model_name)
-
-    # -- MODEL COUNCIL --------------------------------------------------------
-    if council:
-        from agents.council import run_council
-        async for ev in run_council(messages, pool=pool, base_url=base_url,
-                                    model_name=model_name, temperature=temperature):
-            yield ev
-        return
 
     mode = router.classify(messages) if tools_enabled else "simple"
 
@@ -211,6 +211,19 @@ def _args_complete(args: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def _step_signature(ordered: list[dict]) -> str:
+    """Order-independent fingerprint of a step's tool calls (name + raw args).
+
+    Two steps with the same signature mean the model is asking for the exact
+    same action again — the core signal we use to detect a stuck/looping agent.
+    """
+    items = sorted(
+        f"{(c.get('name') or '').strip()}\x00{(c.get('args') or '').strip()}"
+        for c in ordered
+    )
+    return hashlib.sha256("\x01".join(items).encode("utf-8", "ignore")).hexdigest()
 
 
 async def _model_turn(client, send, tools, temperature, tag, *, thinking=True, max_retries=3):
@@ -288,6 +301,13 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
     tag = {"agent": agent_id} if agent_id else {}
     last_summary_len = len(convo)
 
+    # No-progress guard: count how often the model asks for the exact same step
+    # (same tool calls, or the same large answer). Repeats mean it's stuck in a
+    # loop instead of finishing — we nudge it, then stop cleanly.
+    tool_seen: dict[str, int] = {}
+    content_seen: dict[str, int] = {}
+    nudges_used = 0
+
     for step in range(1, max_steps + 1):
         if not agent_id:
             yield _status_ev(pool)
@@ -328,6 +348,36 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
             return
 
         ordered = [tool_calls[i] for i in sorted(tool_calls.keys())]
+
+        # ---- No-progress / loop guard --------------------------------------
+        # Checked BEFORE we commit the assistant turn, so a skipped repeat never
+        # leaves a dangling tool_calls message in the conversation.
+        tsig = _step_signature(ordered)
+        tool_seen[tsig] = tool_seen.get(tsig, 0) + 1
+        reps = tool_seen[tsig]
+        ctext = "".join(text_buf).strip()
+        if len(ctext) >= 200:
+            csig = hashlib.sha256(ctext.encode("utf-8", "ignore")).hexdigest()
+            content_seen[csig] = content_seen.get(csig, 0) + 1
+            reps = max(reps, content_seen[csig])
+
+        if reps >= 3:
+            yield _ev({"type": "content",
+                       "delta": "\n\n_(Stopped: I was repeating the same step without making "
+                                "new progress. The result above is final — ask me to continue "
+                                "if you need more.)_", **tag})
+            yield _ev({"type": "done", **tag})
+            return
+        if reps >= 2 and nudges_used < 2:
+            nudges_used += 1
+            convo.append({"role": "system", "content":
+                "You just repeated an action you already completed — the same tool call with "
+                "the same arguments, or the same answer you already gave. You ALREADY have "
+                "that result above. Do not repeat it. If the task is now complete, reply with "
+                "your final summary and NO tool calls. Only call a tool if it does something "
+                "genuinely new."})
+            continue
+
         convo.append({
             "role": "assistant",
             "content": "".join(text_buf),

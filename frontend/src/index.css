@@ -597,35 +597,6 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
 .md a { background-image: linear-gradient(var(--color-copper-lo), var(--color-copper-lo)); background-size: 0% 1px; background-position: 0 100%; background-repeat: no-repeat; transition: background-size 0.25s var(--ease); text-decoration: none; }
 .md a:hover { background-size: 100% 1px; }
 
-/* ── Model Council ──────────────────────────────────────────────────────── */
-.council-card {
-  border: 1px solid var(--color-border);
-  background: var(--color-elevated);
-  border-radius: 12px;
-  padding: 10px 12px;
-  box-shadow: var(--shadow-card);
-  animation: council-in 0.3s var(--ease) both;
-}
-@keyframes council-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-.council-head {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12.5px; font-weight: 600; color: var(--color-text);
-}
-.council-sub { font-size: 10.5px; font-weight: 400; color: var(--color-faint); margin-left: 2px; }
-.council-member { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
-.council-name { font-size: 12px; color: var(--color-text); min-width: 110px; }
-.council-state { font-size: 11px; color: var(--color-faint); font-family: var(--font-mono); }
-.council-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-faint); flex-shrink: 0; }
-.council-dot.answering { background: var(--color-copper); animation: status-dot-pulse 1.3s ease-in-out infinite; }
-.council-dot.done { background: var(--color-green); }
-
-/* toggled-on pill (Council) */
-.model-pill.pill-on {
-  background: var(--color-copper-wash);
-  border-color: var(--color-copper);
-  color: var(--color-copper-lo);
-}
-
 /* ── Thinking — refined live shimmer (Perplexity/Codex-grade) ───────────── */
 .think-label-live {
   position: relative;

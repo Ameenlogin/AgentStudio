@@ -15,7 +15,6 @@ async def chat_endpoint(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
     messages = data.get("messages", [])
     model_override = data.get("model_name", None)
-    council = bool(data.get("council", False))
 
     settings = db.query(Setting).first()
     if not settings or not settings.api_key:
@@ -36,7 +35,6 @@ async def chat_endpoint(request: Request, db: Session = Depends(get_db)):
         tools_enabled=bool(settings.tools_enabled),
         permission_mode=settings.permission_mode or "ask",
         swarm_mode=settings.swarm_mode or "auto",
-        council=council,
     )
 
     async def gen():

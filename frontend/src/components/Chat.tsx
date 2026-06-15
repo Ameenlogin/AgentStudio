@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUp, Square, AlertTriangle, Settings as Cog, User, Wand2, FileSearch,
   Globe2, Bug, Paperclip, X as XIcon, ChevronDown, Cpu, Database,
-  Lock, Monitor, Briefcase, Users
+  Lock, Monitor, Briefcase
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Message, Block, ToolBlock } from '../store/useStore';
@@ -85,8 +85,6 @@ export default function Chat() {
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [mode, setMode]           = useState('sandbox');
   const [showModeMenu, setShowModeMenu] = useState(false);
-  const [councilOn, setCouncilOn] = useState(false);
-  const [council, setCouncil]     = useState<{ id: string; label: string; status: string; preview?: string }[]>([]);
   const [cacheHit, setCacheHit]   = useState<number | null>(null);
   const [uploads, setUploads]     = useState<{ name: string; path: string }[]>([]);
   const endRef  = useRef<HTMLDivElement>(null);
@@ -165,7 +163,6 @@ export default function Chat() {
     setUploads([]);
     setBusy(true);
     setCacheHit(null);
-    setCouncil([]);
     resetSwarm();
 
     const history = [...messages, { role: 'user', blocks: [{ type: 'text', text: full }] }]
@@ -183,7 +180,7 @@ export default function Chat() {
       const res = await fetch(api('/api/chat/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, model_name: selectedModel, council: councilOn }),
+        body: JSON.stringify({ messages: history, model_name: selectedModel }),
         signal: ctrl.signal,
       });
 
@@ -216,12 +213,6 @@ export default function Chat() {
             case 'permission_request': setPendingPermission(ev); break;
             case 'swarm_status':      setSwarmStatus(ev); break;
             case 'cache_hit':         setCacheHit(ev.similarity); break;
-            case 'council_start':
-              setCouncil((ev.members || []).map((m: any) => ({ id: m.id, label: m.label, status: 'answering' })));
-              break;
-            case 'council_member':
-              setCouncil(prev => prev.map(m => m.id === ev.id ? { ...m, status: ev.status, preview: ev.preview } : m));
-              break;
             case 'swarm_plan':
               setSwarmPlan({ plan: ev.plan, subtasks: ev.subtasks || [] });
               break;
@@ -395,26 +386,6 @@ export default function Chat() {
       {/* Composer */}
       <div className="px-5 pb-4 pt-2 flex-shrink-0">
         <div className="max-w-3xl mx-auto">
-          {/* Model Council deliberation */}
-          {council.length > 0 && (
-            <div className="council-card mb-2">
-              <div className="council-head">
-                <Users className="w-3.5 h-3.5 text-[var(--color-copper)]" />
-                <span>Model Council</span>
-                <span className="council-sub">deliberating · then the chair synthesizes the best answer</span>
-              </div>
-              <div className="flex flex-col gap-1 mt-1.5">
-                {council.map(m => (
-                  <div key={m.id} className="council-member">
-                    <span className={`council-dot ${m.status}`} />
-                    <span className="council-name">{m.label}</span>
-                    <span className="council-state">{m.status === 'done' ? 'answered' : 'thinking…'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {uploads.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {uploads.map((u, i) => (
@@ -450,18 +421,8 @@ export default function Chat() {
               className="flex-1 bg-transparent resize-none outline-none px-1 py-1.5 text-[14px] placeholder:text-[var(--color-faint)] min-h-[36px] leading-relaxed"
             />
 
-            {/* Council toggle + Mode picker + Model picker + send */}
+            {/* Mode picker + Model picker + send */}
             <div className="relative flex items-center gap-1 flex-shrink-0">
-              {/* Model Council */}
-              <button
-                type="button"
-                onClick={() => setCouncilOn(v => !v)}
-                className={`model-pill ${councilOn ? 'pill-on' : ''}`}
-                title="Model Council — multiple models answer, a chair synthesizes the best response"
-              >
-                <Users className={`w-3 h-3 ${councilOn ? 'text-[var(--color-copper-lo)]' : 'text-[var(--color-muted)]'}`} />
-                <span>Council</span>
-              </button>
               {/* Working mode */}
               <div className="relative">
                 <button
