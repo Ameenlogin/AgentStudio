@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Agent Studio command-line launcher (macOS / Linux).
+# Installed on your PATH by install.sh. Usage:
+#   agent run        start Agent Studio and open it in your browser
+#   agent install    update to the latest version and re-setup
+#   agent stop       stop a running instance (frees port 8000)
+#   agent where      print the install directory
+REPO="${AGENT_STUDIO_HOME:-$HOME/AgentStudio}"
+
+if [ ! -d "$REPO" ]; then
+  echo "Agent Studio is not installed at $REPO."
+  echo "Install it with:"
+  echo '  curl -fsSL https://raw.githubusercontent.com/Ameenlogin/AgentStudio/main/install.sh | bash'
+  exit 1
+fi
+
+case "${1:-run}" in
+  run|start|"")          exec bash "$REPO/run.command" ;;
+  install|update|upgrade) exec bash "$REPO/install.sh" ;;
+  stop)                  lsof -ti tcp:8000 2>/dev/null | xargs kill -9 2>/dev/null; echo "Agent Studio stopped." ;;
+  where|dir)             echo "$REPO" ;;
+  *) echo "Usage: agent [run|install|stop|where]"; exit 1 ;;
+esac
