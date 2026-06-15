@@ -143,7 +143,7 @@ Every file/command stays on **your machine**. Before writing or running anything
 - **Never wastes your key** — repeat questions are answered from a local cache, and requests stay under NVIDIA’s rate limit automatically.
 
 ```
-agent run  ─►  local server (FastAPI, :8000)  ─►  your browser UI (React)
+agentstudio run  ─►  local server (FastAPI, :8000)  ─►  your browser UI (React)
                      │
                      └─ streams the agent's thinking + tools live, talking to
                         your chosen NVIDIA NIM model with your free API key
@@ -162,10 +162,10 @@ agent run  ─►  local server (FastAPI, :8000)  ─►  your browser UI (React
 
 ## 🩹 Troubleshooting
 
-- **`agent` not found** — open a **new** terminal window after installing (PATH refresh).
+- **`agentstudio` not found** — open a **new** terminal after installing (or run `source ~/.zshrc`) so your PATH refreshes.
 - **Browser didn’t open** — visit **http://127.0.0.1:8000** manually.
 - **“API key not configured”** — add your NVIDIA key in **Settings**.
-- **Port 8000 busy** — `agent run` frees it automatically.
+- **Port 8000 busy** — `agentstudio run` frees it automatically.
 
 ---
 
