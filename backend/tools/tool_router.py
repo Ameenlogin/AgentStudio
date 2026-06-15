@@ -37,8 +37,10 @@ _S = {"type": "string"}
 
 AVAILABLE_TOOLS = [
     # ── Files ────────────────────────────────────────────────────────────────
-    _fn("read_file", "Read the contents of a text file in the workspace.",
-        {"path": {"type": "string", "description": "File path relative to the workspace."}}, ["path"]),
+    _fn("read_file", "Read a text file in the workspace. For LARGE files, pass offset (1-based start line) and/or limit (line count) to page through any range without loading the whole file.",
+        {"path": {"type": "string", "description": "File path relative to the workspace."},
+         "offset": {"type": "integer", "description": "Optional 1-based line to start at (for large files)."},
+         "limit": {"type": "integer", "description": "Optional number of lines to read from offset."}}, ["path"]),
     _fn("write_file", "Create or overwrite a file with the given content.",
         {"path": _S, "content": {"type": "string", "description": "Full file content."}}, ["path", "content"]),
     _fn("append_file", "Append text to the end of a file (creating it if needed).",
@@ -140,7 +142,7 @@ AVAILABLE_TOOLS = [
 ]
 
 _DISPATCH = {
-    "read_file":        lambda a: read_file(a.get("path", "")),
+    "read_file":        lambda a: read_file(a.get("path", ""), a.get("offset", 0), a.get("limit", 0)),
     "write_file":       lambda a: write_file(a.get("path", ""), a.get("content", "")),
     "append_file":      lambda a: append_file(a.get("path", ""), a.get("content", "")),
     "edit_file":        lambda a: edit_file(a.get("path", ""), a.get("find", ""), a.get("replace", "")),

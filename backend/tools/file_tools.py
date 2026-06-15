@@ -2,18 +2,54 @@
 import os
 from tools.sandbox import resolve, rel
 
-MAX_READ = 200_000  # chars
+MAX_READ = 200_000  # chars — cap for a whole-file read
+PAGE_LINES = 2000   # default lines returned by a ranged (offset/limit) read
 
 
-def read_file(path: str) -> str:
+def read_file(path: str, offset: int = 0, limit: int = 0) -> str:
+    """Read a text file in the workspace.
+
+    Whole-file by default. For LARGE files, pass ``offset`` (1-based start line)
+    and/or ``limit`` (number of lines) to page through any range — the returned
+    text is verbatim (no line-number prefixes) so it can be fed straight back
+    into edit_file / apply_patch.
+    """
     p = resolve(path)
     if not os.path.isfile(p):
         return f"Error: file not found: {rel(p)}"
     try:
+        offset = int(offset or 0)
+        limit = int(limit or 0)
+
+        # ── Ranged, line-based read (large-file paging) ──────────────────────
+        if offset or limit:
+            start = max(offset, 1)
+            count = limit if limit > 0 else PAGE_LINES
+            out, last = [], 0
+            with open(p, "r", encoding="utf-8", errors="replace") as f:
+                for i, line in enumerate(f, 1):
+                    if i < start:
+                        continue
+                    if i >= start + count:
+                        last = i
+                        break
+                    out.append(line.rstrip("\n"))
+            if not out:
+                return f"[no lines at offset {start} in {rel(p)} — file has fewer lines]"
+            body = "\n".join(out)
+            if last:
+                body += (f"\n\n[...more lines below. Continue with "
+                         f"read_file(path, offset={start + count}).]")
+            return body
+
+        # ── Whole-file read with a generous char cap ─────────────────────────
         with open(p, "r", encoding="utf-8", errors="replace") as f:
             data = f.read(MAX_READ + 1)
         if len(data) > MAX_READ:
-            return data[:MAX_READ] + f"\n\n[...truncated, file larger than {MAX_READ} chars]"
+            shown = data[:MAX_READ]
+            return (shown + f"\n\n[...truncated at {MAX_READ} chars. This file is large — "
+                    f"call read_file with offset/limit (1-based line numbers) to page "
+                    f"through the rest, or use grep to jump to what you need.]")
         return data or "[file is empty]"
     except Exception as e:
         return f"Error reading {rel(p)}: {e}"

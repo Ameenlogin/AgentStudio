@@ -1,130 +1,140 @@
-# Agent Studio
+<div align="center">
 
-A local, Claude-Code–style autonomous engineering agent with a live
-"thinking + tool execution" timeline. It runs entirely on your Mac and talks to
-Moonshot's **Kimi K2** models through **NVIDIA NIM** (free API key).
+# ✳️ Agent Studio
 
-![status](https://img.shields.io/badge/status-ready-brightgreen)
-![platform](https://img.shields.io/badge/platform-macOS-black)
+### The best local app for your **NVIDIA NIM API key** — a free, private, Claude Code-style AI coding agent for **macOS & Windows**.
 
----
+Turn a free [NVIDIA NIM](https://build.nvidia.com) key into a full autonomous engineering agent that **plans, writes code, runs tools, and ships** — running 100% on your own machine, powered by **Moonshot Kimi K2** and other NIM models.
 
-## Quick start (macOS)
+![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-black)
+![python](https://img.shields.io/badge/python-3.10%2B-blue)
+![price](https://img.shields.io/badge/price-free-brightgreen)
+![runs](https://img.shields.io/badge/runs-100%25%20local-orange)
 
-Double-click **`START.command`** in Finder. The first run sets up anything missing
-(Python virtual environment + packages), then starts the app and opens it in your
-browser at <http://127.0.0.1:8000>. The UI ships prebuilt, so a normal first run
-needs only **Python 3.10+** — no Node.js required.
-
-- **First time only**, if double-click is blocked, open Terminal in this folder and run:
-  ```bash
-  chmod +x *.command
-  xattr -dr com.apple.quarantine .
-  ```
-  (Or right-click `START.command` → **Open** the first time.)
-- To **stop**: press `Ctrl+C` in the Terminal window, or close it.
-- `install.command` (full setup incl. Node build) and `run.command` (start only)
-  are also provided, but `START.command` alone is all you need.
-
-> No Python? `brew install python` or grab it from python.org.
-
-This is a macOS build — the Windows `.bat` launchers have been removed.
+</div>
 
 ---
 
-## What it does
+## Why Agent Studio?
 
-Agent Studio is an **agentic** assistant, not just a chatbot. Give it a task and it
-plans, calls real tools on your machine, sees the results, and keeps going until the
-job is done — all streamed live so you can watch it think and act.
+If you have a **free NVIDIA NIM API key**, this is the easiest and most powerful way to use it. Agent Studio is a **local, open AI coding agent** — a free alternative to cloud coding assistants — with a live "thinking + tool execution" timeline. Your key, your machine, your files: nothing is sent to a third-party server.
 
-### Capabilities
+- 🔑 **Built for NVIDIA NIM** — paste your key once in the app and go. No `.env` editing, no cloud account.
+- 🖥️ **macOS *and* Windows** — one-click launchers for both. Anyone can clone and run it.
+- 🧠 **Truly agentic** — it doesn't just chat; it reads/writes files, runs shell & Python, searches the web, edits archives, and verifies its own work.
+- 🆓 **Free & private** — runs entirely on `localhost`. Uses *your* NIM key (free tier available from NVIDIA).
+- ⚡ **Fast** — a two-speed router answers simple questions instantly and only spins up the full tool loop when a task needs it.
 
-| Group | What it can do |
-|-------|----------------|
-| **Files** | read / write / append / edit / move / copy / delete, batch read & write, recursive tree, search & bulk-replace, precise unified-diff `apply_patch` |
-| **Archives** | create / extract / list zips **and edit files in place inside a zip** (`zip_read` / `zip_write` / `zip_edit` / `zip_remove`) |
+---
+
+## 🚀 Quick start
+
+You need **Python 3.10+** (and **Node.js 18+** only if the prebuilt UI isn't included). Then two steps:
+
+### macOS
+
+| Step | Do this |
+|------|---------|
+| **1. Install (first time)** | Double-click **`install.command`** |
+| **2. Run (every time)** | Double-click **`run.command`** |
+
+> Prefer one file? **`START.command`** sets up *and* runs in a single double-click.
+> If macOS blocks it, run once in Terminal: `chmod +x *.command && xattr -dr com.apple.quarantine .`
+
+### Windows
+
+| Step | Do this |
+|------|---------|
+| **1. Install (first time)** | Double-click **`install.bat`** |
+| **2. Run (every time)** | Double-click **`run.bat`** |
+
+> Prefer one file? **`START.bat`** sets up *and* runs in a single double-click.
+
+Either way, your browser **opens automatically** at **<http://127.0.0.1:8000>** when the app is ready. To stop it, press `Ctrl+C` in the window or close it.
+
+### Add your API key (first run)
+
+1. Get a **free** key at **[build.nvidia.com](https://build.nvidia.com)** (sign in → any model → *Get API Key*).
+2. Agent Studio opens with a prompt to add it — paste it into **Settings → API key** and save.
+3. Start chatting. That's it.
+
+---
+
+## ✨ What it can do
+
+Give it a task and it plans, calls real tools on your machine, observes the results, and keeps going until the job is done — streamed live so you can watch it think and act.
+
+| Group | Capabilities |
+|-------|--------------|
+| **Files** | read (with **large-file paging**), write, append, edit, move, copy, delete · **batch** read & write · recursive tree · **regex grep** & glob · **bulk find-and-replace** across files · precise unified-diff **`apply_patch`** |
+| **Archives** | create / extract / list zips **and edit files in place inside a zip** without unpacking |
 | **PDFs** | extract text, inspect, and **create PDFs** from text/Markdown |
-| **Code** | run shell commands and Python with **live streamed stdout/stderr**; git status/diff/log/commit |
-| **Web** | search, fetch readable text, scrape by CSS selector, extract links, HTTP requests, downloads |
+| **Code** | run shell commands & Python with **live streamed output** · `pip install` missing libraries · full `git` |
+| **Web** | search, fetch readable text, scrape by CSS selector, extract links, raw HTTP, downloads |
+| **Skills** | install reusable expertise packs from any public GitHub repo |
 
-It can build complete **websites & web apps**, **WordPress themes/plugins (PHP)**,
-CLIs, scripts, data pipelines, design assets, documents and PDFs — and package the
-result into a downloadable zip.
+It can build complete **websites & web apps**, **WordPress themes/plugins (PHP)**, CLIs, scripts, data pipelines, design assets, documents and PDFs — then package the result into a downloadable zip.
 
 ---
 
-## The engine (what's under the hood)
+## 🛠️ Under the hood
 
-- **Two-speed router** — trivial / conversational messages get one fast streamed
-  reply; anything that needs to act runs the full plan→act→observe tool loop.
-- **Multi-agent swarm** *(auto, for complex tasks)* —
-  `Planner → parallel research workers → Builder → Synthesizer`. Independent research
-  runs concurrently; the builder writes code with your permission gate active.
-- **Parallel tool execution** — independent read-only tool calls in a turn run at once.
+- **Two-speed router** — trivial/conversational messages get one fast streamed reply; real tasks run the full plan→act→observe loop.
+- **Knows when to stop** — a no-progress guard detects an agent repeating itself (same tool call or re-emitting the same answer) and finishes cleanly instead of looping. No more "report regenerated forever."
+- **Large-file & large-codebase handling** — `read_file` pages through huge files by line range, and `grep`/`glob`/`tree` jump straight to what matters.
+- **Bulk / parallel actions** — independent read-only tool calls in a turn run concurrently; batch read/write and `apply_patch` change many files at once.
+- **Multi-agent swarm** *(auto, for complex tasks)* — `Planner → parallel research workers → Builder → Synthesizer`.
 - **Live tool streaming** — shell/Python output streams to the UI line-by-line.
-- **API-key health rotation** — requests spread across your NIM keys, each held under
-  ~38 RPM via a sliding window; flaky/limited keys are rotated out automatically.
-- **Streaming circuit breaker** — a stalled stream (no chunk for 5s before output)
-  is cut and retried on an alternate key/endpoint.
-- **Semantic response cache** — near-identical questions are answered instantly from a
-  local embedding cache (zero extra API calls — it protects your rate budget).
-- **Auto-summarization** — long conversations are pruned/summarized to keep context tight.
-- **Semantic search** — `/api/search?q=…` finds similar past chats (local embeddings).
-- **Message integrity** — every saved message carries a SHA-256 hash; tampering is flagged.
+- **Rate-aware key pool** — requests are spread under NVIDIA's RPM limit with automatic back-off, so you never trip a 429.
+- **Semantic cache + search** — near-identical questions answer instantly from a local embedding cache (zero extra API calls); past chats are searchable.
+- **Persistent, separate sessions** — every conversation is saved independently in local SQLite, each message carrying a SHA-256 integrity hash.
 
-All file/shell tools are confined to the **workspace folder** you grant access to.
-Path traversal is blocked and archive extraction is checked for zip-slip escapes.
-
-### Permissions (Claude-Code style)
-
-Before any action that writes files or runs commands, Agent Studio can pause and ask
-you to **Allow once**, **Allow all this run**, or **Deny**. Prefer unattended runs?
-Switch to **Allow all** in Settings.
+All file/shell tools are confined to the **workspace folder** you grant access to; path traversal and zip-slip are blocked. Before any write or command, Agent Studio can **Allow once / Allow all / Deny** — or run unattended in *Allow all* mode.
 
 ---
 
-## Configuration (Settings)
-
-- **API keys** — up to 3 NVIDIA NIM keys (the pool rotates across them).
-- **Model** — `moonshotai/kimi-k2.6` (default) and other NIM presets, or a custom id.
-- **Endpoint** — defaults to `https://integrate.api.nvidia.com/v1`. Extra regional
-  endpoints can be added via the `KIMI_EXTRA_ENDPOINTS` env var (comma-separated).
-- **Workspace path**, **temperature**, **max steps**, **tools on/off**,
-  **permissions** (ask / allow-all), **swarm mode** (auto / off), and the **system prompt**.
-
----
-
-## Architecture
+## 🧩 Architecture
 
 ```
-START.command ─► backend (FastAPI, port 8000) ─► serves built frontend (React)
-                      │
-                      ├─ /api/chat            agent loop, streams NDJSON events
-                      ├─ /api/settings        model + keys + workspace config
-                      ├─ /api/conversations   history CRUD + integrity verify (SQLite)
-                      ├─ /api/search          semantic search over past chats
-                      ├─ /api/files           upload / download / list
-                      └─ /api/permissions     approve / deny risky actions
+START / install / run  ─►  backend (FastAPI, :8000)  ─►  serves built React UI
+                                  │
+                                  ├─ /api/chat            streaming agent loop (NDJSON)
+                                  ├─ /api/settings        model · API key · workspace
+                                  ├─ /api/conversations   history + integrity (SQLite)
+                                  ├─ /api/search          semantic search over chats
+                                  ├─ /api/files           upload / download / list
+                                  └─ /api/permissions     approve / deny risky actions
 ```
 
 - **Backend:** FastAPI · SQLAlchemy (SQLite) · OpenAI-compatible client → NVIDIA NIM
 - **Frontend:** React 19 · Vite · Tailwind v4 · Zustand · Framer Motion
+- **Models:** `moonshotai/kimi-k2.6` (default), GPT-OSS 120B/20B, Llama 3.3 70B, Nemotron 49B, Qwen3-Next 80B — all on NVIDIA NIM.
 
 ---
 
-## Requirements
+## ✅ Requirements
 
-- macOS
-- [Python 3.10+](https://www.python.org/downloads/macos/)
-- Node.js 18+ *(only if you want to rebuild the UI from source)*
+- **macOS** or **Windows 10/11**
+- [Python 3.10+](https://www.python.org/downloads/) (on Windows, tick *"Add python.exe to PATH"*)
+- [Node.js 18+](https://nodejs.org) *(only needed to build the UI from source)*
+- A free **NVIDIA NIM API key** — [build.nvidia.com](https://build.nvidia.com)
 
 ---
 
-## Troubleshooting
+## 🩹 Troubleshooting
 
-- **Blank page / browser didn't open** — wait a few seconds and refresh
-  <http://127.0.0.1:8000>; check the Terminal window for errors.
-- **401 / invalid key** — re-paste your NVIDIA key in Settings.
-- **Frontend build failed** — delete `frontend/node_modules` and run `START.command` again.
-- **Port 8000 busy** — `START.command` frees it automatically.
+- **Browser didn't open** — wait a moment and visit <http://127.0.0.1:8000>; check the launcher window for errors.
+- **"API key not configured"** — add your NVIDIA NIM key in **Settings**.
+- **401 / invalid key** — re-paste the key in Settings.
+- **Port 8000 busy** — the launchers free it automatically.
+- **Build failed** — delete `frontend/node_modules` and run the installer again.
+
+---
+
+<div align="center">
+<sub>
+
+**Keywords:** NVIDIA NIM API key · local AI coding agent · free Claude Code alternative · Kimi K2 · Moonshot AI · autonomous coding agent · self-hosted AI assistant · NVIDIA build.nvidia.com · macOS & Windows AI agent · open source coding agent
+
+</sub>
+</div>
