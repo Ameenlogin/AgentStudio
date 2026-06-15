@@ -4,6 +4,22 @@ from tools.sandbox import resolve, rel
 
 MAX_READ = 200_000  # chars — cap for a whole-file read
 PAGE_LINES = 2000   # default lines returned by a ranged (offset/limit) read
+MAX_SCAN_BYTES = 5_000_000  # skip files bigger than this in bulk grep/search scans
+
+
+def _is_text_file(path: str) -> bool:
+    """Cheap binary/oversize filter for bulk scans (grep / search / replace).
+
+    Reading huge binaries line-by-line is what makes a search across a real
+    project slow; a NUL-byte sniff + size cap skips them so scans stay fast and
+    never return junk matches (or corrupt a binary on replace)."""
+    try:
+        if os.path.getsize(path) > MAX_SCAN_BYTES:
+            return False
+        with open(path, "rb") as f:
+            return b"\x00" not in f.read(4096)
+    except Exception:
+        return False
 
 
 def read_file(path: str, offset: int = 0, limit: int = 0) -> str:
@@ -124,6 +140,8 @@ def search_files(query: str, path: str = ".") -> str:
             dirnames[:] = [d for d in dirnames if d not in skip]
             for fn in filenames:
                 fp = os.path.join(dirpath, fn)
+                if not _is_text_file(fp):
+                    continue
                 try:
                     with open(fp, "r", encoding="utf-8", errors="ignore") as f:
                         for i, line in enumerate(f, 1):
@@ -222,6 +240,8 @@ def replace_in_files(find: str, replace: str, path: str = ".", glob: str = "") -
             if glob and not fnmatch.fnmatch(fn, glob):
                 continue
             fp = os.path.join(dirpath, fn)
+            if not _is_text_file(fp):
+                continue
             try:
                 with open(fp, "r", encoding="utf-8", errors="ignore") as f:
                     data = f.read()
@@ -270,6 +290,8 @@ def grep(pattern: str, path: str = ".", glob: str = "") -> str:
             if glob and not fnmatch.fnmatch(fn, glob):
                 continue
             fp = os.path.join(dirpath, fn)
+            if not _is_text_file(fp):
+                continue
             try:
                 with open(fp, "r", encoding="utf-8", errors="ignore") as f:
                     for i, line in enumerate(f, 1):

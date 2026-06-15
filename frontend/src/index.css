@@ -89,11 +89,15 @@ body {
   animation: spark-glow 2.4s ease-in-out infinite;
   z-index: 0;
 }
-.spark.thinking .spark-img { animation: spark-breathe 2.4s var(--ease) infinite; }
-.spark.working .spark-img  { animation: spark-breathe 1.5s var(--ease) infinite; }
-@keyframes spark-breathe {
-  0%, 100% { transform: scale(0.84) rotate(0deg); opacity: 0.9; }
-  50%      { transform: scale(1) rotate(22deg);   opacity: 1; }
+/* Busy = a smooth, continuous spin until the result is complete (no swing). */
+.spark.thinking .spark-img,
+.spark.working .spark-img {
+  transform-origin: 50% 50%;
+  animation: spark-spin 1.5s linear infinite;
+}
+@keyframes spark-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 @keyframes spark-glow {
   0%, 100% { opacity: 0.25; transform: scale(0.82); }

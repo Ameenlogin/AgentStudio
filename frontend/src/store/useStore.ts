@@ -27,6 +27,8 @@ export interface Message {
 
 export interface ConversationMeta { id: number; title: string; updated_at?: string; }
 
+export interface SkillMeta { name: string; display: string; description: string; }
+
 export interface PermissionRequest {
   id: string;
   call_id: string;
@@ -90,6 +92,12 @@ interface State {
 
   selectedModel: string;
   setSelectedModel: (m: string) => void;
+
+  skills: SkillMeta[];
+  setSkills: (s: SkillMeta[]) => void;
+  composerInsert: string | null;        // sidebar → composer (e.g. "/design ")
+  setComposerInsert: (v: string | null) => void;
+
   swarmStatus: SwarmStatus | null;
   setSwarmStatus: (s: SwarmStatus | null) => void;
   showSwarmPanel: boolean;
@@ -185,8 +193,14 @@ export const useStore = create<State>((set) => ({
       ),
     })),
 
-  selectedModel: 'moonshotai/kimi-k2.6',
+  selectedModel: 'openai/gpt-oss-120b',
   setSelectedModel: (m) => set({ selectedModel: m }),
+
+  skills: [],
+  setSkills: (skills) => set({ skills }),
+  composerInsert: null,
+  setComposerInsert: (composerInsert) => set({ composerInsert }),
+
   swarmStatus: null,
   setSwarmStatus: (s) => set({ swarmStatus: s }),
   showSwarmPanel: false,

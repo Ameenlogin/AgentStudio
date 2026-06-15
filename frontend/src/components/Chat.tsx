@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUp, Square, AlertTriangle, Settings as Cog, User, Wand2, FileSearch,
-  Globe2, Bug, Paperclip, X as XIcon, ChevronDown, Cpu, Database,
-  Lock, Monitor, Briefcase
+  Globe2, Rocket, Paperclip, X as XIcon, ChevronDown, Cpu, Database,
+  Lock, Monitor, Briefcase, Sparkles
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Message, Block, ToolBlock } from '../store/useStore';
@@ -17,7 +17,7 @@ const SUGGESTIONS = [
   { icon: Wand2,      text: 'Build a small website in the workspace and run it' },
   { icon: FileSearch, text: 'List the files in my workspace and summarize the project' },
   { icon: Globe2,     text: 'Research the latest React 19 features and write notes.md' },
-  { icon: Bug,        text: 'Write a buggy function, run it, find the bug and fix it' },
+  { icon: Rocket,     text: 'Build a REST API, run it, and test the endpoints' },
 ];
 
 const MODES = [
@@ -27,37 +27,27 @@ const MODES = [
 ];
 
 const MODELS = [
+  { id: 'openai/gpt-oss-120b',                        short: 'GPT-OSS 120B',  caps: ['fastest','coding','tools'] },
   { id: 'moonshotai/kimi-k2.6',                       short: 'Kimi K2.6',     caps: ['agentic','tools','multimodal'] },
-  { id: 'openai/gpt-oss-120b',                        short: 'GPT-OSS 120B',  caps: ['coding','tools','reasoning'] },
   { id: 'openai/gpt-oss-20b',                         short: 'GPT-OSS 20B',   caps: ['fast','coding','tools'] },
   { id: 'meta/llama-3.3-70b-instruct',                short: 'Llama 3.3 70B', caps: ['tools','coding'] },
   { id: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',   short: 'Nemotron 49B',  caps: ['reasoning','tools'] },
   { id: 'qwen/qwen3-next-80b-a3b-instruct',           short: 'Qwen3 Next 80B',caps: ['coding','reasoning'] },
 ];
 
-// Lightweight live status — no "Step N" gimmick
+// Streamlined live status: just "Thinking…" (or the running tool's label) — no
+// inline icon, since the message's spark already spins while the agent works.
 function LiveStatus({ blocks, pending }: { blocks: Block[]; pending: boolean }) {
   const last = blocks[blocks.length - 1];
-  let label = 'Working';
-  let orbState: 'thinking' | 'working' = 'working';
-
+  let label = 'Thinking';
   if (pending) {
     label = 'Awaiting your approval';
-    orbState = 'thinking';
   } else if (last?.type === 'tool' && (last as ToolBlock).status === 'running') {
     label = (last as ToolBlock).label;
-    orbState = 'working';
-  } else if (last?.type === 'thinking') {
-    label = 'Thinking';
-    orbState = 'thinking';
-  } else if (last?.type === 'text') {
-    label = 'Responding';
-    orbState = 'working';
   }
 
   return (
-    <div className="live-status flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-[var(--color-panel)] border border-[var(--color-border-soft)] text-[13px] text-[var(--color-muted)] w-fit max-w-full">
-      <AgentOrb size={10} state={orbState} />
+    <div className="live-status flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-lg bg-[var(--color-panel)] border border-[var(--color-border-soft)] text-[13px] text-[var(--color-muted)] w-fit max-w-full">
       <span className="truncate">{label}</span>
       <span className="flex gap-0.5 ml-0.5">
         <span className="dot-a">·</span>
@@ -76,6 +66,7 @@ export default function Chat() {
     selectedModel, setSelectedModel, swarmStatus, setSwarmStatus,
     showSwarmPanel, toggleSwarmPanel,
     setSwarmPlan, updateSwarmWorker, resetSwarm,
+    skills, composerInsert, setComposerInsert,
   } = useStore();
 
   const [input, setInput]         = useState('');
@@ -112,6 +103,15 @@ export default function Chat() {
 
   useEffect(() => { loadSettings(); }, []);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
+
+  // Sidebar → composer: when a skill is clicked, drop "/<name> " into the box.
+  useEffect(() => {
+    if (composerInsert != null) {
+      setInput((prev) => (prev ? prev + composerInsert : composerInsert));
+      setComposerInsert(null);
+      requestAnimationFrame(() => taRef.current?.focus());
+    }
+  }, [composerInsert, setComposerInsert]);
   useEffect(() => {
     if (taRef.current) {
       taRef.current.style.height = 'auto';
@@ -152,9 +152,26 @@ export default function Chat() {
 
   const stop = () => { abortRef.current?.abort(); setBusy(false); setPendingPermission(null); };
 
+  // Map a leading "/token" to an installed skill (mirrors the backend resolver:
+  // exact → prefix → substring, on folder name or display name).
+  const resolveSkill = (token: string): string | null => {
+    const q = token.toLowerCase();
+    const ss = useStore.getState().skills;
+    const exact  = ss.find(s => s.name.toLowerCase() === q || (s.display || '').toLowerCase() === q);
+    const prefix = ss.find(s => s.name.toLowerCase().startsWith(q) || (s.display || '').toLowerCase().startsWith(q));
+    const sub    = ss.find(s => s.name.toLowerCase().includes(q) || (s.display || '').toLowerCase().includes(q));
+    return (exact || prefix || sub)?.name ?? null;
+  };
+
   const send = async (text: string) => {
     if (!text.trim() || busy) return;
     let full = text.trim();
+
+    // A leading "/<skill> …" explicitly invokes that skill for this turn.
+    let skill: string | null = null;
+    const sm = full.match(/^\/([A-Za-z0-9_-]+)(?:\s+|$)/);
+    if (sm) skill = resolveSkill(sm[1]);
+
     if (uploads.length) {
       full += `\n\n(Files uploaded to the workspace: ${uploads.map(u => u.path).join(', ')})`;
     }
@@ -180,7 +197,7 @@ export default function Chat() {
       const res = await fetch(api('/api/chat/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, model_name: selectedModel }),
+        body: JSON.stringify({ messages: history, model_name: selectedModel, skill }),
         signal: ctrl.signal,
       });
 
@@ -244,6 +261,17 @@ export default function Chat() {
   const activeModel  = MODELS.find(m => m.id === selectedModel) || MODELS[0];
   const activeMode   = MODES.find(m => m.id === mode) || MODES[0];
   const ModeIcon     = activeMode.icon;
+
+  // Slash-command autocomplete: while typing "/<token>" (before any space),
+  // surface matching installed skills so they're discoverable right in chat.
+  const slashQuery   = input.startsWith('/') && !input.slice(1).includes(' ')
+    ? input.slice(1).toLowerCase() : null;
+  const slashMatches = slashQuery !== null
+    ? skills.filter(s => s.name.toLowerCase().includes(slashQuery) ||
+                         (s.display || '').toLowerCase().includes(slashQuery))
+    : [];
+  const showSlash    = slashQuery !== null && slashMatches.length > 0;
+  const pickSlash    = (name: string) => { setInput('/' + name + ' '); taRef.current?.focus(); };
 
   return (
     <div className="flex flex-col h-full flex-1">
@@ -385,7 +413,41 @@ export default function Chat() {
 
       {/* Composer */}
       <div className="px-5 pb-4 pt-2 flex-shrink-0">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto relative">
+          {/* Slash-command menu — installed skills, filtered as you type "/…" */}
+          <AnimatePresence>
+            {showSlash && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.14 }}
+                className="absolute bottom-full left-0 mb-2 z-50 w-80 rounded-xl border border-[var(--color-border)] bg-[var(--color-elevated)] p-1.5 shadow-lg max-h-72 overflow-y-auto"
+              >
+                <div className="text-[10px] font-semibold text-[var(--color-faint)] px-2.5 py-1.5 border-b border-[var(--color-border-soft)] mb-1 uppercase tracking-[0.1em]">
+                  Skills · pick one to use it
+                </div>
+                {slashMatches.map((s) => (
+                  <button
+                    key={s.name}
+                    onClick={() => pickSlash(s.name)}
+                    className="w-full text-left rounded-lg px-2.5 py-2 flex items-start gap-2.5 hover:bg-[var(--color-panel)] transition"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-[var(--color-copper)]" />
+                    <div className="min-w-0">
+                      <div className="text-[12.5px] font-semibold text-[var(--color-text)]">
+                        {s.display || s.name} <span className="font-mono font-normal text-[var(--color-faint)]">/{s.name}</span>
+                      </div>
+                      {s.description && (
+                        <div className="text-[11px] text-[var(--color-muted)] leading-snug truncate">{s.description}</div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {uploads.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {uploads.map((u, i) => (
@@ -415,7 +477,13 @@ export default function Chat() {
               ref={taRef}
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (showSlash) { pickSlash(slashMatches[0].name); return; }
+                  send(input);
+                }
+              }}
               placeholder="Ask anything or describe a task…"
               rows={1}
               className="flex-1 bg-transparent resize-none outline-none px-1 py-1.5 text-[14px] placeholder:text-[var(--color-faint)] min-h-[36px] leading-relaxed"

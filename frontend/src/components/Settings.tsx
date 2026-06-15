@@ -1,23 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, MessageSquare, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes } from 'lucide-react';
+import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes } from 'lucide-react';
 import { api } from '../lib/api';
 
 const DEFAULTS = {
   base_url: 'https://integrate.api.nvidia.com/v1',
-  model_name: 'moonshotai/kimi-k2.6',
+  model_name: 'openai/gpt-oss-120b',
   temperature: 0.6,
   max_steps: 50,
   tools_enabled: true,
   workspace_path: './workspace',
   permission_mode: 'ask',
   swarm_mode: 'auto',
-  system_prompt:
-    'You are Agent Studio, an elite autonomous software-and-research agent that outperforms conventional coding assistants. Toolkit (all sandboxed to the workspace): read/write/edit/append/move/copy/delete files, batch read & write, recursive tree, search/grep/glob, bulk-replace, precise unified-diff apply_patch; create/extract/list zips AND in-place zip editing (write code straight into a .zip); read & create PDFs; run shell commands and Python with live output; git; web search/fetch/scrape/HTTP/downloads. You can build full websites & web apps, WordPress themes & plugins (PHP), CLIs, scripts, data pipelines, design assets, documents and PDFs — any file type. Work like a top senior engineer: think briefly, then ACT with tools, observe, self-correct, and keep going autonomously until the task is fully complete and verified. Use apply_patch for precise edits and batch read-only calls (they run in parallel). Prefer doing over asking. When asked to package results, produce the artifact and confirm its path. Verify your work by running it, then give a short, clear summary of what you did and produced.',
 };
 
 const MODELS = [
+  { id: 'openai/gpt-oss-120b', short: 'GPT-OSS 120B', provider: 'OpenAI', desc: 'Fastest responses · strong coding + tools', size: '128k', caps: ['fastest', 'coding', 'tools'] },
   { id: 'moonshotai/kimi-k2.6', short: 'Kimi K2.6', provider: 'Moonshot AI', desc: 'Best agentic coding, 1T MoE, multimodal', size: '256k', caps: ['agentic', 'tools', 'multimodal'] },
-  { id: 'openai/gpt-oss-120b', short: 'GPT-OSS 120B', provider: 'OpenAI', desc: 'Open-weight, strong coding + tool use', size: '128k', caps: ['coding', 'tools', 'reasoning'] },
   { id: 'openai/gpt-oss-20b', short: 'GPT-OSS 20B', provider: 'OpenAI', desc: 'Fast open-weight model with tools', size: '128k', caps: ['fast', 'coding', 'tools'] },
   { id: 'meta/llama-3.3-70b-instruct', short: 'Llama 3.3 70B', provider: 'Meta', desc: 'Strong tool-calling, well-tested', size: '128k', caps: ['tools', 'coding'] },
   { id: 'nvidia/llama-3.3-nemotron-super-49b-v1.5', short: 'Nemotron 49B', provider: 'NVIDIA', desc: 'NVIDIA-tuned reasoning + tools', size: '128k', caps: ['reasoning', 'tools'] },
@@ -213,10 +211,6 @@ export default function Settings() {
                 <div className="text-[12px] text-[var(--color-muted)]">Always use a single agent.</div>
               </button>
             </div>
-          </Card>
-
-          <Card icon={MessageSquare} title="System prompt">
-            <textarea value={s.system_prompt} onChange={(e) => set('system_prompt', e.target.value)} rows={5} className={inputCls.replace('font-mono', '') + ' resize-y leading-relaxed'} />
           </Card>
 
           <div className="pb-10 pt-1">

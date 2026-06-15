@@ -34,6 +34,24 @@ CHUNK_STALL_TIMEOUT = 60.0   # mid-stream silence that means a dead connection
 FIRST_CHUNK_TIMEOUT = 120.0  # first-token budget (reasoning models are slow to start)
 MAX_BREAKER_RETRIES = 2      # alternate-endpoint retries before giving up
 
+# Models that don't accept the NIM ``chat_template_kwargs={"thinking": …}`` kwarg
+# (instruct / non-reasoning checkpoints such as qwen3-*-instruct or llama-*-instruct).
+# Sending it to them returns a 400 and forces a wasted retry without it on EVERY
+# turn — which is exactly why such models felt "stupidly slow". We seed the obvious
+# ones and also learn any model at runtime the first time it rejects the kwarg, so
+# we never pay that failed round-trip more than once.
+_NO_THINKING: set[str] = set()
+
+
+def _supports_thinking(model: str) -> bool:
+    m = (model or "").lower()
+    if m in _NO_THINKING:
+        return False
+    # Instruct / chat checkpoints have no separate reasoning channel.
+    if "instruct" in m or "-chat" in m:
+        return False
+    return True
+
 
 class StreamStalled(Exception):
     """Stream died before producing anything — safe to retry cleanly."""
@@ -68,7 +86,9 @@ class KimiClient:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = "auto"
         extra_body = None
-        if thinking is not None:
+        # Only send the reasoning kwarg to models that actually accept it — this
+        # avoids a guaranteed 400-then-retry on every instruct-model turn.
+        if thinking is not None and _supports_thinking(self.model_name):
             extra_body = {"chat_template_kwargs": {"thinking": bool(thinking)}}
         return kwargs, extra_body
 
@@ -89,9 +109,10 @@ class KimiClient:
             return await self.client.chat.completions.create(**call_kwargs), None, None
         except Exception as e:
             err = str(e).lower()
-            # 1) Model rejected the thinking kwarg — drop it and retry.
+            # 1) Model rejected the thinking kwarg — remember that, drop it, retry.
             if extra_body is not None and ("400" in err or "chat_template" in err
                                            or "unexpected" in err or "extra" in err):
+                _NO_THINKING.add((self.model_name or "").lower())
                 return await self._open_stream(kwargs, None)
             # 2) Model doesn't support function calling — drop tools and retry so
             #    every model in the picker still produces an answer.

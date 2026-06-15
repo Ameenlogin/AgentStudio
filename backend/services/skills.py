@@ -30,21 +30,54 @@ def _guide_path(folder: str) -> str | None:
     return None
 
 
-def _read_head(path: str, lines: int = 6) -> str:
+def _parse_frontmatter(text: str) -> dict:
+    """Parse a leading YAML '--- name: … description: … ---' block, as used by
+    Claude-style skills, so installed skills show their proper name/description."""
+    meta: dict = {}
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            for ln in text[3:end].splitlines():
+                if ":" in ln:
+                    k, _, v = ln.partition(":")
+                    meta[k.strip().lower()] = v.strip().strip('"\'')
+    return meta
+
+
+def _meta(path: str) -> dict:
+    """Return {'display', 'description'} for a skill guide.
+
+    Honors a Claude-style YAML frontmatter block (``name`` / ``description``) and,
+    when it is absent, falls back to the first ``# Heading`` for the display name
+    and the next prose line(s) for the description."""
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
-            text = f.read(4000)
+            text = f.read(8000)
     except Exception:
-        return ""
-    # description = first non-heading, non-empty line(s)
-    out = []
-    for ln in text.splitlines():
-        s = ln.strip().lstrip("#").strip()
-        if s and not s.startswith("!["):
-            out.append(s)
-        if len(out) >= 2:
-            break
-    return " ".join(out)[:200]
+        return {"display": "", "description": ""}
+    fm = _parse_frontmatter(text)
+    display = fm.get("name", "")
+    desc = fm.get("description", "")
+    if not display or not desc:
+        body = text
+        if text.startswith("---"):
+            e = text.find("\n---", 3)
+            if e != -1:
+                body = text[e + 4:]
+        out = []
+        for ln in body.splitlines():
+            s = ln.strip()
+            if not display and s.startswith("# "):
+                display = s[2:].strip()
+                continue
+            t = s.lstrip("#").strip()
+            if t and not t.startswith("!["):
+                out.append(t)
+            if len(out) >= 2:
+                break
+        if not desc:
+            desc = " ".join(out)
+    return {"display": display, "description": desc[:200]}
 
 
 def list_skills() -> list[dict]:
@@ -57,12 +90,33 @@ def list_skills() -> list[dict]:
         guide = _guide_path(folder)
         if not guide:
             continue
+        m = _meta(guide)
         skills.append({
             "name": name,
-            "description": _read_head(guide),
+            "display": m["display"] or name,
+            "description": m["description"],
             "guide": os.path.relpath(guide, SKILLS_DIR),
         })
     return skills
+
+
+def resolve_skill(query: str) -> str | None:
+    """Map a user-typed token (e.g. '/design') to an installed skill folder.
+    Tolerant: exact, then prefix, then substring — on folder OR display name."""
+    q = (query or "").strip().lstrip("/").lower()
+    if not q:
+        return None
+    skills = list_skills()
+    for s in skills:
+        if s["name"].lower() == q or (s["display"] or "").lower() == q:
+            return s["name"]
+    for s in skills:
+        if s["name"].lower().startswith(q) or (s["display"] or "").lower().startswith(q):
+            return s["name"]
+    for s in skills:
+        if q in s["name"].lower() or q in (s["display"] or "").lower():
+            return s["name"]
+    return None
 
 
 def read_skill(name: str) -> str:
@@ -117,7 +171,7 @@ def install_from_github(url: str) -> str:
     if not guide:
         return (f"Installed '{name}', but it has no SKILL.md/README. The agent can "
                 f"still browse it with list_directory/read_file under skills/{name}.")
-    return f"Installed skill '{name}'. Description: {_read_head(guide)}"
+    return f"Installed skill '{name}'. Description: {_meta(guide)['description']}"
 
 
 def skills_prompt() -> str:

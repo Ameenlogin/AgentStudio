@@ -15,6 +15,7 @@ async def chat_endpoint(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
     messages = data.get("messages", [])
     model_override = data.get("model_name", None)
+    skill = (data.get("skill") or "").strip() or None
 
     settings = db.query(Setting).first()
     if not settings or not settings.api_key:
@@ -30,11 +31,14 @@ async def chat_endpoint(request: Request, db: Session = Depends(get_db)):
         model_name=model_override or settings.model_name,
         # Temperature & step budget are smart built-in defaults (no UI sliders).
         temperature=settings.temperature if settings.temperature is not None else 0.6,
-        system_prompt=(settings.system_prompt or None),
+        # The system prompt is the app's built-in, tuned instruction set — not a
+        # user-editable field. Always use it (run_agent falls back to _AGENT_SYSTEM).
+        system_prompt=None,
         max_steps=settings.max_steps or 80,
         tools_enabled=bool(settings.tools_enabled),
         permission_mode=settings.permission_mode or "ask",
         swarm_mode=settings.swarm_mode or "auto",
+        skill=skill,
     )
 
     async def gen():

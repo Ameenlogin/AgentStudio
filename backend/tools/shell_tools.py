@@ -4,7 +4,9 @@ import subprocess
 import threading
 from tools.sandbox import get_workspace
 
-TIMEOUT = 60
+# Generous enough for real builds/installs (npm install, pip, compiles) that the
+# old 60s cap killed mid-run. Output streams live and the user can always Stop.
+TIMEOUT = 180
 
 
 def run_command(command: str) -> str:

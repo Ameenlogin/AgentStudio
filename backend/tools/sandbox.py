@@ -19,11 +19,15 @@ def get_workspace() -> str:
 
 
 def resolve(path: str) -> str:
-    """Resolve a (possibly relative) path against the workspace, blocking escapes."""
+    """Resolve a (possibly relative) path against the workspace, blocking escapes.
+
+    Uses ``realpath`` on both the root and the candidate so a symlink inside the
+    workspace can't be used to read or write outside it (the candidate's existing
+    parents are resolved even when the leaf file doesn't exist yet)."""
     if not path:
         path = "."
-    candidate = os.path.normpath(os.path.join(_workspace_root, os.path.expanduser(path)))
-    root = os.path.normpath(_workspace_root)
+    root = os.path.realpath(_workspace_root)
+    candidate = os.path.realpath(os.path.join(_workspace_root, os.path.expanduser(path)))
     if candidate != root and not candidate.startswith(root + os.sep):
         raise PermissionError(
             f"Path '{path}' is outside the workspace. All paths must stay inside {root}."

@@ -106,6 +106,8 @@ _AGENT_SYSTEM = (
     "- Install a skill from a GitHub repo → install_skill; consult one → read_skill.\n"
     "- Use git for version control; download_file / http_request for network I/O.\n\n"
     "HOW TO WORK:\n"
+    "- Be fast and direct: no preamble, no 'I will now…' narration — go straight to "
+    "the answer or the first useful tool call. Brevity is speed.\n"
     "- Read the request first. If it can be answered directly (including current "
     "date/time from ENVIRONMENT), just answer concisely — no tools, no plan narration.\n"
     "- If it needs action, think briefly, then ACT: call tools, observe results, "
@@ -157,7 +159,8 @@ def _status_ev(pool):
 
 async def run_agent(messages, *, api_keys, base_url, model_name,
                     temperature=0.6, system_prompt=None, max_steps=50,
-                    tools_enabled=True, permission_mode="ask", swarm_mode="auto"):
+                    tools_enabled=True, permission_mode="ask", swarm_mode="auto",
+                    skill=None):
     valid_keys = [k for k in api_keys if k and k.strip()]
     if not valid_keys:
         yield _ev({"type": "error",
@@ -166,6 +169,28 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
 
     pool = APIPool(valid_keys, base_url)
     client = KimiClient(pool=pool, base_url=base_url, model_name=model_name)
+
+    # -- EXPLICIT SKILL INVOCATION (/skill …) ---------------------------------
+    # The user invoked a skill by name. Inject its full guide into the system
+    # prompt and run the agentic loop directly so it follows the skill precisely.
+    if skill and tools_enabled:
+        from services import skills as _sk
+        resolved = _sk.resolve_skill(skill)
+        active = ""
+        if resolved:
+            guide = _sk.read_skill(resolved)
+            active = (f"\n\nACTIVE SKILL: '{resolved}'. The user explicitly invoked this "
+                      f"skill for the current task — read it as authoritative and follow "
+                      f"its guidance precisely:\n\n{guide[:12000]}\n")
+        else:
+            active = (f"\n\n(The user tried to invoke a skill '{skill}', but no matching "
+                      f"skill is installed. Proceed normally and mention this.)")
+        convo = [{"role": "system", "content": _compose_system(system_prompt or _AGENT_SYSTEM) + active}]
+        convo.extend(messages)
+        async for ev in agentic_loop(client, pool, convo, AVAILABLE_TOOLS, temperature,
+                                     max_steps, permission_mode):
+            yield ev
+        return
 
     mode = router.classify(messages) if tools_enabled else "simple"
 
