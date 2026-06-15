@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowUp, Square, AlertTriangle, Settings as Cog, User, Wand2, FileSearch,
   Globe2, Rocket, Paperclip, X as XIcon, ChevronDown, Cpu, Database,
-  Lock, Monitor, Briefcase, Sparkles
+  Lock, Monitor, Briefcase, Puzzle, Loader2
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Message, Block, ToolBlock } from '../store/useStore';
@@ -34,12 +34,6 @@ const MODELS = [
   { id: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',   short: 'Nemotron 49B',  caps: ['reasoning','tools'] },
   { id: 'qwen/qwen3-next-80b-a3b-instruct',           short: 'Qwen3 Next 80B',caps: ['coding','reasoning'] },
 ];
-
-const EFFORTS = [
-  { id: 'medium', label: 'Medium', desc: 'Fast and balanced — the everyday default' },
-  { id: 'high',   label: 'High',   desc: 'Plans ahead, weighs edge cases, and verifies before finishing' },
-  { id: 'max',    label: 'Max',    desc: 'Deepest reasoning + rigorous self-verification. Best quality, takes longer' },
-] as const;
 
 // Streamlined live status: just "Thinking…" (or the running tool's label) — no
 // inline icon, since the message's spark already spins while the agent works.
@@ -74,7 +68,7 @@ export default function Chat() {
     showSwarmPanel, toggleSwarmPanel,
     setSwarmPlan, updateSwarmWorker, resetSwarm,
     skills, composerInsert, setComposerInsert,
-    effort, setEffort,
+    effort,
   } = useStore();
 
   const [input, setInput]         = useState('');
@@ -86,6 +80,7 @@ export default function Chat() {
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [cacheHit, setCacheHit]   = useState<number | null>(null);
   const [uploads, setUploads]     = useState<{ name: string; path: string }[]>([]);
+  const [uploading, setUploading] = useState(0);   // count of files currently uploading
   const endRef  = useRef<HTMLDivElement>(null);
   const taRef   = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -144,16 +139,28 @@ export default function Chat() {
     }).then(r => r.json()).then(d => { if (d.id) setCurrentId(d.id); }).catch(() => {});
   };
 
+  // Upload any number of files, a few at a time (bounded concurrency) so 50+
+  // files don't open 50 sockets at once or freeze the UI. Each result is added
+  // as it lands; failures are skipped quietly.
   const onPickFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
-    for (const file of Array.from(files)) {
+    const list = files ? Array.from(files) : [];
+    if (!list.length) return;
+    setUploading((n) => n + list.length);
+
+    const uploadOne = async (file: File) => {
       const fd = new FormData();
       fd.append('file', file);
       try {
         const r = await fetch(api('/api/files/upload'), { method: 'POST', body: fd });
         const d = await r.json();
-        if (d.path) setUploads(u => [...u, { name: file.name, path: d.path }]);
-      } catch {}
+        if (d.path) setUploads((u) => [...u, { name: file.name, path: d.path }]);
+      } catch { /* skip this file */ }
+      finally { setUploading((n) => Math.max(0, n - 1)); }
+    };
+
+    const CONCURRENCY = 5;
+    for (let i = 0; i < list.length; i += CONCURRENCY) {
+      await Promise.all(list.slice(i, i + CONCURRENCY).map(uploadOne));
     }
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -441,7 +448,7 @@ export default function Chat() {
                     onClick={() => pickSlash(s.name)}
                     className="w-full text-left rounded-lg px-2.5 py-2 flex items-start gap-2.5 hover:bg-[var(--color-panel)] transition"
                   >
-                    <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-[var(--color-copper)]" />
+                    <Puzzle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-[var(--color-copper)]" />
                     <div className="min-w-0">
                       <div className="text-[12.5px] font-semibold text-[var(--color-text)]">
                         {s.display || s.name} <span className="font-mono font-normal text-[var(--color-faint)]">/{s.name}</span>
@@ -456,19 +463,36 @@ export default function Chat() {
             )}
           </AnimatePresence>
 
-          {uploads.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {uploads.map((u, i) => (
-                <span key={i} className="flex items-center gap-1.5 text-[11.5px] rounded-lg border border-[var(--color-border)] bg-[var(--color-elevated)] pl-2.5 pr-1.5 py-1">
-                  <Paperclip className="w-3 h-3 text-[var(--color-copper)]" /> {u.name}
-                  <button
-                    onClick={() => setUploads(us => us.filter((_, j) => j !== i))}
-                    className="text-[var(--color-faint)] hover:text-[var(--color-red)] ml-0.5"
-                  >
-                    <XIcon className="w-3 h-3" />
-                  </button>
+          {(uploads.length > 0 || uploading > 0) && (
+            <div className="mb-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] px-2.5 py-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11px] font-medium text-[var(--color-muted)] flex items-center gap-1.5">
+                  {uploading > 0 && <Loader2 className="w-3 h-3 animate-spin text-[var(--color-copper)]" />}
+                  {uploading > 0
+                    ? `Uploading ${uploading} file${uploading > 1 ? 's' : ''}…`
+                    : `${uploads.length} file${uploads.length > 1 ? 's' : ''} attached`}
                 </span>
-              ))}
+                {uploads.length > 0 && (
+                  <button onClick={() => setUploads([])} className="text-[11px] text-[var(--color-faint)] hover:text-[var(--color-red)] transition">
+                    Clear all
+                  </button>
+                )}
+              </div>
+              {/* Bounded + scrollable so any number of files can't push the input box off-screen */}
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-0.5">
+                {uploads.map((u, i) => (
+                  <span key={i} className="flex items-center gap-1 text-[11px] rounded-lg border border-[var(--color-border)] bg-[var(--color-elevated)] pl-2 pr-1 py-1 max-w-[170px]">
+                    <Paperclip className="w-3 h-3 text-[var(--color-copper)] flex-shrink-0" />
+                    <span className="truncate">{u.name}</span>
+                    <button
+                      onClick={() => setUploads(us => us.filter((_, j) => j !== i))}
+                      className="text-[var(--color-faint)] hover:text-[var(--color-red)] flex-shrink-0"
+                    >
+                      <XIcon className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
@@ -497,27 +521,8 @@ export default function Chat() {
               className="flex-1 bg-transparent resize-none outline-none px-1 py-1.5 text-[14px] placeholder:text-[var(--color-faint)] min-h-[36px] leading-relaxed"
             />
 
-            {/* Effort toggle + Mode picker + Model picker + send */}
+            {/* Mode picker + Model picker + send */}
             <div className="relative flex items-center gap-1 flex-shrink-0">
-              {/* Effort — how hard the agent works (Medium / High / Max) */}
-              <div className="flex items-center rounded-lg border border-[var(--color-border)] bg-[var(--color-elevated)] p-0.5" title="Effort — how hard the agent thinks and works">
-                {EFFORTS.map((e) => (
-                  <button
-                    key={e.id}
-                    type="button"
-                    onClick={() => setEffort(e.id)}
-                    title={e.desc}
-                    className={`px-2 py-1 rounded-md text-[11px] font-medium transition ${
-                      effort === e.id
-                        ? 'bg-[var(--color-copper)] text-white shadow-sm'
-                        : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'
-                    }`}
-                  >
-                    {e.label}
-                  </button>
-                ))}
-              </div>
-
               {/* Working mode */}
               <div className="relative">
                 <button
@@ -619,7 +624,7 @@ export default function Chat() {
               ) : (
                 <button
                   onClick={() => send(input)}
-                  disabled={!input.trim()}
+                  disabled={!input.trim() || uploading > 0}
                   className="w-8 h-8 rounded-xl grid place-items-center bg-gradient-to-br from-[var(--color-copper)] to-[var(--color-copper-lo)] text-white disabled:opacity-25 disabled:cursor-not-allowed hover:shadow-[var(--shadow-lift)] active:scale-95 transition-all"
                 >
                   <ArrowUp className="w-3.5 h-3.5" />

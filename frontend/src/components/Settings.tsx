@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes } from 'lucide-react';
+import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes, Gauge } from 'lucide-react';
 import { api } from '../lib/api';
+import { useStore } from '../store/useStore';
+
+const EFFORTS = [
+  { id: 'medium', label: 'Medium', desc: 'Fast and balanced — the everyday default.' },
+  { id: 'high',   label: 'High',   desc: 'Plans ahead, weighs edge cases, verifies before finishing.' },
+  { id: 'max',    label: 'Max',    desc: 'Deepest reasoning + rigorous self-verification. Best quality, slower.' },
+] as const;
 
 const DEFAULTS = {
   base_url: 'https://integrate.api.nvidia.com/v1',
@@ -44,6 +51,8 @@ export default function Settings() {
   const [save, setSave] = useState<SaveStatus>('idle');
   const [loading, setLoading] = useState(true);
   const set = (k: string, v: any) => setS((p: any) => ({ ...p, [k]: v }));
+  const effort = useStore((st) => st.effort);
+  const setEffort = useStore((st) => st.setEffort);
 
   useEffect(() => {
     fetch(api('/api/settings/')).then((r) => r.json()).then((d) => {
@@ -79,12 +88,13 @@ export default function Settings() {
       </div>
 
       <div className="flex-1 px-6 py-6">
-        <div className="max-w-2xl mx-auto space-y-4">
+        <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-4 items-start">
           {/* API key section */}
+          <div className="lg:col-span-2">
           <Card icon={Key} title="NVIDIA NIM API Key">
             <p className="text-xs text-[var(--color-muted)] mb-4">
               Get a free API key at{' '}
-              <a href="https://build.nvidia.com" target="_blank" rel="noreferrer" className="text-[var(--color-cyan)] underline underline-offset-2">build.nvidia.com</a>. Runs on a single key at ~40 RPM.
+              <a href="https://build.nvidia.com" target="_blank" rel="noreferrer" className="text-[var(--color-cyan)] underline underline-offset-2">build.nvidia.com</a>. Each key is paced to ~36 RPM, safely under NVIDIA's 40/key limit. Add up to 3 keys for more head-room.
             </p>
             <div>
               <label className="text-[11px] font-semibold text-[var(--color-muted)] mb-1 block">API Key</label>
@@ -101,7 +111,9 @@ export default function Settings() {
               </div>
             </div>
           </Card>
+          </div>
 
+          <div className="lg:col-span-2">
           <Card icon={Cpu} title="Select Model">
             <div className="grid sm:grid-cols-2 gap-3 mb-2">
               {MODELS.map((m) => {
@@ -147,6 +159,7 @@ export default function Settings() {
               />
             </div>
           </Card>
+          </div>
 
           <Card icon={Globe} title="Endpoint">
             <input value={s.base_url} onChange={(e) => set('base_url', e.target.value)} className={inputCls} />
@@ -157,6 +170,29 @@ export default function Settings() {
             <p className="text-xs text-[var(--color-faint)] mt-2">The only folder the agent can read, write and run commands in. Relative paths are based on the backend folder.</p>
           </Card>
 
+          <Card icon={Gauge} title="Effort">
+            <p className="text-sm text-[var(--color-muted)] mb-3">
+              How hard the agent thinks and works on each task. Higher effort means deeper
+              reasoning and self-verification (and more model calls). Applies immediately.
+            </p>
+            <div className="space-y-2">
+              {EFFORTS.map((e) => (
+                <button
+                  key={e.id}
+                  onClick={() => setEffort(e.id)}
+                  className={`w-full text-left rounded-xl border px-3.5 py-3 transition ${
+                    effort === e.id ? 'border-[var(--color-copper)] bg-[var(--color-copper-wash)]' : 'border-[var(--color-border)] hover:border-[var(--color-faint)]'
+                  }`}
+                >
+                  <div className="text-[14px] font-medium flex items-center gap-2">
+                    {e.label}
+                    {e.id === 'medium' && <span className="text-[10px] font-normal text-[var(--color-faint)] uppercase tracking-wide">default</span>}
+                  </div>
+                  <div className="text-[12px] text-[var(--color-muted)]">{e.desc}</div>
+                </button>
+              ))}
+            </div>
+          </Card>
 
           <Card icon={Wrench} title="Tools">
             <label className="flex items-center justify-between cursor-pointer">
@@ -213,7 +249,7 @@ export default function Settings() {
             </div>
           </Card>
 
-          <div className="pb-10 pt-1">
+          <div className="pb-10 pt-1 lg:col-span-2">
             <button
               onClick={onSave} disabled={save === 'saving'}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${

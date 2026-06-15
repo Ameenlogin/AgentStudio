@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Settings as Cog, MessageSquare, Trash2, Cpu, PanelLeftClose, PanelLeft, Sparkles } from 'lucide-react';
+import { Plus, Settings as Cog, MessageSquare, Trash2, Cpu, PanelLeftClose, PanelLeft, Puzzle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Message } from '../store/useStore';
 import { api } from '../lib/api';
@@ -134,7 +134,7 @@ export default function Sidebar() {
           onClick={() => setShowSkills(true)}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--color-muted)] hover:bg-[var(--color-elevated)]/60 hover:text-[var(--color-text)] transition"
         >
-          <Sparkles className="w-4 h-4 text-[var(--color-copper)]" /> Skills
+          <Puzzle className="w-4 h-4 text-[var(--color-copper)]" /> Skills
           {skills.length > 0 && (
             <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-[var(--color-copper-wash)] text-[var(--color-copper-lo)]">{skills.length}</span>
           )}

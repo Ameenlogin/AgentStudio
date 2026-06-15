@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X as XIcon, Plus, ArrowRight } from 'lucide-react';
+import { Puzzle, X as XIcon, Plus, ArrowRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { api } from '../lib/api';
 
@@ -61,7 +61,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean; onClose:
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border-soft)]">
               <div className="flex items-center gap-2.5">
                 <span className="grid place-items-center w-8 h-8 rounded-lg bg-[var(--color-copper-wash)]">
-                  <Sparkles className="w-4 h-4 text-[var(--color-copper)]" />
+                  <Puzzle className="w-4 h-4 text-[var(--color-copper)]" />
                 </span>
                 <div className="leading-tight">
                   <div className="font-display font-semibold text-[15px]">Skills</div>
@@ -95,7 +95,7 @@ export default function SkillsModal({ open, onClose }: { open: boolean; onClose:
                   className="group flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-elevated)] p-3.5 hover:border-[var(--color-copper)] hover:shadow-[var(--shadow-card)] transition"
                 >
                   <div className="flex items-center gap-2 mb-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[var(--color-copper)] flex-shrink-0" />
+                    <Puzzle className="w-3.5 h-3.5 text-[var(--color-copper)] flex-shrink-0" />
                     <span className="font-semibold text-[13.5px] truncate">{s.display || s.name}</span>
                     <span className="ml-auto font-mono text-[10.5px] text-[var(--color-faint)] flex-shrink-0">/{s.name}</span>
                   </div>
