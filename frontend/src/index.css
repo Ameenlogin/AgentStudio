@@ -128,9 +128,11 @@ body {
 .sidebar-mark .spark-img { animation: none; }
 
 /* ── Timeline lineup (flat, Claude / Perplexity / Kimi style) ────────────── */
-.timeline { position: relative; display: flex; flex-direction: column; }
-/* continuous hairline rail down the left, behind the nodes */
-.timeline::before {
+.timeline { display: flex; flex-direction: column; }
+/* The connecting rail lives ONLY behind the thinking steps (.think-rail), never
+   behind the full-width Agent Computer — so it can't cross the computer screen. */
+.think-rail { position: relative; display: flex; flex-direction: column; }
+.think-rail::before {
   content: "";
   position: absolute;
   left: 8px; top: 10px; bottom: 10px;
@@ -651,14 +653,19 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
   border-bottom: 1px solid rgba(0,0,0,0.25);
 }
 .ac-menubar strong { color: rgba(255,255,255,0.85); font-weight: 600; margin-right: 4px; }
-.ac-screen { padding: 14px; min-height: 210px; }
+/* A fixed-height "monitor": the screen never resizes while output streams or the
+   agent switches apps, so the box (and the page) never shake — content scrolls
+   inside instead. */
+.ac-screen { padding: 14px; height: 384px; box-sizing: border-box; }
 .ac-window {
-  border-radius: 10px; overflow: hidden;
+  display: flex; flex-direction: column; height: 100%;
+  border-radius: 12px; overflow: hidden;          /* all four corners rounded */
   border: 1px solid var(--color-border);
   background: var(--color-panel);
   box-shadow: var(--shadow-card);
 }
 .ac-window-head {
+  flex-shrink: 0;
   display: flex; align-items: center; gap: 7px;
   padding: 7px 11px; font-size: 11.5px; font-weight: 600; color: var(--color-muted);
   background: var(--color-elevated); border-bottom: 1px solid var(--color-border-soft);
@@ -667,7 +674,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
   margin-left: auto; font-family: var(--font-mono); font-size: 10px;
   color: var(--color-faint); background: var(--color-bg); padding: 1px 7px; border-radius: 999px;
 }
-.ac-window-body { max-height: 340px; overflow: auto; }
+.ac-window-body { flex: 1; min-height: 0; overflow: auto; }
 .ac-dock { display: flex; justify-content: center; gap: 10px; padding: 8px 12px 12px; }
 .ac-dock-app {
   position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px;
