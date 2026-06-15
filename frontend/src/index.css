@@ -1,0 +1,647 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg:          #FAF9F5;
+  --color-panel:       #F2F0E9;
+  --color-elevated:    #FFFFFF;
+  --color-border:      #E5E1D6;
+  --color-border-soft: #EEEBE1;
+  --color-text:        #20201E;
+  --color-muted:       #6E6A60;
+  --color-faint:       #A8A294;
+  --color-copper:      #D97757;
+  --color-copper-lo:   #C15F40;
+  --color-copper-wash: #F6E9E1;
+  --color-cyan:        #5B6CB0;
+  --color-green:       #5F8B57;
+  --color-red:         #C4554D;
+  --color-violet:      #8A6FB0;
+  --color-gold:        #C49A3C;
+
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --shadow-card: 0 1px 2px rgba(50,46,38,0.04), 0 1px 3px rgba(50,46,38,0.05);
+  --shadow-lift: 0 4px 18px rgba(50,46,38,0.09), 0 1px 3px rgba(50,46,38,0.05);
+  --shadow-glow-copper: 0 0 20px rgba(217,119,87,0.15);
+  --shadow-glow-cyan: 0 0 20px rgba(91,108,176,0.15);
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Studio canvas ──────────────────────────────────────────────────────── */
+.studio-canvas {
+  background:
+    radial-gradient(1100px 600px at 82% -12%, rgba(217,119,87,0.07), transparent 60%),
+    radial-gradient(820px 560px at -5% 108%, rgba(91,108,176,0.045), transparent 55%),
+    var(--color-bg);
+}
+.dot-grid {
+  background-image: radial-gradient(rgba(50,46,38,0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(circle at 50% 42%, black, transparent 72%);
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #DAD5C7; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #C8C2B1; }
+
+/* ── Spark (asterisk mark) ─────────────────────────────────────────────── */
+.spark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.spark-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+/* Soft copper glow behind the mark while the agent is busy */
+.spark.thinking::before,
+.spark.working::before {
+  content: "";
+  position: absolute;
+  inset: -38%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217,119,87,0.40), transparent 66%);
+  animation: spark-glow 2.4s ease-in-out infinite;
+  z-index: 0;
+}
+.spark.thinking .spark-img { animation: spark-breathe 2.4s var(--ease) infinite; }
+.spark.working .spark-img  { animation: spark-breathe 1.5s var(--ease) infinite; }
+@keyframes spark-breathe {
+  0%, 100% { transform: scale(0.84) rotate(0deg); opacity: 0.9; }
+  50%      { transform: scale(1) rotate(22deg);   opacity: 1; }
+}
+@keyframes spark-glow {
+  0%, 100% { opacity: 0.25; transform: scale(0.82); }
+  50%      { opacity: 0.65; transform: scale(1.08); }
+}
+/* Hero spark: gentle idle float + soft ambient glow */
+.spark-hero {
+  display: grid; place-items: center;
+  position: relative;
+  animation: spark-float 5s ease-in-out infinite;
+}
+.spark-hero::before {
+  content: "";
+  position: absolute; inset: -60%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217,119,87,0.16), transparent 64%);
+}
+@keyframes spark-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+/* Sidebar brand mark: static logo, no animation */
+.sidebar-mark {
+  position: relative;
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+}
+.sidebar-mark .spark-img { animation: none; }
+
+/* ── Timeline lineup (flat, Claude / Perplexity / Kimi style) ────────────── */
+.timeline { position: relative; display: flex; flex-direction: column; }
+/* continuous hairline rail down the left, behind the nodes */
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 8px; top: 10px; bottom: 10px;
+  width: 1.5px;
+  background: linear-gradient(to bottom, var(--color-border) 0%, var(--color-border-soft) 100%);
+  border-radius: 2px;
+}
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 17px 1fr;
+  gap: 11px;
+  padding: 3px 0;
+  align-items: start;
+}
+.answer { padding: 4px 0 2px 28px; }   /* prose aligns with step bodies */
+
+/* small node markers sitting on the rail */
+.step-node {
+  position: relative; z-index: 1;
+  margin-top: 3px;
+  width: 17px; height: 17px;
+  border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: var(--color-bg);
+}
+/* done/error nodes get a soft tinted disc behind the check/x */
+.step-node.node-done  { background: rgba(95,139,87,0.12); }
+.step-node.node-error { background: rgba(196,85,77,0.12); }
+
+/* thinking pip — a soft pulsing copper dot (no box, stronger signal) */
+.think-pip {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--color-faint);
+}
+.node-think-live .think-pip {
+  background: var(--color-copper);
+  box-shadow: 0 0 0 0 rgba(217,119,87,0.45);
+  animation: pip-pulse 1.5s ease-out infinite;
+}
+@keyframes pip-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(217,119,87,0.5); transform: scale(0.9); }
+  70%  { box-shadow: 0 0 0 7px rgba(217,119,87,0); transform: scale(1.1); }
+  100% { box-shadow: 0 0 0 0 rgba(217,119,87,0); transform: scale(0.9); }
+}
+
+/* tool running spinner dot */
+.dot-spin {
+  width: 11px; height: 11px; border-radius: 50%;
+  border: 1.6px solid rgba(217,119,87,0.2);
+  border-top-color: var(--color-copper);
+  animation: orbital-spin 0.7s linear infinite;
+}
+.step-body { min-width: 0; padding-bottom: 1px; }
+.step-head {
+  display: flex; align-items: center; gap: 7px;
+  cursor: pointer; user-select: none;
+  padding: 2px 0; background: none; border: none;
+  text-align: left; width: 100%;
+}
+
+/* ── Thinking — flat reasoning lineup ───────────────────────────────────── */
+/* Stronger Claude-style shimmer label while thinking */
+.think-label-live {
+  font-size: 13px;
+  font-weight: 600;
+  background: linear-gradient(
+    90deg,
+    var(--color-faint) 0%,
+    var(--color-copper) 30%,
+    var(--color-copper-lo) 50%,
+    var(--color-copper) 70%,
+    var(--color-faint) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-move 1.6s linear infinite;
+}
+.think-label-done {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+@keyframes shimmer-move { to { background-position: -220% 0; } }
+
+/* The streamed thought, set as quiet prose just under the header */
+.think-stream {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-muted);
+  font-family: var(--font-sans);
+  white-space: pre-wrap;
+  word-break: break-word;
+  letter-spacing: -0.002em;
+  padding-right: 4px;
+}
+.think-line {
+  display: block;
+  animation: think-line-in 0.18s var(--ease) both;
+}
+.think-line-empty { display: block; height: 0.55em; }
+@keyframes think-line-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* chevron rotate */
+.chevron-r { transition: transform 0.2s var(--ease); }
+.chevron-r.open { transform: rotate(90deg); }
+
+/* ── Typewriter cursor ──────────────────────────────────────────────────── */
+.caret::after {
+  content: "";
+  display: inline-block;
+  width: 2px; height: 1.1em;
+  background: var(--color-copper);
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  animation: caret-blink 0.9s ease-in-out infinite;
+  box-shadow: 0 0 4px rgba(217,119,87,0.4);
+  border-radius: 1px;
+}
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.1; }
+}
+
+/* Inline blinking dot for "last char streaming" inside code/text */
+.stream-dot::after {
+  content: "▋";
+  font-size: 0.85em;
+  color: var(--color-copper);
+  opacity: 0.8;
+  animation: caret-blink 0.9s ease-in-out infinite;
+}
+
+/* ── Tool — flat activity row (no box) ──────────────────────────────────── */
+.tool-line {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 -8px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s var(--ease);
+}
+.tool-line:hover { background: var(--color-panel); }
+.tool-line-main {
+  display: flex; align-items: center; gap: 8px;
+  flex: 1; min-width: 0;
+  background: none; border: none; padding: 0;
+  cursor: pointer; text-align: left;
+}
+.tool-name { font-size: 13px; font-weight: 600; color: var(--color-text); flex-shrink: 0; }
+.tool-arg {
+  font-size: 12px; color: var(--color-faint);
+  font-family: var(--font-mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; min-width: 0;
+}
+
+/* Result / output block (subtle, rounded all corners) */
+.tool-result-pre {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--color-panel);
+  border-radius: 8px;
+  border: 1px solid var(--color-border-soft);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* ── Orbital spinner ────────────────────────────────────────────────────── */
+@keyframes orbital-spin { to { transform: rotate(360deg); } }
+.orbital-spinner { position: relative; display: inline-block; }
+.orbital-spinner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(217,119,87,0.15);
+  border-top-color: var(--color-copper);
+  animation: orbital-spin 0.75s linear infinite;
+}
+
+/* ── Live status pill ───────────────────────────────────────────────────── */
+@keyframes status-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: none; }
+}
+.live-status { animation: status-in 0.3s var(--ease) both; }
+.live-status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--color-copper);
+  animation: status-dot-pulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes status-dot-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.15); }
+}
+
+/* Animated dots */
+@keyframes dot-bounce {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.75); }
+  40%           { opacity: 1;   transform: scale(1); }
+}
+.dot-a { display: inline-block; animation: dot-bounce 1.2s 0.0s ease-in-out infinite; }
+.dot-b { display: inline-block; animation: dot-bounce 1.2s 0.2s ease-in-out infinite; }
+.dot-c { display: inline-block; animation: dot-bounce 1.2s 0.4s ease-in-out infinite; }
+
+/* ── Download button (Claude-style) ─────────────────────────────────────── */
+.dl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-copper-lo);
+  border: 1px solid rgba(193,95,64,0.25);
+  text-decoration: none;
+  transition: all 0.18s var(--ease);
+  flex-shrink: 0;
+}
+.dl-btn:hover {
+  background: var(--color-copper-wash);
+  border-color: rgba(193,95,64,0.45);
+  box-shadow: 0 1px 4px rgba(193,95,64,0.12);
+}
+
+/* ── Swarm panel ────────────────────────────────────────────────────────── */
+.swarm-panel {
+  background: var(--color-panel);
+  border-left: 1px solid var(--color-border);
+  transition: width 0.3s var(--ease), opacity 0.3s var(--ease);
+}
+.rpm-bar { height: 3px; border-radius: 2px; background: var(--color-border-soft); overflow: hidden; }
+.rpm-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s var(--ease), background-color 0.3s; }
+.rpm-low    { background: var(--color-green); }
+.rpm-medium { background: var(--color-gold); }
+.rpm-high   { background: var(--color-red); }
+
+/* Agent thinking stream in swarm panel */
+.agent-think-stream {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  line-height: 1.55;
+  color: var(--color-faint);
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-soft);
+  max-height: 80px;
+  overflow: hidden;
+  position: relative;
+}
+.agent-think-stream::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 24px;
+  background: linear-gradient(transparent, var(--color-bg));
+  border-radius: 0 0 6px 6px;
+}
+
+/* ── Model pill ─────────────────────────────────────────────────────────── */
+.model-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+.model-pill:hover { border-color: var(--color-copper); box-shadow: var(--shadow-card); }
+
+/* ── Markdown ───────────────────────────────────────────────────────────── */
+.md { font-size: 14.5px; line-height: 1.72; color: var(--color-text); word-break: break-word; }
+.md p { margin: 0 0 0.7em; }
+.md h1,.md h2,.md h3 { font-family: var(--font-display); font-weight: 500; margin: 1.15em 0 0.5em; line-height: 1.25; letter-spacing: -0.01em; }
+.md h1 { font-size: 1.5em; } .md h2 { font-size: 1.28em; } .md h3 { font-size: 1.1em; }
+.md ul,.md ol { margin: 0 0 0.7em; padding-left: 1.3em; }
+.md li { margin: 0.22em 0; }
+.md li::marker { color: var(--color-faint); }
+.md a { color: var(--color-copper-lo); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.md strong { color: var(--color-text); font-weight: 600; }
+.md blockquote { border-left: 2.5px solid var(--color-copper); margin: 0 0 0.7em; padding-left: 0.95em; color: var(--color-muted); font-style: italic; }
+.md code:not(pre code) { font-family: var(--font-mono); font-size: 0.85em; background: var(--color-copper-wash); border: 1px solid #EEDDD3; padding: 0.12em 0.42em; border-radius: 5px; color: var(--color-copper-lo); }
+.md table { border-collapse: collapse; width: 100%; margin: 0 0 0.7em; font-size: 0.9em; }
+.md th,.md td { border: 1px solid var(--color-border); padding: 0.45em 0.65em; text-align: left; }
+.md th { background: var(--color-panel); font-weight: 600; }
+.md pre { margin: 0; }
+
+/* Code block inside md */
+.code-block {
+  position: relative;
+  margin: 8px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: #24221E;
+}
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background: #2A2824;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.code-block-lang {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  text-transform: lowercase;
+}
+.code-block-copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.code-block-copy:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.07); }
+.code-block pre {
+  overflow-x: auto;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.65;
+  color: #ECE6DA;
+  margin: 0;
+}
+
+/* ── Page-load reveal ───────────────────────────────────────────────────── */
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.45s var(--ease) both; }
+
+/* ── Modals ─────────────────────────────────────────────────────────────── */
+.backdrop { background: rgba(40,36,30,0.34); backdrop-filter: blur(3px); }
+@keyframes modal-in { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+.modal-card { animation: modal-in 0.28s var(--ease) both; box-shadow: 0 24px 70px rgba(40,36,30,0.22); }
+
+/* ── Range ──────────────────────────────────────────────────────────────── */
+input[type="range"] { -webkit-appearance: none; appearance: none; height: 5px; border-radius: 5px; background: var(--color-border); outline: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17px; height: 17px; border-radius: 50%; background: var(--color-copper); cursor: pointer; border: 3px solid #fff; box-shadow: var(--shadow-card); }
+
+/* ── Cap badges ─────────────────────────────────────────────────────────── */
+.cap-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 6px; font-size: 10px; font-weight: 500; background: var(--color-panel); border: 1px solid var(--color-border-soft); color: var(--color-muted); }
+
+/* ── Live tool output (streamed stdout/stderr) ──────────────────────────── */
+.tool-stream {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: #D6CFC0;
+  background: #24221E;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.tool-stream-live { border-color: rgba(217,119,87,0.35); }
+.tool-stream .cursor::after {
+  content: "▋";
+  color: var(--color-copper);
+  animation: caret-blink 0.9s ease-in-out infinite;
+}
+
+/* ── Cache hit badge (transparency: answered from memory) ───────────────── */
+.cache-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-cyan);
+  background: rgba(91,108,176,0.08);
+  border: 1px solid rgba(91,108,176,0.2);
+  padding: 2px 9px;
+  border-radius: 20px;
+}
+
+/* ── Swarm plan + workers (clean, informative — no gimmick) ─────────────── */
+.worker-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-elevated);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.worker-row.running { border-color: rgba(217,119,87,0.4); background: var(--color-copper-wash); }
+.worker-row.done    { border-color: var(--color-border-soft); opacity: 0.78; }
+.worker-role {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--color-panel);
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+.worker-row.running .worker-role { background: rgba(217,119,87,0.16); color: var(--color-copper-lo); }
+.worker-status-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--color-faint);
+}
+.worker-row.running .worker-status-dot { background: var(--color-copper); animation: status-dot-pulse 1.4s ease-in-out infinite; }
+.worker-row.done .worker-status-dot { background: var(--color-green); }
+
+/* ── Buttons (industry-standard, calm) ──────────────────────────────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  font-size: 13.5px; font-weight: 500;
+  padding: 9px 16px; border-radius: 10px;
+  background: var(--color-copper); color: #fff;
+  border: 1px solid var(--color-copper-lo);
+  cursor: pointer; transition: all 0.16s var(--ease);
+}
+.btn-primary:hover { background: var(--color-copper-lo); box-shadow: var(--shadow-card); }
+.btn-primary:active { transform: translateY(0.5px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  font-size: 13.5px; font-weight: 500;
+  padding: 9px 16px; border-radius: 10px;
+  background: var(--color-elevated); color: var(--color-text);
+  border: 1px solid var(--color-border);
+  cursor: pointer; transition: all 0.16s var(--ease);
+}
+.btn-ghost:hover { border-color: var(--color-faint); background: var(--color-panel); }
+
+/* Subtle link underline draw on hover (restrained) */
+.md a { background-image: linear-gradient(var(--color-copper-lo), var(--color-copper-lo)); background-size: 0% 1px; background-position: 0 100%; background-repeat: no-repeat; transition: background-size 0.25s var(--ease); text-decoration: none; }
+.md a:hover { background-size: 100% 1px; }
+
+/* ── Model Council ──────────────────────────────────────────────────────── */
+.council-card {
+  border: 1px solid var(--color-border);
+  background: var(--color-elevated);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow-card);
+  animation: council-in 0.3s var(--ease) both;
+}
+@keyframes council-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.council-head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--color-text);
+}
+.council-sub { font-size: 10.5px; font-weight: 400; color: var(--color-faint); margin-left: 2px; }
+.council-member { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
+.council-name { font-size: 12px; color: var(--color-text); min-width: 110px; }
+.council-state { font-size: 11px; color: var(--color-faint); font-family: var(--font-mono); }
+.council-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-faint); flex-shrink: 0; }
+.council-dot.answering { background: var(--color-copper); animation: status-dot-pulse 1.3s ease-in-out infinite; }
+.council-dot.done { background: var(--color-green); }
+
+/* toggled-on pill (Council) */
+.model-pill.pill-on {
+  background: var(--color-copper-wash);
+  border-color: var(--color-copper);
+  color: var(--color-copper-lo);
+}
+
+/* ── Thinking — refined live shimmer (Perplexity/Codex-grade) ───────────── */
+.think-label-live {
+  position: relative;
+}
+.think-stream { position: relative; }
+/* a soft gradient veil that sweeps the freshly-streamed thought */
+.think-stream::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(217,119,87,0.06), transparent);
+  background-size: 220% 100%;
+  animation: think-sweep 2.4s linear infinite;
+  border-radius: 6px;
+}
+@keyframes think-sweep { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

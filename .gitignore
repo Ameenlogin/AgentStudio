@@ -1,0 +1,33 @@
+# ───── Secrets (NEVER commit) ─────
+backend/config/keys.py
+*.env
+.env
+.env.*
+!*.env.example
+
+# ───── Local runtime state / data ─────
+backend/agent_studio.db
+*.db
+backend/response_cache.json
+backend/workspace/
+
+# ───── Python ─────
+backend/venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ───── Node / frontend build ─────
+node_modules/
+frontend/dist/
+dist/
+
+# ───── OS / editor ─────
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Large third-party vendored skill (its own git repo)
+backend/skills/open-design/
