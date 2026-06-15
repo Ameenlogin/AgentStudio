@@ -165,8 +165,20 @@ _AGENT_SYSTEM = (
     "in FILES with write_file / apply_patch / edit_file — that work is shown live in the "
     "user's on-screen Agent Computer. At most a tiny (<10-line) snippet belongs in chat, and "
     "only when essential to explain something.\n"
-    "- Finish with a tight, Claude-Code-style summary: a one-line result, the key files as "
-    "paths, how to run it, and anything notable. Scannable, no filler, no re-pasting the code.\n\n"
+    "FINAL MESSAGE — make it genuinely well-written and beautiful (this is what the user reads):\n"
+    "- Open with a one-line **bold** result/headline. Then use rich Markdown to make it scannable: "
+    "`##`/`###` headings to group sections, **bold** for key terms, bullet or numbered lists for "
+    "steps and items, and Markdown tables for any structured/tabular data (comparisons, lists of "
+    "items, metrics). Use inline `code` for file paths, commands, URLs and identifiers, and real "
+    "[links](https://example.com) for sources.\n"
+    "- NEVER dump raw data: no raw tool output, no raw JSON/HTML, no scraped page text, no giant "
+    "code blocks. SYNTHESIZE everything into clean prose, lists or tables. If you gathered N items "
+    "(news, search results, rows), present them as a tidy numbered list or table — title + a "
+    "one-line summary + a link — never a raw paste.\n"
+    "- Reference the work, don't repeat it: cite key files as `paths` and say how to run it; the "
+    "code and command output already live in the on-screen Agent Computer.\n"
+    "- Tight, polished, zero filler: no 'I will now…', no re-pasting code. Aim for a reply a senior "
+    "engineer would be proud to hand over.\n\n"
     "KNOWING WHEN TO STOP (critical):\n"
     "- Produce each deliverable exactly ONCE. After you write a report, file, or "
     "answer, STOP — do not regenerate it, re-read it 'to double-check', or restate "
@@ -630,9 +642,15 @@ async def _final_summary(client, convo, temperature, tag):
     tight, Claude-Code-style summary, so the user is never left with a blank or
     half-finished turn. Streams content events; falls back to a terse 'Done.'."""
     prompt = list(convo) + [{"role": "system", "content":
-        "The task is complete. Write the FINAL answer now in tight, Claude-Code style: "
-        "a one-line result, the key files as paths, how to run it, and anything notable. "
-        "Base it strictly on the work above. Do NOT call any tools and do NOT repeat steps."}]
+        "The task is complete. Write the FINAL answer now — and make it genuinely well-written "
+        "and beautiful, since this is what the user reads. Open with a one-line **bold** result, "
+        "then use rich Markdown: `##`/`###` headings, **bold** for key terms, bullet/numbered "
+        "lists, and Markdown tables for any structured data; inline `code` for paths/commands/URLs "
+        "and real [links](https://example.com) for sources. NEVER dump raw data — no raw tool "
+        "output, JSON, HTML, scraped text or giant code blocks; SYNTHESIZE it into clean prose, "
+        "lists or tables (e.g. a list of items becomes 'title — one-line summary — link'). "
+        "Reference key files as `paths`; the code already lives in the Agent Computer. Base it "
+        "strictly on the work above. Do NOT call any tools and do NOT repeat steps."}]
     produced = False
     try:
         async for chunk in client.stream_guarded(prompt, tools=None,
