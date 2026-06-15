@@ -16,9 +16,6 @@ async def chat_endpoint(request: Request, db: Session = Depends(get_db)):
     messages = data.get("messages", [])
     model_override = data.get("model_name", None)
     skill = (data.get("skill") or "").strip() or None
-    effort = (data.get("effort") or "medium").strip().lower()
-    if effort not in ("medium", "high", "max"):
-        effort = "medium"
 
     settings = db.query(Setting).first()
     if not settings or not settings.api_key:
@@ -42,7 +39,6 @@ async def chat_endpoint(request: Request, db: Session = Depends(get_db)):
         permission_mode=settings.permission_mode or "ask",
         swarm_mode=settings.swarm_mode or "auto",
         skill=skill,
-        effort=effort,
     )
 
     async def gen():

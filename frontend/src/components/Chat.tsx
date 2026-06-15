@@ -38,9 +38,8 @@ const MODELS = [
 // Streamlined live status: just "Thinking…" (or the running tool's label) — no
 // inline icon, since the message's spark already spins while the agent works.
 function LiveStatus({ blocks, pending }: { blocks: Block[]; pending: boolean }) {
-  const effort = useStore((s) => s.effort);
   const last = blocks[blocks.length - 1];
-  let label = effort === 'max' ? 'Thinking deeply' : effort === 'high' ? 'Thinking hard' : 'Thinking';
+  let label = 'Thinking';
   if (pending) {
     label = 'Awaiting your approval';
   } else if (last?.type === 'tool' && (last as ToolBlock).status === 'running') {
@@ -68,7 +67,6 @@ export default function Chat() {
     showSwarmPanel, toggleSwarmPanel,
     setSwarmPlan, updateSwarmWorker, resetSwarm,
     skills, composerInsert, setComposerInsert,
-    effort,
   } = useStore();
 
   const [input, setInput]         = useState('');
@@ -212,7 +210,7 @@ export default function Chat() {
       const res = await fetch(api('/api/chat/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, model_name: selectedModel, skill, effort }),
+        body: JSON.stringify({ messages: history, model_name: selectedModel, skill }),
         signal: ctrl.signal,
       });
 
@@ -635,7 +633,7 @@ export default function Chat() {
 
           <p className="text-center text-[10.5px] text-[var(--color-faint)] mt-1.5">
             <ModeIcon className="w-2.5 h-2.5 inline-block mr-1 -mt-0.5 text-[var(--color-copper)]" />
-            {activeMode.label} mode · <span className="capitalize">{effort}</span> effort · {activeMode.desc}
+            {activeMode.label} mode · {activeMode.desc}
           </p>
         </div>
       </div>

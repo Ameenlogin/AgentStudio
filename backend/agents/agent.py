@@ -164,28 +164,14 @@ _AGENT_SYSTEM = (
 )
 
 
-# ── Effort levels ────────────────────────────────────────────────────────────
-# The composer's effort toggle (Medium / High / Max) governs how hard the agent
-# works. Higher effort = deeper reasoning, more steps, lower temperature (more
-# precise) and more token head-room to think — at the cost of more model calls,
-# which the API pool paces under the rate limit automatically.
-_HIGH_SUFFIX = (
-    "\n\nEFFORT: HIGH. Plan before you act — outline the approach and consider the "
-    "edge cases, then verify your work (run or inspect it) before the final answer. "
-    "Favor correctness and completeness over speed."
-)
-_MAX_SUFFIX = (
-    "\n\nEFFORT: MAXIMUM — do your best work. Reason step by step in depth and choose "
-    "the BEST solution, not the first that works. Anticipate edge cases and failure "
-    "modes, and self-verify rigorously: run it, read the output, fix what's wrong, and "
-    "only finish when the result is correct and complete. Take the steps you need; do "
-    "not cut corners. Quality and correctness come before speed."
-)
-_EFFORT = {
-    "medium": {"steps_mult": 1.0, "temp": None, "max_tokens": 16384, "suffix": ""},
-    "high":   {"steps_mult": 1.6, "temp": 0.45, "max_tokens": 24576, "suffix": _HIGH_SUFFIX},
-    "max":    {"steps_mult": 2.4, "temp": 0.35, "max_tokens": 32768, "suffix": _MAX_SUFFIX},
-}
+# ── Single fast, high-quality path ───────────────────────────────────────────
+# The agent runs ONE tuned path optimized for speed AND quality. Reasoning is
+# disabled at the model layer (see KimiClient `thinking=False`) so the first
+# token arrives fast and the answer streams Claude-Code-style; quality comes
+# from the act→observe→verify tool loop and the prompt, not from slow internal
+# "thinking" traces. The old Medium/High/Max effort toggle was removed on
+# purpose: forcing deep reasoning on every turn is exactly what made it slow.
+MAX_OUTPUT_TOKENS = 16384   # per-step ceiling; truncated answers auto-continue
 
 
 def _status_ev(pool):
@@ -201,7 +187,7 @@ def _status_ev(pool):
 async def run_agent(messages, *, api_keys, base_url, model_name,
                     temperature=0.6, system_prompt=None, max_steps=50,
                     tools_enabled=True, permission_mode="ask", swarm_mode="auto",
-                    skill=None, effort="medium"):
+                    skill=None):
     valid_keys = [k for k in api_keys if k and k.strip()]
     if not valid_keys:
         yield _ev({"type": "error",
@@ -210,14 +196,13 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
 
     pool = APIPool(valid_keys, base_url)
 
-    # Resolve the effort level into concrete knobs once, then apply everywhere.
-    eff = _EFFORT.get((effort or "medium").lower(), _EFFORT["medium"])
-    eff_steps = min(int((max_steps or 50) * eff["steps_mult"]), 400)
-    eff_temp = eff["temp"] if eff["temp"] is not None else temperature
-    base_prompt = (system_prompt or _AGENT_SYSTEM) + eff["suffix"]
+    # One tuned path: a generous step budget and the built-in prompt. Speed comes
+    # from reasoning-off streaming; quality comes from the verify loop + prompt.
+    max_steps_eff = min(max_steps or 80, 400)
+    base_prompt = system_prompt or _AGENT_SYSTEM
 
     client = KimiClient(pool=pool, base_url=base_url, model_name=model_name,
-                        max_tokens=eff["max_tokens"])
+                        max_tokens=MAX_OUTPUT_TOKENS)
 
     # -- EXPLICIT SKILL INVOCATION (/skill …) ---------------------------------
     # The user invoked a skill by name. Inject its full guide into the system
@@ -236,18 +221,12 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
                       f"skill is installed. Proceed normally and mention this.)")
         convo = [{"role": "system", "content": _compose_system(base_prompt) + active}]
         convo.extend(messages)
-        async for ev in agentic_loop(client, pool, convo, AVAILABLE_TOOLS, eff_temp,
-                                     eff_steps, permission_mode):
+        async for ev in agentic_loop(client, pool, convo, AVAILABLE_TOOLS, temperature,
+                                     max_steps_eff, permission_mode):
             yield ev
         return
 
     mode = router.classify(messages) if tools_enabled else "simple"
-
-    # High/Max effort: only trivial chit-chat stays on the instant path; any real
-    # question gets the full reasoning loop so the effort setting is actually felt.
-    if effort in ("high", "max") and mode == "simple" and tools_enabled \
-            and not router.is_trivial(messages):
-        mode = "agentic"
 
     # -- FAST PATH ------------------------------------------------------------
     if mode == "simple":
@@ -266,8 +245,8 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
         from agents.orchestrator import run_swarm
         async for ev in run_swarm(
             messages, client=client, pool=pool, model_name=model_name,
-            temperature=eff_temp, system_prompt=base_prompt,
-            max_steps=eff_steps, permission_mode=permission_mode,
+            temperature=temperature, system_prompt=base_prompt,
+            max_steps=max_steps_eff, permission_mode=permission_mode,
         ):
             yield ev
         return
@@ -278,8 +257,8 @@ async def run_agent(messages, *, api_keys, base_url, model_name,
     convo.extend(messages)
 
     tools = AVAILABLE_TOOLS if tools_enabled else None
-    async for ev in agentic_loop(client, pool, convo, tools, eff_temp,
-                                 eff_steps, permission_mode):
+    async for ev in agentic_loop(client, pool, convo, tools, temperature,
+                                 max_steps_eff, permission_mode):
         yield ev
 
 
@@ -322,29 +301,37 @@ def _step_signature(ordered: list[dict]) -> str:
     return hashlib.sha256("\x01".join(items).encode("utf-8", "ignore")).hexdigest()
 
 
-async def _model_turn(client, send, tools, temperature, tag, *, thinking=True, max_retries=3):
+async def _model_turn(client, send, tools, temperature, tag, *, thinking=False, max_retries=3):
     """Resiliently stream ONE model turn.
 
     Yields event strings for the live UI as deltas arrive, then finishes with a
     final tuple:
-      ("__result__", text_buf:list, tool_calls:dict)   — usable turn
+      ("__result__", text_buf:list, tool_calls:dict, finish_reason:str|None)
       ("__error__", message:str)                        — gave up after retries
 
-    A stream that dies *before* producing anything usable is retried cleanly (no
-    duplicated output). A stream that dies *after* producing usable content/tool
-    calls finishes with what arrived — so the agent keeps going instead of
-    surfacing "Stream interrupted".
+    ``finish_reason`` lets the loop tell a clean stop ("stop"/"tool_calls") from
+    a truncated answer ("length") it should auto-continue. A stream that dies
+    *before* producing anything usable is retried cleanly (no duplicated output);
+    one that dies *after* producing usable content/tool calls finishes with what
+    arrived — so the agent keeps going instead of surfacing "Stream interrupted".
+
+    Reasoning is OFF by default (``thinking=False``) so the first token lands
+    fast; the model still streams a reasoning trace if it emits one natively.
     """
     for attempt in range(max_retries):
         text_buf: list[str] = []
         tool_calls: dict = {}
+        finish_reason: str | None = None
         emitted = False
         try:
             async for chunk in client.stream_guarded(send, tools=tools,
                                                      temperature=temperature, thinking=thinking):
                 if not chunk.choices:
                     continue
-                delta = chunk.choices[0].delta
+                choice = chunk.choices[0]
+                if choice.finish_reason:
+                    finish_reason = choice.finish_reason
+                delta = choice.delta
 
                 reasoning = extract_reasoning(delta)
                 if reasoning:
@@ -366,7 +353,7 @@ async def _model_turn(client, send, tools, temperature, tag, *, thinking=True, m
                         if tc.function and tc.function.arguments:
                             slot["args"] += tc.function.arguments
 
-            yield ("__result__", text_buf, tool_calls)
+            yield ("__result__", text_buf, tool_calls, finish_reason)
             return
         except Exception as e:
             have_text = bool("".join(text_buf).strip())
@@ -379,7 +366,7 @@ async def _model_turn(client, send, tools, temperature, tag, *, thinking=True, m
                 continue
             # Complete tool calls (or solid text with no partial tool args) → use them.
             if tools_ok or (have_text and not have_tools):
-                yield ("__result__", text_buf, tool_calls if tools_ok else {})
+                yield ("__result__", text_buf, tool_calls if tools_ok else {}, finish_reason)
                 return
             # Partial/garbled output → one more clean retry if we can.
             if attempt < max_retries - 1:
@@ -404,6 +391,12 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
     content_seen: dict[str, int] = {}
     nudges_used = 0
 
+    # Truncation watchdog: if the model stops because it hit the token ceiling
+    # (finish_reason == "length") we transparently continue the generation
+    # instead of handing back a half-finished answer. Bounded so it can't loop.
+    MAX_CONTINUATIONS = 6
+    continuations = 0
+
     for step in range(1, max_steps + 1):
         if not agent_id:
             yield _status_ev(pool)
@@ -419,24 +412,35 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
 
         text_buf = []
         tool_calls = {}
+        finish_reason = None
         step_error = None
 
         async for item in _model_turn(client, send, tools, temperature, tag):
             if isinstance(item, str):
                 yield item                       # live reasoning/content delta
             elif item[0] == "__result__":
-                text_buf, tool_calls = item[1], item[2]
+                text_buf, tool_calls, finish_reason = item[1], item[2], item[3]
             elif item[0] == "__error__":
                 step_error = item[1]
 
         if step_error is not None:
             yield _ev({"type": "error",
-                       "error": f"The model connection dropped before finishing ({step_error}). "
-                                f"Please send the message again.", **tag})
+                       "error": f"The connection to the model dropped and couldn't be recovered "
+                                f"after retries ({step_error}). Your conversation is saved — send "
+                                f"your last message again to continue.", **tag})
             return
 
         if not tool_calls:
-            if not "".join(text_buf).strip() and not agent_id:
+            full_text = "".join(text_buf)
+            # Auto-continue a truncated answer instead of stopping mid-sentence.
+            if finish_reason == "length" and full_text.strip() and continuations < MAX_CONTINUATIONS:
+                continuations += 1
+                convo.append({"role": "assistant", "content": full_text})
+                convo.append({"role": "user", "content":
+                    "Continue exactly where you left off. Do not repeat anything you already "
+                    "wrote — just keep going seamlessly until the answer is complete."})
+                continue
+            if not full_text.strip() and not agent_id:
                 yield _ev({"type": "content",
                            "delta": "I finished without producing a visible answer. "
                                     "Could you rephrase or add a bit more detail?"})

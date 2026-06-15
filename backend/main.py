@@ -60,10 +60,11 @@ with Session(engine) as session:
         _KEYS = []
     # Ignore blanks and the example placeholder so a copied template never seeds.
     _KEYS = [k for k in (_KEYS or []) if k and k.strip() and "YOUR_KEY" not in k]
-    if not (row.api_key or "").strip() and _KEYS:
-        row.api_key = _KEYS[0]
-    row.api_key_2 = ""
-    row.api_key_3 = ""
+    # Seed any empty key slots from a local keys.py (optional), but NEVER wipe
+    # keys the user saved — extra keys multiply the rate-limit head-room.
+    for _i, _attr in enumerate(("api_key", "api_key_2", "api_key_3")):
+        if not (getattr(row, _attr, "") or "").strip() and _i < len(_KEYS):
+            setattr(row, _attr, _KEYS[_i])
     if not (row.base_url or "").strip():
         row.base_url = _BASE_URL
     if not (row.model_name or "").strip():

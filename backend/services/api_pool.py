@@ -3,8 +3,8 @@ rotation and multi-endpoint (region) routing.
 
 Core guarantee: each key is held to a safety cap (SAFE_RPM = 36) via a 60s
 sliding window — deliberately under NVIDIA's 40 RPM/key limit so a key never
-reaches 40/40 in a minute and we never trip a 429, even on High/Max effort
-where the agent makes more calls. On top of that:
+reaches 40/40 in a minute and we never trip a 429, even on long agentic tasks
+that make many calls. On top of that:
 
   • Health-aware rotation — `acquire()` hands out the *healthiest* key with the
     most head-room instead of a blind round-robin, and steers away from any key
@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from openai import AsyncOpenAI
 
 # Safety cap per key: stay comfortably below NVIDIA's 40 RPM/key hard limit so a
-# key never reaches 40/40 in any 60s window (no 429s, even at Max effort).
+# key never reaches 40/40 in any 60s window (no 429s, even on long tool loops).
 SAFE_RPM = 36
 
 

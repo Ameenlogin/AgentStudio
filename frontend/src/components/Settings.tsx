@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes, Gauge } from 'lucide-react';
+import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes } from 'lucide-react';
 import { api } from '../lib/api';
-import { useStore } from '../store/useStore';
-
-const EFFORTS = [
-  { id: 'medium', label: 'Medium', desc: 'Fast and balanced — the everyday default.' },
-  { id: 'high',   label: 'High',   desc: 'Plans ahead, weighs edge cases, verifies before finishing.' },
-  { id: 'max',    label: 'Max',    desc: 'Deepest reasoning + rigorous self-verification. Best quality, slower.' },
-] as const;
 
 const DEFAULTS = {
   base_url: 'https://integrate.api.nvidia.com/v1',
@@ -51,8 +44,6 @@ export default function Settings() {
   const [save, setSave] = useState<SaveStatus>('idle');
   const [loading, setLoading] = useState(true);
   const set = (k: string, v: any) => setS((p: any) => ({ ...p, [k]: v }));
-  const effort = useStore((st) => st.effort);
-  const setEffort = useStore((st) => st.setEffort);
 
   useEffect(() => {
     fetch(api('/api/settings/')).then((r) => r.json()).then((d) => {
@@ -168,30 +159,6 @@ export default function Settings() {
           <Card icon={FolderCog} title="Workspace folder">
             <input value={s.workspace_path} onChange={(e) => set('workspace_path', e.target.value)} className={inputCls} />
             <p className="text-xs text-[var(--color-faint)] mt-2">The only folder the agent can read, write and run commands in. Relative paths are based on the backend folder.</p>
-          </Card>
-
-          <Card icon={Gauge} title="Effort">
-            <p className="text-sm text-[var(--color-muted)] mb-3">
-              How hard the agent thinks and works on each task. Higher effort means deeper
-              reasoning and self-verification (and more model calls). Applies immediately.
-            </p>
-            <div className="space-y-2">
-              {EFFORTS.map((e) => (
-                <button
-                  key={e.id}
-                  onClick={() => setEffort(e.id)}
-                  className={`w-full text-left rounded-xl border px-3.5 py-3 transition ${
-                    effort === e.id ? 'border-[var(--color-copper)] bg-[var(--color-copper-wash)]' : 'border-[var(--color-border)] hover:border-[var(--color-faint)]'
-                  }`}
-                >
-                  <div className="text-[14px] font-medium flex items-center gap-2">
-                    {e.label}
-                    {e.id === 'medium' && <span className="text-[10px] font-normal text-[var(--color-faint)] uppercase tracking-wide">default</span>}
-                  </div>
-                  <div className="text-[12px] text-[var(--color-muted)]">{e.desc}</div>
-                </button>
-              ))}
-            </div>
           </Card>
 
           <Card icon={Wrench} title="Tools">

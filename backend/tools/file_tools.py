@@ -273,6 +273,43 @@ def glob_files(pattern: str, path: str = ".") -> str:
     return f"{len(hits)} match(es) for '{pattern}':\n" + out + ("\n[...truncated]" if len(hits) > 300 else "")
 
 
+_GREP_SKIP = (".git", "node_modules", "__pycache__", "venv", ".venv", "dist", ".next")
+
+
+def _grep_ripgrep(pattern: str, root: str, glob: str = "") -> str | None:
+    """Fast path: shell out to ripgrep when it's installed (10–100× faster on
+    large codebases). Returns the formatted result, or None to fall back to the
+    pure-Python walk (rg missing, or rg reported an internal error)."""
+    import shutil as _sh
+    import subprocess as _sp
+    from tools.sandbox import get_workspace
+    rg = _sh.which("rg")
+    if not rg:
+        return None
+    sub = rel(root) or "."
+    cmd = [rg, "-n", "--no-heading", "--color=never"]
+    for ex in _GREP_SKIP:
+        cmd += ["-g", f"!{ex}"]
+    if glob:
+        cmd += ["-g", glob]
+    cmd += ["-e", pattern, "--", sub]
+    try:
+        proc = _sp.run(cmd, cwd=get_workspace(), capture_output=True, text=True, timeout=30)
+    except Exception:
+        return None
+    if proc.returncode == 1:                      # ran fine, zero matches
+        return f"No matches for /{pattern}/ under {sub}/"
+    if proc.returncode != 0:                       # rg errored → use Python path
+        return None
+    lines = [ln for ln in proc.stdout.splitlines() if ln.strip()]
+    if not lines:
+        return f"No matches for /{pattern}/ under {sub}/"
+    body = "\n".join(ln[:240] for ln in lines[:200])
+    if len(lines) > 200:
+        body += "\n[...more matches truncated]"
+    return body
+
+
 def grep(pattern: str, path: str = ".", glob: str = "") -> str:
     """Regex search file contents across the workspace (ripgrep-style)."""
     import re as _re
@@ -282,6 +319,9 @@ def grep(pattern: str, path: str = ".", glob: str = "") -> str:
     except _re.error as e:
         return f"Error: invalid regex: {e}"
     root = resolve(path)
+    rg_result = _grep_ripgrep(pattern, root, glob)
+    if rg_result is not None:
+        return rg_result
     skip = {".git", "node_modules", "__pycache__", "venv", "dist", ".venv", ".next"}
     hits = []
     for dirpath, dirnames, filenames in os.walk(root):
