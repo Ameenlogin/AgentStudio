@@ -37,6 +37,7 @@ with engine.begin() as _conn:
         ("messages", "content_hash", "VARCHAR"),
         ("settings", "swarm_mode", "VARCHAR DEFAULT 'auto'"),
         ("settings", "mode", "VARCHAR DEFAULT 'sandbox'"),
+        ("settings", "custom_models", "TEXT DEFAULT '[]'"),
     ]:
         try:
             _cols = [r[1] for r in _conn.execute(_sql_text(f"PRAGMA table_info({_table})"))]

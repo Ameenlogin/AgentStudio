@@ -63,7 +63,7 @@ export default function Chat() {
     messages, pushUser, startAssistant, appendText, appendThinking,
     startTool, appendToolStream, finishTool, setView, currentId, setCurrentId,
     pendingPermission, setPendingPermission,
-    selectedModel, setSelectedModel, swarmStatus, setSwarmStatus,
+    selectedModel, setSelectedModel, customModels, setCustomModels, swarmStatus, setSwarmStatus,
     showSwarmPanel, toggleSwarmPanel,
     setSwarmPlan, updateSwarmWorker, resetSwarm,
     skills, composerInsert, setComposerInsert,
@@ -107,6 +107,10 @@ export default function Chat() {
       setHasKey(!!d.api_key);
       setShowAccess(!d.desktop_granted);
       if (d.mode) setMode(d.mode);
+      // Keep the composer's model picker in sync with saved settings, including
+      // any user-added custom models so they're selectable right here.
+      if (Array.isArray(d.custom_models)) setCustomModels(d.custom_models);
+      if (d.model_name) setSelectedModel(d.model_name);
     }).catch(() => {});
 
   const changeMode = async (m: string) => {
@@ -296,7 +300,14 @@ export default function Chat() {
 
   const empty        = messages.length === 0;
   const lastId       = messages.length ? messages[messages.length - 1].id : '';
-  const activeModel  = MODELS.find(m => m.id === selectedModel) || MODELS[0];
+  // Built-in models + the user's custom ones (custom never shadows a built-in id).
+  const builtinIds   = new Set(MODELS.map(m => m.id));
+  const customAsModels = (customModels || [])
+    .filter(m => m && m.id && !builtinIds.has(m.id))
+    .map(m => ({ id: m.id, short: m.label || m.id, caps: ['custom'] as string[] }));
+  const allModels    = [...MODELS, ...customAsModels];
+  const activeModel  = allModels.find(m => m.id === selectedModel)
+    || { id: selectedModel, short: selectedModel.split('/').pop() || selectedModel, caps: ['custom'] as string[] };
   const activeMode   = MODES.find(m => m.id === mode) || MODES[0];
   const ModeIcon     = activeMode.icon;
 
@@ -614,7 +625,7 @@ export default function Chat() {
                     <div className="text-[10px] font-semibold text-[var(--color-faint)] px-2.5 py-1.5 border-b border-[var(--color-border-soft)] mb-1 uppercase tracking-[0.1em]">
                       Model
                     </div>
-                    {MODELS.map(m => (
+                    {allModels.map(m => (
                       <button
                         key={m.id}
                         onClick={() => { setSelectedModel(m.id); setShowModelMenu(false); }}

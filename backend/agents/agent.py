@@ -7,6 +7,9 @@
   {"type":"tool_stream", "id","delta":"..."[,"agent"]}   # live stdout/stderr
   {"type":"tool_result", "id","ok":true,"result":"..."[,"agent"]}
   {"type":"cache_hit",   "similarity":0.97}     # answered from semantic cache
+  {"type":"todo_update", "todos":[{"id","content","status"}]}  # live checklist
+  {"type":"goal_progress","goal","progress","percent"}         # high-level goal
+  {"type":"verification_result","passed":true,"label":"..."}   # verify_work verdict
   {"type":"swarm_plan",  "plan","subtasks":[...]}
   {"type":"swarm_agent", "id","role","title","status"}
   {"type":"heartbeat"}                          # keep-alive while awaiting input
@@ -31,6 +34,8 @@ from services.kimi_client import KimiClient, extract_reasoning
 from services.api_pool import APIPool
 from services.cache import cache
 from services import skills as skills_service
+from services import todo_manager
+from services import project_memory
 from tools.tool_router import (
     AVAILABLE_TOOLS, TOOL_META, RISKY_KINDS, execute_tool,
     execute_tool_streaming, is_parallel_safe, STREAMING_DISPATCH,
@@ -65,8 +70,14 @@ def _env_preamble() -> str:
 
 
 def _compose_system(base: str) -> str:
-    """Final system prompt = live environment + base instructions + installed skills."""
+    """Final system prompt = live environment + project rules + base instructions
+    + installed skills. Project instruction files (AGENTS.md / CLAUDE.md /
+    .cursorrules …) found in the workspace are auto-injected so the agent respects
+    house rules without being told."""
     parts = [_env_preamble(), base]
+    pm = project_memory.scan()
+    if pm:
+        parts.append("\n\n" + pm)
     sk = skills_service.skills_prompt()
     if sk:
         parts.append("\n\n" + sk)
@@ -89,7 +100,10 @@ _AGENT_SYSTEM = (
     "- Real browser (Chrome via Playwright): browser_goto/click/type/fill/scroll/"
     "key_press, coordinate clicks (browser_click_at / browser_type_at), multi-tab, "
     "file upload, screenshots, the accessibility tree, wait primitives, and cookie "
-    "session save/load — for JS-heavy sites, logins and interactive flows.\n\n"
+    "session save/load — for JS-heavy sites, logins and interactive flows.\n"
+    "- Self-management: todo_write (live checklist for multi-step work), verify_work "
+    "(run tests/build for a PASSED/FAILED verdict), update_goal (progress), and "
+    "scan_project_instructions (re-read AGENTS.md/CLAUDE.md/.cursorrules house rules).\n\n"
     "YOU CAN BUILD: full websites and web apps, frontend/backend systems, CLIs, "
     "scripts, data pipelines, WordPress themes & plugins (PHP), static sites, "
     "design assets (SVG/HTML/CSS), documents and PDFs — any file type.\n\n"
@@ -136,6 +150,28 @@ _AGENT_SYSTEM = (
     "— do not give up or claim a capability is unavailable.\n"
     "- When asked to package or zip results, produce the artifact and confirm its "
     "path so the user can download it.\n\n"
+    "AMBITIOUS, MULTI-STEP WORK — plan, track, verify (do this for any task with 3+ "
+    "real steps; skip it for quick one-shot answers so simple tasks stay fast):\n"
+    "- EXPLORE first when the work is non-trivial or ambiguous: read the key files "
+    "(grep / read_file / tree_directory) and understand the project before you change "
+    "anything. For genuinely ambiguous scope, ask ONE sharp clarifying question rather "
+    "than guessing — but never shrink the task to make it easier.\n"
+    "- TRACK with todo_write: break the work into a short checklist up front and call "
+    "todo_write. Mark each item in_progress when you start it and completed the instant "
+    "it's done, updating after every meaningful step. This is the single biggest thing "
+    "that keeps long tasks on the rails — never let the list go stale, and don't stop "
+    "while an item is still pending or in_progress.\n"
+    "- VERIFY before you claim success: after writing or changing code, actually run it — "
+    "verify_work (it auto-runs the tests/build and returns PASSED/FAILED) or run_command / "
+    "python_exec — then READ the output and fix any failure. Never say 'done' or 'it works' "
+    "until verification has actually passed. Verified-working beats 'should work'.\n"
+    "- SELF-REVIEW on big changes: before finishing, re-read your own diff with a critical "
+    "eye (git_diff / read_file) and check it against the original request — then verify.\n"
+    "- RESPECT project rules: any AGENTS.md / CLAUDE.md / .cursorrules found in the workspace "
+    "is auto-loaded above as [PROJECT INSTRUCTIONS]; follow it as authoritative.\n"
+    "- Match ceremony to size: a one-file change or a direct question needs no todo list or "
+    "verification ritual — keep it fast. Reserve the full plan→track→verify discipline for "
+    "real, multi-step engineering.\n\n"
     "LARGE FILES, BIG CODEBASES & DATABASES — you are fully equipped, never give up:\n"
     "- Never say a file or project is 'too big'. To read a huge file, call read_file "
     "with offset/limit to page through it by line range; use grep to jump straight to "
@@ -412,6 +448,12 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
     tag = {"agent": agent_id} if agent_id else {}
     last_summary_len = len(convo)
 
+    # Per-run structured todo list, keyed so concurrent chats / swarm workers
+    # never clobber each other's checklist. Start this task with a clean list.
+    run_token = agent_id or f"run-{id(convo)}"
+    todo_manager.current_run.set(run_token)
+    todo_manager.reset(run_token)
+
     # No-progress guard: count how often the model asks for the exact same step
     # (same tool calls, or the same large answer). Repeats mean it's stuck in a
     # loop instead of finishing — we nudge it, then stop cleanly.
@@ -439,6 +481,12 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
                 last_summary_len = len(convo)
         send = prune_context(convo)
 
+        # Keep the live checklist in front of the model every turn (transient —
+        # not persisted into convo) so it never loses track on long tasks.
+        todo_block = todo_manager.active_block(run_token)
+        if todo_block:
+            send = send + [{"role": "system", "content": todo_block}]
+
         text_buf = []
         tool_calls = {}
         finish_reason = None
@@ -453,10 +501,13 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
                 step_error = item[1]
 
         if step_error is not None:
+            mdl = getattr(client, "model_name", "the model")
             yield _ev({"type": "error",
-                       "error": f"The connection to the model dropped and couldn't be recovered "
-                                f"after retries ({step_error}). Your conversation is saved — send "
-                                f"your last message again to continue.", **tag})
+                       "error": f"'{mdl}' didn't respond after several retries ({step_error}). On "
+                                f"NVIDIA NIM this usually means that model is busy or still warming "
+                                f"up (Kimi K2.6 is a 1T MoE and can be slow to start cold) — resend "
+                                f"your message, or switch to a faster model like GPT-OSS 120B in the "
+                                f"picker. Your conversation is saved.", **tag})
             return
 
         if not tool_calls:
@@ -627,6 +678,20 @@ async def agentic_loop(client, pool, convo, tools, temperature, max_steps,
         for c in calls:
             convo.append({"role": "tool", "tool_call_id": c["call_id"],
                           "content": str(results_by_id.get(c["call_id"], ""))[:16000]})
+
+        # ---- Self-management events: live todos / goal / verification -------
+        called = {c["name"] for c in calls}
+        if "todo_write" in called:
+            yield _ev({"type": "todo_update", "todos": todo_manager.get(run_token), **tag})
+        for c in calls:
+            if c["name"] == "update_goal":
+                yield _ev({"type": "goal_progress", "goal": c["args"].get("goal", ""),
+                           "progress": c["args"].get("progress", ""),
+                           "percent": c["args"].get("percent"), **tag})
+            elif c["name"] == "verify_work":
+                head = str(results_by_id.get(c["call_id"], "")).split("\n", 1)[0]
+                yield _ev({"type": "verification_result",
+                           "passed": "PASSED" in head, "label": head[:200], **tag})
 
     yield _ev({"type": "content",
                "delta": f"\n\n_(Reached the {max_steps}-step limit. Ask me to continue if needed.)_",

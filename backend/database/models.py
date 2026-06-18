@@ -18,6 +18,9 @@ class Setting(Base):
     api_key_3 = Column(String, nullable=True, default="")
     base_url = Column(String, default=_BASE_URL)
     model_name = Column(String, default=_MODEL)
+    # User-added custom models, JSON list of {"id","label"}. They show up in the
+    # model picker alongside the built-ins and persist across restarts.
+    custom_models = Column(Text, default="[]")
     temperature = Column(Float, default=0.6)
     system_prompt = Column(Text, default=None)  # None → agent uses its built-in prompt
     max_steps = Column(Integer, default=50)

@@ -20,6 +20,7 @@ from tools.archive_tools import (
 )
 from tools.pdf_tools import pdf_read, pdf_info, pdf_create
 from tools.data_tools import python_exec, python_exec_stream, install_package
+from tools.agent_tools import todo_write, verify_work, update_goal, scan_project_instructions
 from tools.browser_tools import (
     browser_launch, browser_goto, browser_back, browser_forward, browser_reload,
     browser_click, browser_click_at, browser_type, browser_type_at, browser_fill,
@@ -158,6 +159,35 @@ AVAILABLE_TOOLS = [
         {"n": {"type": "integer", "description": "Number of commits (default 10)."}}, []),
     _fn("git_commit", "Stage all changes and commit with a message.",
         {"message": _S}, ["message"]),
+    # ── Self-management (todos, verification, goals, project rules) ───────────
+    _fn("todo_write", "Create or update your LIVE TASK CHECKLIST. Call this for ANY task "
+        "with 3+ distinct steps, right after you understand the request, then update it after "
+        "every meaningful step. Pass the FULL list each time (it merges by id): mark an item "
+        "'in_progress' when you start it and 'completed' the moment it's done. This keeps you "
+        "on track on long, ambitious work and renders as a live checklist for the user.",
+        {"todos": {"type": "array", "description": "The full todo list.",
+                   "items": {"type": "object", "properties": {
+                       "id": {"type": "string", "description": "Stable short id, e.g. 't1'."},
+                       "content": {"type": "string", "description": "What this step does."},
+                       "status": {"type": "string", "enum": ["pending", "in_progress", "completed", "cancelled"]}},
+                    "required": ["id", "content", "status"]}}}, ["todos"]),
+    _fn("verify_work", "Prove your work actually runs: run tests / a build / a compile and get "
+        "a structured PASSED or FAILED verdict. Call this after implementing anything non-trivial "
+        "and whenever the user says 'verify', 'test' or 'make sure it works'. Pass an explicit "
+        "command (best) or a framework hint; with neither, it auto-detects pytest / npm / go / "
+        "cargo / make from the workspace. If it FAILS, read the output, fix the cause, and verify "
+        "again — never claim done while verification is failing.",
+        {"command": {"type": "string", "description": "Exact command, e.g. 'python -m pytest -q' or 'npm test'."},
+         "framework": {"type": "string", "description": "Optional hint: pytest | npm | build | go | cargo | make."}}, []),
+    _fn("update_goal", "Record the high-level goal and your progress toward it on a big task "
+        "(surfaced to the user as a progress indicator). Optional but useful on long builds.",
+        {"goal": {"type": "string", "description": "The overall objective."},
+         "progress": {"type": "string", "description": "A short note on where things stand."},
+         "percent": {"type": "integer", "description": "Optional 0–100 completion estimate."}}, []),
+    _fn("scan_project_instructions", "Re-scan the workspace for project instruction files "
+        "(AGENTS.md, CLAUDE.md, .cursorrules, CONTRIBUTING.md …) and return their house rules. "
+        "These are auto-loaded at the start of a task; call this only to refresh after they change.",
+        {}, []),
     # ── Real Chrome browser (Playwright) ─────────────────────────────────────
     # Drives an actual Chromium: JS-heavy sites, logins, clicking, forms, scraping
     # behind auth. Prefer fetch_url/scrape for simple static pages; use the browser
@@ -278,6 +308,11 @@ _DISPATCH = {
     "git_diff":         lambda a: git_diff(a.get("path", "")),
     "git_log":          lambda a: git_log(a.get("n", 10)),
     "git_commit":       lambda a: git_commit(a.get("message", "auto commit")),
+    # ── Self-management ──────────────────────────────────────────────────────
+    "todo_write":       lambda a: todo_write(a.get("todos", [])),
+    "verify_work":      lambda a: verify_work(a.get("command", ""), a.get("framework", "")),
+    "update_goal":      lambda a: update_goal(a.get("goal", ""), a.get("progress", ""), a.get("percent")),
+    "scan_project_instructions": lambda a: scan_project_instructions(),
     # ── Browser (Playwright) ────────────────────────────────────────────────
     "browser_launch":   lambda a: browser_launch(a.get("url", ""), a.get("headless", True)),
     "browser_goto":     lambda a: browser_goto(a.get("url", ""), a.get("wait_until", "load")),
@@ -364,6 +399,11 @@ TOOL_META = {
     "git_diff":         {"label": "Git diff",         "icon": "git-branch",  "kind": "read"},
     "git_log":          {"label": "Git log",          "icon": "git-branch",  "kind": "read"},
     "git_commit":       {"label": "Git commit",       "icon": "git-branch",  "kind": "write"},
+    # ── Self-management — "task" is ungated & sequential; verify_work runs shell ──
+    "todo_write":       {"label": "Update todos",     "icon": "list-checks", "kind": "task"},
+    "verify_work":      {"label": "Verify work",      "icon": "shield-check","kind": "shell"},
+    "update_goal":      {"label": "Update goal",      "icon": "target",      "kind": "task"},
+    "scan_project_instructions": {"label": "Scan project rules", "icon": "book-open", "kind": "read"},
     # ── Browser (Playwright) — kind "system": gated in "ask" mode like write/shell ──
     "browser_launch":               {"label": "Launch browser",   "icon": "globe",         "kind": "system"},
     "browser_goto":                 {"label": "Open URL",         "icon": "globe",         "kind": "system"},

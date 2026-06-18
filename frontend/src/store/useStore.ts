@@ -92,6 +92,8 @@ interface State {
 
   selectedModel: string;
   setSelectedModel: (m: string) => void;
+  customModels: { id: string; label: string }[];
+  setCustomModels: (m: { id: string; label: string }[]) => void;
 
   skills: SkillMeta[];
   setSkills: (s: SkillMeta[]) => void;
@@ -195,6 +197,8 @@ export const useStore = create<State>((set) => ({
 
   selectedModel: 'openai/gpt-oss-120b',
   setSelectedModel: (m) => set({ selectedModel: m }),
+  customModels: [],
+  setCustomModels: (customModels) => set({ customModels }),
 
   skills: [],
   setSkills: (skills) => set({ skills }),
