@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>ComfyAI Cloud — AI image generation, agents & creative tools</title>
+<meta name="description" content="ComfyAI Cloud — a warm, fast home for AI image generation, upscaling, visual deconstruction, AI friends, and AgentStudio, your free autonomous coding agent." />
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#FAF9F5; --panel:#F2F0E9; --elevated:#FFFFFF;
+    --border:#E5E1D6; --border-soft:#EEEBE1;
+    --text:#20201E; --muted:#6E6A60; --faint:#A8A294;
+    --copper:#D97757; --copper-lo:#C15F40; --copper-wash:#F6E9E1;
+    --cyan:#5B6CB0; --green:#5F8B57; --red:#C4554D; --violet:#8A6FB0; --gold:#C49A3C;
+    --font-display:"Newsreader",Georgia,serif;
+    --font-sans:"Inter",system-ui,sans-serif;
+    --shadow-card:0 1px 2px rgba(50,46,38,.04),0 1px 3px rgba(50,46,38,.05);
+    --shadow-lift:0 6px 24px rgba(50,46,38,.10),0 1px 3px rgba(50,46,38,.05);
+    --radius:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1100px 600px at 82% -12%,rgba(217,119,87,.07),transparent 60%),
+      radial-gradient(820px 560px at -5% 108%,rgba(91,108,176,.05),transparent 55%),
+      var(--bg);
+    color:var(--text);font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+
+  /* Nav */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(20px) saturate(1.6);
+    background:rgba(250,249,245,.78);border-bottom:1px solid var(--border-soft)}
+  .nav-in{display:flex;align-items:center;gap:18px;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em}
+  .spark{width:26px;height:26px;flex:0 0 auto}
+  .nav-links{display:flex;gap:6px;margin-left:14px}
+  .nav-links a{padding:8px 12px;border-radius:9999px;color:var(--muted);font-size:14px;font-weight:500;transition:.15s}
+  .nav-links a:hover{background:var(--panel);color:var(--text)}
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .btn{display:inline-flex;align-items:center;gap:7px;border-radius:9999px;font-weight:600;
+    font-size:14px;padding:9px 18px;cursor:pointer;border:1px solid transparent;transition:.18s;white-space:nowrap}
+  .btn-ghost{color:var(--text);border-color:var(--border)}
+  .btn-ghost:hover{background:var(--panel)}
+  .btn-primary{background:var(--copper);color:#fff;box-shadow:var(--shadow-card)}
+  .btn-primary:hover{background:var(--copper-lo);transform:translateY(-1px);box-shadow:var(--shadow-lift)}
+  @media(max-width:760px){.nav-links{display:none}}
+
+  /* Hero */
+  .hero{text-align:center;padding:80px 0 48px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--copper-wash);
+    color:var(--copper-lo);font-weight:600;font-size:13px;padding:6px 14px;border-radius:9999px;margin-bottom:24px}
+  .hero h1{font-family:var(--font-display);font-weight:500;letter-spacing:-.02em;
+    font-size:clamp(2.6rem,6vw,4.6rem);line-height:1.04;margin-bottom:20px}
+  .hero h1 .accent{color:var(--copper);font-style:italic}
+  .hero p{max-width:640px;margin:0 auto 32px;color:var(--muted);font-size:clamp(1rem,2vw,1.2rem)}
+  .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn-lg{padding:13px 26px;font-size:15px}
+
+  /* Tools grid */
+  .section-head{text-align:center;margin:64px 0 30px}
+  .section-head h2{font-family:var(--font-display);font-weight:500;font-size:clamp(1.7rem,3vw,2.4rem);letter-spacing:-.02em}
+  .section-head p{color:var(--muted);margin-top:8px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}}
+  .card{position:relative;display:block;background:var(--elevated);border:1px solid var(--border);
+    border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-card);transition:.2s;overflow:hidden}
+  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift);border-color:#dcd6c8}
+  .chip{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .chip svg{width:24px;height:24px;stroke-width:1.9}
+  .card h3{font-size:17px;font-weight:700;letter-spacing:-.01em;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .card p{color:var(--muted);font-size:14px;line-height:1.55}
+  .soon{font-size:11px;font-weight:600;color:var(--faint);border:1px solid var(--border);
+    border-radius:9999px;padding:2px 9px;margin-left:auto}
+  .go{margin-top:16px;font-size:13px;font-weight:600;color:var(--copper);display:inline-flex;align-items:center;gap:5px}
+  /* Featured AgentStudio card */
+  .card.feature{grid-column:span 3;display:flex;gap:28px;align-items:center;
+    background:linear-gradient(120deg,#fff 0%,var(--copper-wash) 130%);border-color:#ecd9cd}
+  @media(max-width:900px){.card.feature{grid-column:span 2;flex-direction:column;align-items:flex-start}}
+  @media(max-width:600px){.card.feature{grid-column:span 1}}
+  .feature .chip{width:60px;height:60px;border-radius:16px;margin:0}
+  .feature-body{flex:1}
+  .feature h3{font-size:22px}
+  .feature p{font-size:15px;max-width:560px}
+
+  footer{margin-top:90px;border-top:1px solid var(--border-soft);padding:36px 0;color:var(--faint);font-size:13px}
+  .foot-in{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center}
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/">
+      <img class="spark" src="/spark.png" alt="" onerror="this.style.display='none'"/>
+      ComfyAI&nbsp;Cloud
+    </a>
+    <div class="nav-links">
+      <a href="#tools">Tools</a>
+      <a href="/agentstudio">AgentStudio</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <a class="btn btn-ghost" href="#" id="signin">Sign in</a>
+      <a class="btn btn-primary" href="/agentstudio">Open AgentStudio →</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <span class="eyebrow">✳ Now with AgentStudio — your free coding agent</span>
+  <h1>Create, generate, and <span class="accent">automate</span><br/>with AI — beautifully.</h1>
+  <p>A warm, fast home for AI image generation, upscaling, visual deconstruction, AI friends,
+     and an autonomous agent that writes and runs real code. One account, one workspace.</p>
+  <div class="hero-cta">
+    <a class="btn btn-primary btn-lg" href="/agentstudio">Launch AgentStudio →</a>
+    <a class="btn btn-ghost btn-lg" href="#tools">Explore the tools</a>
+  </div>
+</header>
+
+<section class="wrap" id="tools">
+  <div class="section-head">
+    <h2>Everything in one creative cloud</h2>
+    <p>Pick a tool below. AgentStudio is live and free — the rest are rolling out.</p>
+  </div>
+  <div class="grid">
+
+    <!-- Featured: AgentStudio (live) -->
+    <a class="card feature" href="/agentstudio">
+      <div class="chip" style="background:var(--copper-wash);color:var(--copper-lo)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg>
+      </div>
+      <div class="feature-body">
+        <h3>AgentStudio <span style="font-size:11px;font-weight:600;color:#fff;background:var(--green);border-radius:9999px;padding:2px 9px">LIVE · FREE</span></h3>
+        <p>Turn a free NVIDIA NIM key into a private, autonomous coding agent. It plans, writes &amp; runs code, and drives a real browser — live, in your own workspace. No login, bring your own key.</p>
+        <span class="go">Open AgentStudio →</span>
+      </div>
+    </a>
+
+    <div class="card">
+      <div class="chip" style="background:rgba(91,108,176,.10);color:var(--cyan)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <h3>Image Generation <span class="soon">Soon</span></h3>
+      <p>Prompt-to-image with pro ComfyUI workflows and 30+ NVIDIA models, right in the browser.</p>
+    </div>
+
+    <div class="card">
+      <div class="chip" style="background:rgba(95,139,87,.12);color:var(--green)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7V3h4M21 7V3h-4M3 17v4h4M21 17v4h-4"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>
+      </div>
+      <h3>Upscaler <span class="soon">Soon</span></h3>
+      <p>Sharpen and enlarge images up to 8K with detail-preserving neural upscaling.</p>
+    </div>
+
+    <div class="card">
+      <div class="chip" style="background:rgba(138,111,176,.12);color:var(--violet)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+      </div>
+      <h3>Deconstruct <span class="soon">Soon</span></h3>
+      <p>Reverse-engineer any image into an editable prompt and a node graph you can remix.</p>
+    </div>
+
+    <div class="card">
+      <div class="chip" style="background:rgba(196,154,60,.14);color:var(--gold)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <h3>AI Friends <span class="soon">Soon</span></h3>
+      <p>Chat with expressive AI characters — voice, memory, and personality included.</p>
+    </div>
+
+    <div class="card" id="pricing">
+      <div class="chip" style="background:rgba(196,85,77,.12);color:var(--red)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <h3>Credits &amp; Pricing <span class="soon">Soon</span></h3>
+      <p>Simple credit packs for the creative tools. AgentStudio always stays free.</p>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-in">
+    <span>© <span id="yr"></span> ComfyAI Cloud · onaiagents.com</span>
+    <span>AgentStudio is free &amp; bring-your-own-key.</span>
+  </div>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body>
+</html>

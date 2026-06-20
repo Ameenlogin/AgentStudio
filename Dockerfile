@@ -28,6 +28,9 @@ RUN python -m playwright install --with-deps chromium
 COPY backend/ backend/
 COPY --from=frontend /app/frontend/dist frontend/dist
 
+# Marketing site (converted ComfyAI theme) served at "/".
+COPY site/ site/
+
 # Persistent data dir (SQLite settings + chat history) — mount a volume here.
 RUN mkdir -p /data
 

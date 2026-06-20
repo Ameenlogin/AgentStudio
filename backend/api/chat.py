@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from database.database import get_db
 from database.models import Setting
-from tools.sandbox import set_workspace
+from tools.sandbox import set_workspace, workspace_for_client
 from agents.agent import run_agent
 
 router = APIRouter()
@@ -35,7 +35,10 @@ async def chat_endpoint(request: Request, db: Session = Depends(get_db)):
     if not api_keys:
         raise HTTPException(status_code=400, detail="API key not configured. Open Settings and add your NVIDIA NIM key.")
 
-    set_workspace((settings.workspace_path if settings else None) or "./workspace")
+    # Each browser (anonymous X-Client-Id) gets its own private workspace; the
+    # desktop app sends no id and falls back to the configured single-user dir.
+    client_ws = workspace_for_client(request.headers.get("X-Client-Id"))
+    set_workspace(client_ws or (settings.workspace_path if settings else None) or "./workspace")
 
     cfg = dict(
         api_keys=api_keys,

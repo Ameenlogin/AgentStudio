@@ -85,34 +85,45 @@ app.include_router(files_router.router, prefix="/api/files")
 app.include_router(search_router.router, prefix="/api/search")
 app.include_router(skills_router.router, prefix="/api/skills")
 
-# ── Serve the built frontend ──────────────────────────────────────────────────
-frontend_dist = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
-)
+# ── Serve the AgentStudio app under /agentstudio, the marketing site at / ─────
+_root = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+frontend_dist = os.path.join(_root, "frontend", "dist")
+site_dir = os.path.join(_root, "site")
 
+# AgentStudio React app — built with Vite base "/agentstudio/".
 if os.path.isdir(frontend_dist):
     assets_dir = os.path.join(frontend_dist, "assets")
     if os.path.isdir(assets_dir):
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+        app.mount("/agentstudio/assets", StaticFiles(directory=assets_dir), name="studio-assets")
 
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
-        if full_path.startswith("api/"):
-            return JSONResponse({"error": "Not found"}, status_code=404)
-        target = os.path.join(frontend_dist, full_path)
-        if full_path and os.path.isfile(target):
-            return FileResponse(target)
+    @app.get("/agentstudio")
+    @app.get("/agentstudio/{full_path:path}")
+    async def serve_studio(full_path: str = ""):
+        if full_path:
+            target = os.path.join(frontend_dist, full_path)
+            if os.path.isfile(target):
+                return FileResponse(target)
         index = os.path.join(frontend_dist, "index.html")
         if os.path.isfile(index):
             return FileResponse(index)
         return JSONResponse({"error": "Frontend not built"}, status_code=404)
-else:
-    @app.get("/")
-    async def no_frontend():
-        return JSONResponse(
-            {"error": "Frontend not built", "hint": "Run START.bat or: cd frontend && npm install && npm run build"},
-            status_code=503,
-        )
+
+
+# Marketing site (the converted ComfyAI theme) at the root. Registered last so
+# the API routers and /agentstudio routes take precedence.
+@app.get("/")
+@app.get("/{full_path:path}")
+async def serve_site(full_path: str = ""):
+    if full_path.startswith("api/") or full_path.startswith("agentstudio"):
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    if full_path:
+        target = os.path.join(site_dir, full_path)
+        if os.path.isfile(target):
+            return FileResponse(target)
+    index = os.path.join(site_dir, "index.html")
+    if os.path.isfile(index):
+        return FileResponse(index)
+    return JSONResponse({"error": "Site not built"}, status_code=404)
 
 if __name__ == "__main__":
     import uvicorn

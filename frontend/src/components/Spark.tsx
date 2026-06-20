@@ -11,10 +11,13 @@ interface SparkProps {
   className?: string;
 }
 
+// Base-aware so the marks resolve whether the app is served at "/" (dev) or
+// under "/agentstudio/" (hosted alongside the marketing site).
+const B = import.meta.env.BASE_URL;
 const SRC: Record<string, string> = {
-  copper: '/spark.png',
-  ink: '/spark-ink.png',
-  white: '/spark-white.png',
+  copper: `${B}spark.png`,
+  ink: `${B}spark-ink.png`,
+  white: `${B}spark-white.png`,
 };
 
 export default function Spark({ size = 16, state = 'idle', tone = 'copper', className = '' }: SparkProps) {

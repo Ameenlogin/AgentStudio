@@ -4,5 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Hosted under onaiagents.com/agentstudio (the marketing site owns "/").
+  base: '/agentstudio/',
   plugins: [react(), tailwindcss()],
 })
