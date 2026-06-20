@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>ComfyAI Cloud — AI image generation, agents & creative tools</title>
-<meta name="description" content="ComfyAI Cloud — a warm, fast home for AI image generation, upscaling, visual deconstruction, AI friends, and AgentStudio, your free autonomous coding agent." />
+<title>onaiagents — AI image generation, agents & creative tools</title>
+<meta name="description" content="onaiagents — a warm, fast home for AI image generation, upscaling, visual deconstruction, AI friends, and AgentStudio: your free autonomous coding agent." />
 <meta name="theme-color" content="#FAF9F5" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root{
     --bg:#FAF9F5; --panel:#F2F0E9; --elevated:#FFFFFF;
@@ -20,132 +20,178 @@
     --font-display:"Newsreader",Georgia,serif;
     --font-sans:"Inter",system-ui,sans-serif;
     --shadow-card:0 1px 2px rgba(50,46,38,.04),0 1px 3px rgba(50,46,38,.05);
-    --shadow-lift:0 6px 24px rgba(50,46,38,.10),0 1px 3px rgba(50,46,38,.05);
-    --radius:18px;
+    --shadow-lift:0 10px 34px rgba(50,46,38,.12),0 2px 6px rgba(50,46,38,.05);
+    --radius:18px; --max:1140px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{
-    background:
-      radial-gradient(1100px 600px at 82% -12%,rgba(217,119,87,.07),transparent 60%),
-      radial-gradient(820px 560px at -5% 108%,rgba(91,108,176,.05),transparent 55%),
-      var(--bg);
-    color:var(--text);font-family:var(--font-sans);
-    -webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh;
-  }
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
-  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+  /* Ambient drifting orbs */
+  .ambient{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5}
+  .orb.a{width:560px;height:560px;top:-180px;right:-120px;background:radial-gradient(circle,rgba(217,119,87,.22),transparent 68%);animation:drift1 22s ease-in-out infinite}
+  .orb.b{width:520px;height:520px;bottom:-200px;left:-140px;background:radial-gradient(circle,rgba(91,108,176,.18),transparent 68%);animation:drift2 26s ease-in-out infinite}
+  .orb.c{width:360px;height:360px;top:36%;left:52%;background:radial-gradient(circle,rgba(196,154,60,.12),transparent 68%);animation:drift1 30s ease-in-out infinite}
+  @keyframes drift1{50%{transform:translate(-40px,30px) scale(1.08)}}
+  @keyframes drift2{50%{transform:translate(50px,-26px) scale(1.06)}}
 
   /* Nav */
-  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(20px) saturate(1.6);
-    background:rgba(250,249,245,.78);border-bottom:1px solid var(--border-soft)}
-  .nav-in{display:flex;align-items:center;gap:18px;height:64px}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em}
-  .spark{width:26px;height:26px;flex:0 0 auto}
-  .nav-links{display:flex;gap:6px;margin-left:14px}
-  .nav-links a{padding:8px 12px;border-radius:9999px;color:var(--muted);font-size:14px;font-weight:500;transition:.15s}
+  nav{position:sticky;top:0;z-index:50;transition:.3s}
+  .nav-in{display:flex;align-items:center;gap:18px;height:66px;margin:10px auto 0;
+    padding:0 14px 0 18px;max-width:calc(var(--max) + 0px);
+    background:rgba(255,255,255,.7);backdrop-filter:blur(22px) saturate(1.7);
+    border:1px solid var(--border-soft);border-radius:9999px;box-shadow:var(--shadow-card)}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;letter-spacing:-.02em}
+  .brand .spark{width:24px;height:24px;animation:spin-slow 28s linear infinite}
+  @keyframes spin-slow{to{transform:rotate(360deg)}}
+  .nav-links{display:flex;gap:4px;margin-left:10px}
+  .nav-links a{padding:8px 13px;border-radius:9999px;color:var(--muted);font-size:14px;font-weight:500;transition:.15s}
   .nav-links a:hover{background:var(--panel);color:var(--text)}
-  .nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:9px}
   .btn{display:inline-flex;align-items:center;gap:7px;border-radius:9999px;font-weight:600;
-    font-size:14px;padding:9px 18px;cursor:pointer;border:1px solid transparent;transition:.18s;white-space:nowrap}
+    font-size:14px;padding:9px 18px;cursor:pointer;border:1px solid transparent;transition:.2s var(--ease,ease);white-space:nowrap}
   .btn-ghost{color:var(--text);border-color:var(--border)}
   .btn-ghost:hover{background:var(--panel)}
   .btn-primary{background:var(--copper);color:#fff;box-shadow:var(--shadow-card)}
   .btn-primary:hover{background:var(--copper-lo);transform:translateY(-1px);box-shadow:var(--shadow-lift)}
-  @media(max-width:760px){.nav-links{display:none}}
+  @media(max-width:780px){.nav-links{display:none}}
 
   /* Hero */
-  .hero{text-align:center;padding:80px 0 48px}
+  .hero{text-align:center;padding:84px 0 56px}
   .eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--copper-wash);
-    color:var(--copper-lo);font-weight:600;font-size:13px;padding:6px 14px;border-radius:9999px;margin-bottom:24px}
-  .hero h1{font-family:var(--font-display);font-weight:500;letter-spacing:-.02em;
-    font-size:clamp(2.6rem,6vw,4.6rem);line-height:1.04;margin-bottom:20px}
-  .hero h1 .accent{color:var(--copper);font-style:italic}
-  .hero p{max-width:640px;margin:0 auto 32px;color:var(--muted);font-size:clamp(1rem,2vw,1.2rem)}
+    color:var(--copper-lo);font-weight:600;font-size:13px;padding:6px 15px;border-radius:9999px;
+    margin-bottom:26px;border:1px solid #efd9cc}
+  .hero h1{font-family:var(--font-display);font-weight:500;letter-spacing:-.025em;
+    font-size:clamp(2.7rem,6.4vw,5rem);line-height:1.03;margin-bottom:22px}
+  .hero h1 .accent{font-style:italic;background:linear-gradient(100deg,var(--copper),var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{max-width:640px;margin:0 auto 34px;color:var(--muted);font-size:clamp(1.02rem,2vw,1.22rem)}
   .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .btn-lg{padding:13px 26px;font-size:15px}
+  .btn-lg{padding:14px 28px;font-size:15px}
 
-  /* Tools grid */
-  .section-head{text-align:center;margin:64px 0 30px}
-  .section-head h2{font-family:var(--font-display);font-weight:500;font-size:clamp(1.7rem,3vw,2.4rem);letter-spacing:-.02em}
+  /* staggered entrance */
+  .rise{opacity:0;transform:translateY(20px);animation:rise .9s cubic-bezier(.16,1,.3,1) forwards}
+  .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.25s}.d4{animation-delay:.35s}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  /* Stat strip */
+  .stats{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:46px}
+  .stat{background:rgba(255,255,255,.6);border:1px solid var(--border-soft);border-radius:14px;padding:14px 22px;min-width:150px}
+  .stat b{font-family:var(--font-display);font-size:26px;font-weight:600;display:block;line-height:1}
+  .stat span{font-size:12.5px;color:var(--muted)}
+
+  /* Sections */
+  .section-head{text-align:center;margin:78px 0 32px}
+  .section-head h2{font-family:var(--font-display);font-weight:500;font-size:clamp(1.8rem,3.2vw,2.5rem);letter-spacing:-.02em}
   .section-head p{color:var(--muted);margin-top:8px}
+
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){.grid{grid-template-columns:1fr}}
   .card{position:relative;display:block;background:var(--elevated);border:1px solid var(--border);
-    border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-card);transition:.2s;overflow:hidden}
-  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift);border-color:#dcd6c8}
-  .chip{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+    border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-card);transition:.25s cubic-bezier(.16,1,.3,1);overflow:hidden}
+  .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lift);border-color:#dcd6c8}
+  .card::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;
+    background:radial-gradient(420px 160px at var(--mx,50%) -10%,rgba(217,119,87,.10),transparent 70%);transition:.3s}
+  .card:hover::after{opacity:1}
+  .chip{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;transition:.25s}
+  .card:hover .chip{transform:scale(1.08) rotate(-4deg)}
   .chip svg{width:24px;height:24px;stroke-width:1.9}
   .card h3{font-size:17px;font-weight:700;letter-spacing:-.01em;margin-bottom:6px;display:flex;align-items:center;gap:8px}
   .card p{color:var(--muted);font-size:14px;line-height:1.55}
-  .soon{font-size:11px;font-weight:600;color:var(--faint);border:1px solid var(--border);
-    border-radius:9999px;padding:2px 9px;margin-left:auto}
+  .soon{font-size:11px;font-weight:600;color:var(--faint);border:1px solid var(--border);border-radius:9999px;padding:2px 9px;margin-left:auto}
+  .tag-live{font-size:11px;font-weight:600;color:#fff;background:var(--green);border-radius:9999px;padding:2px 9px}
   .go{margin-top:16px;font-size:13px;font-weight:600;color:var(--copper);display:inline-flex;align-items:center;gap:5px}
-  /* Featured AgentStudio card */
+  .card:hover .go{gap:9px}
   .card.feature{grid-column:span 3;display:flex;gap:28px;align-items:center;
-    background:linear-gradient(120deg,#fff 0%,var(--copper-wash) 130%);border-color:#ecd9cd}
+    background:linear-gradient(120deg,#fff 0%,var(--copper-wash) 135%);border-color:#ecd9cd}
   @media(max-width:900px){.card.feature{grid-column:span 2;flex-direction:column;align-items:flex-start}}
   @media(max-width:600px){.card.feature{grid-column:span 1}}
-  .feature .chip{width:60px;height:60px;border-radius:16px;margin:0}
-  .feature-body{flex:1}
-  .feature h3{font-size:22px}
-  .feature p{font-size:15px;max-width:560px}
+  .feature .chip{width:62px;height:62px;border-radius:16px;margin:0}
+  .feature-body{flex:1}.feature h3{font-size:22px}.feature p{font-size:15px;max-width:560px}
 
-  footer{margin-top:90px;border-top:1px solid var(--border-soft);padding:36px 0;color:var(--faint);font-size:13px}
+  /* Why row */
+  .why{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:14px}
+  @media(max-width:760px){.why{grid-template-columns:1fr}}
+  .why .ic{width:40px;height:40px;border-radius:11px;background:var(--panel);display:flex;align-items:center;justify-content:center;margin-bottom:12px;color:var(--copper-lo)}
+  .why h4{font-size:15.5px;font-weight:700;margin-bottom:5px}
+  .why p{color:var(--muted);font-size:14px}
+
+  /* CTA band */
+  .cta{margin-top:84px;text-align:center;background:linear-gradient(120deg,var(--copper-wash),#fff);
+    border:1px solid #efd9cc;border-radius:26px;padding:54px 24px}
+  .cta h2{font-family:var(--font-display);font-weight:500;font-size:clamp(1.7rem,3vw,2.3rem);margin-bottom:10px}
+  .cta p{color:var(--muted);margin-bottom:24px}
+
+  footer{margin-top:64px;border-top:1px solid var(--border-soft);padding:34px 0;color:var(--faint);font-size:13px}
   .foot-in{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center}
+
+  /* scroll reveal */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){
+    .rise,.reveal,.orb{animation:none!important;transition:none!important;opacity:1!important;transform:none!important}
+  }
 </style>
 </head>
 <body>
+<div class="ambient"><span class="orb a"></span><span class="orb b"></span><span class="orb c"></span></div>
+
 <nav>
-  <div class="wrap nav-in">
+  <div class="wrap"><div class="nav-in">
     <a class="brand" href="/">
-      <img class="spark" src="/spark.png" alt="" onerror="this.style.display='none'"/>
-      ComfyAI&nbsp;Cloud
+      <img class="spark" src="/spark.png" alt="" onerror="this.style.display='none'"/>onaiagents
     </a>
     <div class="nav-links">
       <a href="#tools">Tools</a>
       <a href="/agentstudio">AgentStudio</a>
+      <a href="#why">Why us</a>
       <a href="#pricing">Pricing</a>
     </div>
     <div class="nav-right">
       <a class="btn btn-ghost" href="#" id="signin">Sign in</a>
       <a class="btn btn-primary" href="/agentstudio">Open AgentStudio →</a>
     </div>
-  </div>
+  </div></div>
 </nav>
 
 <header class="hero wrap">
-  <span class="eyebrow">✳ Now with AgentStudio — your free coding agent</span>
-  <h1>Create, generate, and <span class="accent">automate</span><br/>with AI — beautifully.</h1>
-  <p>A warm, fast home for AI image generation, upscaling, visual deconstruction, AI friends,
-     and an autonomous agent that writes and runs real code. One account, one workspace.</p>
-  <div class="hero-cta">
+  <span class="eyebrow rise d1">✳ Now with AgentStudio — your free coding agent</span>
+  <h1 class="rise d2">Create, generate &amp; <span class="accent">automate</span><br/>with AI — beautifully.</h1>
+  <p class="rise d3">One warm, fast home for AI image generation, upscaling, visual deconstruction,
+     AI friends, and an autonomous agent that writes and runs real code.</p>
+  <div class="hero-cta rise d4">
     <a class="btn btn-primary btn-lg" href="/agentstudio">Launch AgentStudio →</a>
     <a class="btn btn-ghost btn-lg" href="#tools">Explore the tools</a>
+  </div>
+  <div class="stats rise d4">
+    <div class="stat"><b>30+</b><span>NVIDIA models</span></div>
+    <div class="stat"><b>8K</b><span>upscaling</span></div>
+    <div class="stat"><b>Free</b><span>AgentStudio, forever</span></div>
   </div>
 </header>
 
 <section class="wrap" id="tools">
-  <div class="section-head">
-    <h2>Everything in one creative cloud</h2>
-    <p>Pick a tool below. AgentStudio is live and free — the rest are rolling out.</p>
-  </div>
+  <div class="section-head reveal"><h2>Everything in one creative cloud</h2>
+    <p>AgentStudio is live and free — the creative tools are rolling out.</p></div>
   <div class="grid">
 
-    <!-- Featured: AgentStudio (live) -->
-    <a class="card feature" href="/agentstudio">
+    <a class="card feature reveal" href="/agentstudio">
       <div class="chip" style="background:var(--copper-wash);color:var(--copper-lo)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg>
       </div>
       <div class="feature-body">
-        <h3>AgentStudio <span style="font-size:11px;font-weight:600;color:#fff;background:var(--green);border-radius:9999px;padding:2px 9px">LIVE · FREE</span></h3>
+        <h3>AgentStudio <span class="tag-live">LIVE · FREE</span></h3>
         <p>Turn a free NVIDIA NIM key into a private, autonomous coding agent. It plans, writes &amp; runs code, and drives a real browser — live, in your own workspace. No login, bring your own key.</p>
         <span class="go">Open AgentStudio →</span>
       </div>
     </a>
 
-    <div class="card">
+    <div class="card reveal">
       <div class="chip" style="background:rgba(91,108,176,.10);color:var(--cyan)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
       </div>
@@ -153,7 +199,7 @@
       <p>Prompt-to-image with pro ComfyUI workflows and 30+ NVIDIA models, right in the browser.</p>
     </div>
 
-    <div class="card">
+    <div class="card reveal">
       <div class="chip" style="background:rgba(95,139,87,.12);color:var(--green)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7V3h4M21 7V3h-4M3 17v4h4M21 17v4h-4"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>
       </div>
@@ -161,15 +207,15 @@
       <p>Sharpen and enlarge images up to 8K with detail-preserving neural upscaling.</p>
     </div>
 
-    <div class="card">
+    <div class="card reveal">
       <div class="chip" style="background:rgba(138,111,176,.12);color:var(--violet)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
       </div>
       <h3>Deconstruct <span class="soon">Soon</span></h3>
       <p>Reverse-engineer any image into an editable prompt and a node graph you can remix.</p>
     </div>
 
-    <div class="card">
+    <div class="card reveal">
       <div class="chip" style="background:rgba(196,154,60,.14);color:var(--gold)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </div>
@@ -177,7 +223,7 @@
       <p>Chat with expressive AI characters — voice, memory, and personality included.</p>
     </div>
 
-    <div class="card" id="pricing">
+    <div class="card reveal">
       <div class="chip" style="background:rgba(196,85,77,.12);color:var(--red)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
@@ -188,12 +234,43 @@
   </div>
 </section>
 
+<section class="wrap" id="why">
+  <div class="section-head reveal"><h2>Built for makers</h2><p>Professional power, a calm, warm interface.</p></div>
+  <div class="why">
+    <div class="reveal"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div>
+      <h4>Fast by default</h4><p>GPU-backed pipelines and a snappy, no-clutter UI that stays out of your way.</p></div>
+    <div class="reveal"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <h4>Yours &amp; private</h4><p>AgentStudio runs on your own key and workspace. Your work stays your work.</p></div>
+    <div class="reveal"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+      <h4>One account, one cloud</h4><p>Generate, upscale, chat and automate — all under a single warm roof.</p></div>
+  </div>
+</section>
+
+<section class="wrap" id="pricing">
+  <div class="cta reveal">
+    <h2>Start free. Upgrade when you fly.</h2>
+    <p>AgentStudio is free forever. Creative tools run on simple credit packs — launching soon.</p>
+    <a class="btn btn-primary btn-lg" href="/agentstudio">Launch AgentStudio →</a>
+  </div>
+</section>
+
 <footer>
   <div class="wrap foot-in">
-    <span>© <span id="yr"></span> ComfyAI Cloud · onaiagents.com</span>
+    <span>© <span id="yr"></span> onaiagents · onaiagents.com</span>
     <span>AgentStudio is free &amp; bring-your-own-key.</span>
   </div>
 </footer>
-<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+
+<script>
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  /* nav shadow on scroll */
+  var nv=document.querySelector('.nav-in');
+  addEventListener('scroll',function(){nv.style.boxShadow=scrollY>10?'var(--shadow-lift)':'var(--shadow-card)'},{passive:true});
+  /* scroll reveal */
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el)});
+  /* card pointer glow */
+  document.querySelectorAll('.card').forEach(function(c){c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px')})});
+</script>
 </body>
 </html>
