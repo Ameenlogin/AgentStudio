@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Message, Block, ToolBlock } from '../store/useStore';
-import { api } from '../lib/api';
+import { api, getCreds, credKeys, hasLocalKey } from '../lib/api';
 import Blocks from './Blocks';
 import AgentOrb from './AgentOrb';
 import PermissionDialog from './PermissionDialog';
@@ -104,14 +104,19 @@ export default function Chat() {
 
   const loadSettings = () =>
     fetch(api('/api/settings/')).then(r => r.json()).then(d => {
-      setHasKey(!!d.api_key);
+      // The key lives in THIS browser (bring-your-own-key); fall back to any
+      // server-side key for the classic single-user desktop install.
+      setHasKey(hasLocalKey() || !!d.api_key);
       setShowAccess(!d.desktop_granted);
       if (d.mode) setMode(d.mode);
       // Keep the composer's model picker in sync with saved settings, including
       // any user-added custom models so they're selectable right here.
       if (Array.isArray(d.custom_models)) setCustomModels(d.custom_models);
-      if (d.model_name) setSelectedModel(d.model_name);
-    }).catch(() => {});
+      // Prefer this browser's chosen model, then the server default.
+      const localModel = getCreds().model_name;
+      if (localModel) setSelectedModel(localModel);
+      else if (d.model_name) setSelectedModel(d.model_name);
+    }).catch(() => { setHasKey(hasLocalKey()); });
 
   const changeMode = async (m: string) => {
     setMode(m);
@@ -239,7 +244,14 @@ export default function Chat() {
       const res = await fetch(api('/api/chat/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history, model_name: selectedModel, skill }),
+        body: JSON.stringify({
+          messages: history,
+          model_name: selectedModel,
+          skill,
+          // Browser-local credentials travel with the request (no shared key).
+          api_keys: credKeys(),
+          base_url: getCreds().base_url || undefined,
+        }),
         signal: ctrl.signal,
       });
 

@@ -1,0 +1,49 @@
+# Agent Studio — one-command hosted deployment.
+#
+#   docker compose up -d --build
+#
+# Serves the app behind Caddy with automatic HTTPS (Let's Encrypt) for
+# onaiagents.com. Each visitor brings their own NVIDIA NIM API key in the
+# browser (no login, no shared server key). Point the domain's A record at
+# this server first so Caddy can issue the certificate.
+
+services:
+  app:
+    build:
+      context: "https://github.com/Ameenlogin/AgentStudio.git#deploy"
+    image: agentstudio:latest
+    restart: unless-stopped
+    environment:
+      - AGENT_STUDIO_DB=/data/agent_studio.db
+    volumes:
+      - app_data:/data
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+configs:
+  caddyfile:
+    content: |
+      onaiagents.com, www.onaiagents.com {
+        encode zstd gzip
+        reverse_proxy app:8000
+      }
+
+volumes:
+  app_data:
+  caddy_data:
+  caddy_config:

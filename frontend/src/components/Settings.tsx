@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff, Save, Check, Key, Globe, Cpu, FolderCog, Wrench, RotateCcw, ShieldCheck, Boxes, Heart, Plus, Trash2, X } from 'lucide-react';
-import { api } from '../lib/api';
+import { api, getCreds, setCreds } from '../lib/api';
 import { useStore } from '../store/useStore';
 
 type CustomModel = { id: string; label: string };
@@ -90,15 +90,37 @@ export default function Settings() {
 
   useEffect(() => {
     fetch(api('/api/settings/')).then((r) => r.json()).then((d) => {
-      setS({ ...DEFAULTS, ...Object.fromEntries(Object.entries(d).filter(([, v]) => v != null)) });
+      const server = { ...DEFAULTS, ...Object.fromEntries(Object.entries(d).filter(([, v]) => v != null)) };
+      // The API key + model are read from THIS browser (bring-your-own-key), so
+      // each visitor sees their own key and never the shared server row.
+      const local = getCreds();
+      setS({
+        ...server,
+        api_key: local.api_key ?? '',
+        api_key_2: local.api_key_2 ?? '',
+        api_key_3: local.api_key_3 ?? '',
+        base_url: local.base_url || server.base_url,
+        model_name: local.model_name || server.model_name,
+      });
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const onSave = async () => {
     setSave('saving');
+    // Secrets stay in THIS browser only — never POSTed to the shared server row.
+    setCreds({
+      api_key: s.api_key,
+      api_key_2: s.api_key_2,
+      api_key_3: s.api_key_3,
+      base_url: s.base_url,
+      model_name: s.model_name,
+    });
     try {
+      // Strip the key fields out of the server payload (non-secret prefs only).
+      const { api_key, api_key_2, api_key_3, ...serverSafe } = s;
+      void api_key; void api_key_2; void api_key_3;
       await fetch(api('/api/settings/'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(s),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serverSafe),
       });
       // Push the model picks to the live store so the composer reflects them
       // immediately (custom models become selectable in chat right away).

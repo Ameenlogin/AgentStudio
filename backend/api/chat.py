@@ -17,18 +17,30 @@ async def chat_endpoint(request: Request, db: Session = Depends(get_db)):
     model_override = data.get("model_name", None)
     skill = (data.get("skill") or "").strip() or None
 
+    # ── Bring-your-own-key (browser-local) ────────────────────────────────────
+    # The hosted deployment has no login and no shared server key: each visitor
+    # keeps their own NVIDIA NIM key in their own browser and sends it per
+    # request, so concurrent users never share or overwrite a key. We use those
+    # creds when present and otherwise fall back to any server-side key (the
+    # classic single-user desktop install).
+    body_keys = data.get("api_keys") or data.get("api_key") or []
+    if isinstance(body_keys, str):
+        body_keys = [body_keys]
+    body_keys = [k.strip() for k in body_keys if isinstance(k, str) and k.strip()]
+    body_base_url = (data.get("base_url") or "").strip()
+
     settings = db.query(Setting).first()
-    if not settings or not settings.api_key:
-        raise HTTPException(status_code=400, detail="API key not configured. Open Settings and add your NVIDIA key.")
+    server_keys = [k for k in [settings.api_key, settings.api_key_2, settings.api_key_3] if k] if settings else []
+    api_keys = body_keys or server_keys
+    if not api_keys:
+        raise HTTPException(status_code=400, detail="API key not configured. Open Settings and add your NVIDIA NIM key.")
 
-    set_workspace(settings.workspace_path or "./workspace")
-
-    api_keys = [k for k in [settings.api_key, settings.api_key_2, settings.api_key_3] if k]
+    set_workspace((settings.workspace_path if settings else None) or "./workspace")
 
     cfg = dict(
         api_keys=api_keys,
-        base_url=settings.base_url,
-        model_name=model_override or settings.model_name,
+        base_url=body_base_url or (settings.base_url if settings else None) or "https://integrate.api.nvidia.com/v1",
+        model_name=model_override or (settings.model_name if settings else None),
         # Temperature & step budget are smart built-in defaults (no UI sliders).
         temperature=settings.temperature if settings.temperature is not None else 0.6,
         # The system prompt is the app's built-in, tuned instruction set — not a

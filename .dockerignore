@@ -1,0 +1,16 @@
+# Build artifacts & local state — never ship these into the image.
+**/node_modules
+**/dist
+**/__pycache__
+**/*.py[cod]
+backend/venv
+venv
+**/*.db
+backend/response_cache.json
+backend/workspace
+backend/config/keys.py
+.git
+.github
+docs/screenshots
+*.log
+.DS_Store
