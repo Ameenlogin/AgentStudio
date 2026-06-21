@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>onaiagents — AI image generation, agents & creative tools</title>
-<meta name="description" content="onaiagents — a warm, fast home for AI image generation, upscaling, visual deconstruction, AI friends, and AgentStudio: your free autonomous coding agent." />
+<meta name="description" content="onaiagents — a calm, fast home for AI image generation, upscaling, visual deconstruction, AI friends, and AgentStudio: your free autonomous coding agent." />
 <meta name="theme-color" content="#FAF9F5" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,44 +13,37 @@
 <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-<div class="ambient"><span class="orb a"></span><span class="orb b"></span><span class="orb c"></span></div>
-
 <nav>
   <div class="wrap nav-in">
-    <a class="brand" href="/">
-      <img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents
-    </a>
+    <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
     <div class="nav-links">
       <a href="#tools">Tools</a>
       <a href="/agentstudio">AgentStudio</a>
-      <a href="#why">Why us</a>
+      <a href="#why">Why</a>
       <a href="#pricing">Pricing</a>
     </div>
     <div class="nav-right">
-      <a class="btn btn-ghost" href="#" id="signin">Sign in</a>
-      <a class="btn btn-primary" href="/agentstudio">Open AgentStudio →</a>
+      <a class="btn-text" href="#">Sign in</a>
+      <a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a>
     </div>
     <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
   </div>
   <div class="mobile-menu" id="mm">
-    <a href="#tools">Tools</a>
-    <a href="/agentstudio">AgentStudio</a>
-    <a href="#why">Why us</a>
-    <a href="#pricing">Pricing</a>
-    <a href="#">Sign in</a>
-    <a class="btn btn-primary" href="/agentstudio">Open AgentStudio →</a>
+    <a href="#tools">Tools</a><a href="/agentstudio">AgentStudio</a>
+    <a href="#why">Why</a><a href="#pricing">Pricing</a><a href="#">Sign in</a>
+    <a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a>
   </div>
 </nav>
 
 <header class="hero wrap">
-  <span class="eyebrow rise d1">✳ Now with AgentStudio — your free coding agent</span>
-  <h1 class="rise d2">Create, generate &amp; <span class="accent">automate</span><br/>with AI — beautifully.</h1>
-  <p class="rise d3">One warm, fast home for AI image generation, upscaling, visual deconstruction,
+  <span class="overline rise d1">AgentStudio is live — free</span>
+  <h1 class="rise d2">Create, generate &amp; <span class="accent">automate</span> with AI.</h1>
+  <p class="rise d3">A calm, fast home for AI image generation, upscaling, visual deconstruction,
      AI friends, and an autonomous agent that writes and runs real code.</p>
   <div class="hero-cta rise d4">
-    <a class="btn btn-primary btn-lg" href="/agentstudio">Launch AgentStudio →</a>
+    <a class="btn btn-primary btn-lg" href="/agentstudio">Launch AgentStudio</a>
     <a class="btn btn-ghost btn-lg" href="#tools">Explore the tools</a>
   </div>
   <div class="stats rise d4">
@@ -61,82 +54,77 @@
 </header>
 
 <section class="wrap" id="tools">
-  <div class="section-head reveal"><h2>Everything in one creative cloud</h2>
-    <p>AgentStudio is live and free — the creative tools are rolling out.</p></div>
+  <div class="section-head reveal"><h2>One creative cloud</h2><p>AgentStudio is live &amp; free. The creative tools are rolling out.</p></div>
   <div class="grid">
 
     <a class="card feature reveal" href="/agentstudio">
-      <div class="chip" style="background:var(--ink-wash);color:var(--ink)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg>
-      </div>
+      <div class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"/></svg></div>
       <div class="feature-body">
-        <h3>AgentStudio <span class="tag-live">LIVE · FREE</span></h3>
+        <h3>AgentStudio <span class="tag onlight">Free · Live</span></h3>
         <p>Turn a free NVIDIA NIM key into a private, autonomous coding agent. It plans, writes &amp; runs code, and drives a real browser — live, in your own workspace. No login, bring your own key.</p>
-        <span class="go">Open AgentStudio →</span>
+        <span class="go">Open AgentStudio <span class="ar">→</span></span>
       </div>
     </a>
 
     <a class="card reveal" href="/playground">
-      <div class="chip" style="background:rgba(91,108,176,.10);color:var(--cyan)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
-      </div>
-      <h3>Image Generation <span class="tag-prev">Preview</span></h3>
-      <p>Prompt-to-image with pro ComfyUI workflows and 30+ NVIDIA models, right in the browser.</p>
-      <span class="go">Open the studio →</span>
+      <div class="chip" style="color:var(--cyan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>
+      <h3>Image Generation <span class="tag prev">Preview</span></h3>
+      <p>Prompt-to-image with professional workflows and 30+ NVIDIA models, in the browser.</p>
+      <span class="go">Open the studio <span class="ar">→</span></span>
     </a>
 
     <div class="card reveal">
-      <div class="chip" style="background:rgba(95,139,87,.12);color:var(--green)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7V3h4M21 7V3h-4M3 17v4h4M21 17v4h-4"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>
-      </div>
-      <h3>Upscaler <span class="soon">Soon</span></h3>
+      <div class="chip" style="color:var(--green)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7V3h4M21 7V3h-4M3 17v4h4M21 17v4h-4"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></div>
+      <h3>Upscaler <span class="tag soon">Soon</span></h3>
       <p>Sharpen and enlarge images up to 8K with detail-preserving neural upscaling.</p>
     </div>
 
     <div class="card reveal">
-      <div class="chip" style="background:rgba(138,111,176,.12);color:var(--violet)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
-      </div>
-      <h3>Deconstruct <span class="soon">Soon</span></h3>
+      <div class="chip" style="color:var(--violet)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
+      <h3>Deconstruct <span class="tag soon">Soon</span></h3>
       <p>Reverse-engineer any image into an editable prompt and a node graph you can remix.</p>
     </div>
 
     <div class="card reveal">
-      <div class="chip" style="background:rgba(196,154,60,.14);color:var(--gold)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      </div>
-      <h3>AI Friends <span class="soon">Soon</span></h3>
+      <div class="chip" style="color:var(--gold)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <h3>AI Friends <span class="tag soon">Soon</span></h3>
       <p>Chat with expressive AI characters — voice, memory, and personality included.</p>
     </div>
 
     <div class="card reveal">
-      <div class="chip" style="background:rgba(196,85,77,.12);color:var(--red)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      </div>
-      <h3>Credits &amp; Pricing <span class="soon">Soon</span></h3>
+      <div class="chip" style="color:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <h3>Credits &amp; Pricing <span class="tag soon">Soon</span></h3>
       <p>Simple credit packs for the creative tools. AgentStudio always stays free.</p>
+    </div>
+
+    <div class="card reveal">
+      <div class="chip" style="color:var(--gold)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+      <h3>Blog Studio <span class="tag soon">Soon</span></h3>
+      <p>Draft, illustrate and publish long-form posts with AI assistance, end to end.</p>
     </div>
 
   </div>
 </section>
 
 <section class="wrap" id="why">
-  <div class="section-head reveal"><h2>Built for makers</h2><p>Professional power, a calm, warm interface.</p></div>
+  <div class="section-head reveal"><h2>Built for makers</h2><p>Professional power, a calm interface.</p></div>
   <div class="why">
-    <div class="reveal"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div>
+    <div class="reveal"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div>
       <h4>Fast by default</h4><p>GPU-backed pipelines and a snappy, no-clutter UI that stays out of your way.</p></div>
-    <div class="reveal"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <div class="reveal"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
       <h4>Yours &amp; private</h4><p>AgentStudio runs on your own key and workspace. Your work stays your work.</p></div>
-    <div class="reveal"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-      <h4>One account, one cloud</h4><p>Generate, upscale, chat and automate — all under a single warm roof.</p></div>
+    <div class="reveal"><div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+      <h4>One account, one cloud</h4><p>Generate, upscale, chat and automate — all under a single roof.</p></div>
   </div>
 </section>
 
 <section class="wrap" id="pricing">
   <div class="cta reveal">
-    <h2>Start free. Upgrade when you fly.</h2>
-    <p>AgentStudio is free forever. Creative tools run on simple credit packs — launching soon.</p>
-    <a class="btn btn-primary btn-lg" href="/agentstudio">Launch AgentStudio →</a>
+    <div>
+      <h2>Start free. Upgrade when you fly.</h2>
+      <p>AgentStudio is free forever. Creative tools run on simple credit packs — launching soon.</p>
+    </div>
+    <a class="btn btn-primary btn-lg" href="/agentstudio">Launch AgentStudio</a>
   </div>
 </section>
 
@@ -150,13 +138,12 @@
 <script>
   document.getElementById('yr').textContent=new Date().getFullYear();
   var nv=document.querySelector('nav');
-  addEventListener('scroll',function(){nv.style.boxShadow=scrollY>10?'var(--shadow-lift)':'none'},{passive:true});
+  addEventListener('scroll',function(){nv.style.borderBottomColor=scrollY>8?'var(--border)':'var(--border-soft)'},{passive:true});
   var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');
   mb.addEventListener('click',function(){var o=mm.classList.toggle('open');mb.setAttribute('aria-expanded',o)});
   mm.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){mm.classList.remove('open')})});
-  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.1});
   document.querySelectorAll('.reveal').forEach(function(el){io.observe(el)});
-  document.querySelectorAll('.card').forEach(function(c){c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px')})});
 </script>
 </body>
 </html>
