@@ -83,10 +83,17 @@ with Session(engine) as _s:
         if not _s.query(_SS).filter(_SS.key == _k).first():
             _s.add(_SS(key=_k, value=_v))
     _admin_email = (_os.environ.get("ADMIN_EMAIL") or "admin@onaiagents.com").strip().lower()
-    if not _s.query(_SU).filter(_SU.email == _admin_email).first():
-        _pw = _os.environ.get("ADMIN_PASSWORD") or "Onai$Admin2026"
+    _admin_pw = _os.environ.get("ADMIN_PASSWORD")  # set on the server, never in the repo
+    _admin = _s.query(_SU).filter(_SU.email == _admin_email).first()
+    if not _admin:
+        import secrets as _sec
+        _pw = _admin_pw or _sec.token_urlsafe(12)
         _s.add(_SU(email=_admin_email, name="Admin", password_hash=_hashpw(_pw),
                    credits=1000000, is_admin=True))
+        if not _admin_pw:
+            print(f"[onaiagents] Seeded admin {_admin_email} password: {_pw}", flush=True)
+    elif _admin_pw:
+        _admin.password_hash = _hashpw(_admin_pw)  # env var is the source of truth
     _s.commit()
 
 # ── Routers (absolute imports — the original crash was here) ──────────────────
