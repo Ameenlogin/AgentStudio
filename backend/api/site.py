@@ -114,6 +114,7 @@ class GenReq(BaseModel):
     prompt: str | None = None
     scale: str | None = None
     model_cost: int | None = None
+    image: str | None = None  # data URL, for vision (deconstruct)
 
 
 def _cost_for(tool: str, scale: str | None, s: dict) -> int:
@@ -124,35 +125,94 @@ def _cost_for(tool: str, scale: str | None, s: dict) -> int:
     return int(s.get("cost_playground", "40") or 0)
 
 
+_PREVIEW = "Live generation isn't enabled yet. Add an AI provider in admin Settings."
+
+
 @router.post("/generate")
 def generate(body: GenReq, user=Depends(auth.require_user), db: Session = Depends(get_db)):
     s = _settings(db)
     cost = body.model_cost if body.model_cost else _cost_for(body.tool, body.scale, s)
     if (user.credits or 0) < cost:
         raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
+    base = (s.get("img_base_url") or "").rstrip("/")
+    key = s.get("img_api_key")
+    H = {"Authorization": f"Bearer {key}"}
 
-    # Real image generation only when an OpenAI-compatible provider is configured.
-    base, key, model = s.get("img_base_url"), s.get("img_api_key"), s.get("img_model")
-    if body.tool == "playground" and base and key:
+    # ── Image generation (OpenAI-compatible /images/generations) ──
+    if body.tool in ("playground", "image"):
+        if not (base and key):
+            return {"status": "preview", "credits": user.credits, "message": _PREVIEW}
         try:
             import requests
-            r = requests.post(base.rstrip("/") + "/images/generations",
-                              headers={"Authorization": f"Bearer {key}"},
-                              json={"model": model or "stabilityai/sdxl", "prompt": body.prompt or "",
-                                    "n": 1, "size": "1024x1024"}, timeout=120)
+            r = requests.post(base + "/images/generations", headers=H,
+                              json={"model": s.get("img_model") or "grok-2-image",
+                                    "prompt": body.prompt or "", "n": 1}, timeout=180)
             r.raise_for_status()
-            data = r.json().get("data", [{}])[0]
-            url = data.get("url") or (("data:image/png;base64," + data["b64_json"]) if data.get("b64_json") else None)
+            d = r.json().get("data", [{}])[0]
+            url = d.get("url") or (("data:image/png;base64," + d["b64_json"]) if d.get("b64_json") else None)
             if not url:
                 raise ValueError("No image returned")
-            _grant(db, user, -cost, f"{body.tool} generation")
+            _grant(db, user, -cost, "image generation")
             return {"status": "ok", "image": url, "credits": user.credits}
         except Exception as e:
             raise HTTPException(502, f"Generation failed: {e}")
 
-    # No provider configured (or tool not wired yet) → preview, no charge.
-    return {"status": "preview", "credits": user.credits,
-            "message": "Live generation isn't enabled yet. Add an image provider in admin Settings."}
+    # ── Deconstruct (vision → prompt, OpenAI-compatible /chat/completions) ──
+    if body.tool == "deconstruct":
+        if not (base and key and body.image):
+            return {"status": "preview", "credits": user.credits, "message": _PREVIEW}
+        try:
+            import requests
+            r = requests.post(base + "/chat/completions", headers=H, json={
+                "model": s.get("vision_model") or s.get("img_model") or "grok-2-vision-latest",
+                "messages": [{"role": "user", "content": [
+                    {"type": "text", "text": "Reverse-engineer this image into ONE detailed text-to-image prompt. Output only the prompt."},
+                    {"type": "image_url", "image_url": {"url": body.image}}]}],
+                "max_tokens": 500}, timeout=120)
+            r.raise_for_status()
+            text = (r.json()["choices"][0]["message"]["content"] or "").strip()
+            _grant(db, user, -cost, "deconstruct")
+            return {"status": "ok", "text": text, "credits": user.credits}
+        except Exception as e:
+            raise HTTPException(502, f"Deconstruct failed: {e}")
+
+    # Other tools (e.g. upscale) — preview until a provider is wired.
+    return {"status": "preview", "credits": user.credits, "message": _PREVIEW}
+
+
+class ChatReq(BaseModel):
+    messages: list
+    persona: str | None = None
+
+
+@router.post("/chat")
+def chat(body: ChatReq, user=Depends(auth.require_user), db: Session = Depends(get_db)):
+    s = _settings(db)
+    base = (s.get("img_base_url") or "").rstrip("/")
+    key = s.get("img_api_key")
+    if not (base and key):
+        raise HTTPException(503, "Chat isn't enabled yet. Add an AI provider in admin Settings.")
+    cost = int(s.get("cost_chat", "1") or 0)
+    if (user.credits or 0) < cost:
+        raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
+    msgs = []
+    if body.persona:
+        msgs.append({"role": "system", "content": str(body.persona)[:2000]})
+    for m in (body.messages or [])[-12:]:
+        if isinstance(m, dict) and m.get("role") in ("user", "assistant") and m.get("content"):
+            msgs.append({"role": m["role"], "content": str(m["content"])[:4000]})
+    try:
+        import requests
+        r = requests.post(base + "/chat/completions", headers={"Authorization": f"Bearer {key}"},
+                          json={"model": s.get("chat_model") or "grok-2-latest", "messages": msgs,
+                                "max_tokens": 700}, timeout=120)
+        r.raise_for_status()
+        reply = r.json()["choices"][0]["message"]["content"]
+        if cost:
+            _grant(db, user, -cost, "ai friends chat")
+        return {"status": "ok", "reply": reply, "credits": user.credits}
+    except Exception as e:
+        raise HTTPException(502, f"Chat failed: {e}")
 
 
 # ── buy credits ───────────────────────────────────────────────────────────────

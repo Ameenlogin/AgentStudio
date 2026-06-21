@@ -148,27 +148,48 @@
   wr.oninput=function(){document.getElementById('wcount').textContent=this.value;document.getElementById('wmeta').textContent=this.value+' parallel workers';};
   var fx=true;document.getElementById('fxBtn').onclick=function(){fx=!fx;document.getElementById('fxLabel').textContent='Card FX '+(fx?'On':'Off')};
 
-  var queued=0;
+  var items=[];
   function addThumbs(files){
     var grid=document.getElementById('grid');
     Array.prototype.forEach.call(files,function(f){
-      queued++;var c=document.createElement('div');c.className='rcard animate-scale-in';
+      var c=document.createElement('div');c.className='rcard animate-scale-in';
       var url=URL.createObjectURL(f);
       c.innerHTML='<div class="rthumb" style="background-image:url('+url+');background-size:cover;background-position:center"></div><div class="rmeta">'+f.name.slice(0,28)+'</div>';
       grid.appendChild(c);
+      items.push({file:f,card:c,done:false,prompt:''});
     });
-    document.getElementById('qsum').textContent=queued+' queued';
-    document.getElementById('exportBtn').style.display=queued?'inline-flex':'none';
+    document.getElementById('qsum').textContent=items.length+' queued';
+    document.getElementById('exportBtn').style.display=items.length?'inline-flex':'none';
   }
   document.getElementById('dz').onclick=function(){document.getElementById('upload').click()};
   document.getElementById('dz').ondragover=function(e){e.preventDefault();this.classList.add('drag')};
   document.getElementById('dz').ondragleave=function(){this.classList.remove('drag')};
   document.getElementById('dz').ondrop=function(e){e.preventDefault();this.classList.remove('drag');addThumbs(e.dataTransfer.files)};
   document.getElementById('upload').onchange=function(){addThumbs(this.files)};
-  document.getElementById('runBtn').onclick=function(){
+  function toDataURL(f){return new Promise(function(res){var r=new FileReader();r.onload=function(){res(r.result)};r.readAsDataURL(f)})}
+  document.getElementById('runBtn').onclick=async function(){
     if(window.__OA_USER===false){location.href='/login?next=/deconstruct';return}
-    if(!queued){toast('Add some images first');return}
-    toast('Deconstruction launches soon — backend in progress');
+    var pending=items.filter(function(i){return !i.done});
+    if(!pending.length){toast('Add some images first');return}
+    var btn=this;btn.disabled=true;
+    for(var i=0;i<pending.length;i++){var it=pending[i],meta=it.card.querySelector('.rmeta');
+      meta.innerHTML='<span style="color:var(--faint)">Analyzing…</span>';
+      try{var dataURL=await toDataURL(it.file);
+        var r=await fetch('/api/site/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'deconstruct',image:dataURL})});
+        var d=await r.json();
+        if(r.status===401){location.href='/login?next=/deconstruct';return}
+        if(r.status===402){toast(d.detail||'Not enough credits');meta.textContent='—';break}
+        if(d.status==='ok'&&d.text){it.done=true;it.prompt=d.text;
+          meta.innerHTML='<div style="font-size:12px;line-height:1.55;color:var(--text);max-height:140px;overflow:auto">'+d.text.replace(/[&<]/g,function(m){return m==='&'?'&amp;':'&lt;'})+'</div>';
+        }else{meta.innerHTML='<span style="color:var(--faint)">'+(d.message||'Preview — set a provider in admin')+'</span>';}
+      }catch(e){meta.textContent='Failed'}
+    }
+    btn.disabled=false;
+  };
+  document.getElementById('exportBtn').onclick=function(){
+    var txt=items.filter(function(i){return i.prompt}).map(function(i,n){return '# '+(n+1)+' '+i.file.name+'\n'+i.prompt}).join('\n\n');
+    if(!txt){toast('Nothing to export yet');return}
+    var a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);a.download='prompts.txt';a.click();
   };
 </script>
 </body>

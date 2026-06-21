@@ -105,6 +105,18 @@
   </div>
 </div>
 
+<div class="cov" id="chatOv">
+  <div class="chatbox">
+    <div class="chathead">
+      <div class="cav" id="chatAv">N</div>
+      <div><h3 id="chatName">Nova</h3><div style="font-size:12px;color:var(--muted)">AI friend</div></div>
+      <button class="x" id="chatClose" aria-label="Close">✕</button>
+    </div>
+    <div class="msgs" id="chatMsgs"></div>
+    <div class="chatin"><input type="text" id="chatInput" placeholder="Message…" /><button class="btn btn-primary" id="chatSend">Send</button></div>
+  </div>
+</div>
+
 <footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Back to all tools</a></span></div></footer>
 
 <script>
@@ -117,8 +129,49 @@
   ov.onclick=function(e){if(e.target===ov)ov.classList.remove('on')};
   document.getElementById('traits').addEventListener('click',function(e){var t=e.target.closest('.chip2');if(t)t.classList.toggle('sel')});
   document.getElementById('createBtn').onclick=function(){var n=document.getElementById('fName');if(!n.value.trim()){n.focus();return}ov.classList.remove('on');toast('AI Friends launches soon — '+n.value.trim()+' is saved')};
-  document.querySelectorAll('#grid .fc[data-name]').forEach(function(c){c.onclick=function(){toast('Chat with '+c.dataset.name+' launches soon')}});
+  var PERSONAS={
+    Nova:"You are Nova, a creative muse who helps brainstorm, name things and push ideas further. Warm, imaginative, concise.",
+    Atlas:"You are Atlas, a patient tutor who explains anything step by step with simple examples. Encouraging and clear.",
+    Sage:"You are Sage, a calm wellness companion for reflection and daily check-ins. Gentle, supportive, non-judgmental.",
+    Pixel:"You are Pixel, a sharp coding buddy. Give concise, correct help and rubber-duck debugging.",
+    Luna:"You are Luna, a vivid storyteller for fiction and worldbuilding. Evocative and playful."
+  };
+  var AVCOL={Nova:'var(--violet)',Atlas:'var(--cyan)',Sage:'var(--green)',Pixel:'var(--gold)',Luna:'var(--red)'};
+  var chatOv=document.getElementById('chatOv'),chatMsgs=document.getElementById('chatMsgs');
+  var hist=[],persona='';
+  function addMsg(role,text){var m=document.createElement('div');m.className='msg '+(role==='user'?'u':'a');m.textContent=text;chatMsgs.appendChild(m);chatMsgs.scrollTop=chatMsgs.scrollHeight;return m;}
+  function openChat(name){persona=PERSONAS[name]||('You are '+name+', a friendly AI companion.');hist=[];chatMsgs.innerHTML='';
+    document.getElementById('chatName').textContent=name;
+    var av=document.getElementById('chatAv');av.textContent=name[0];av.style.background=AVCOL[name]||'var(--ink)';
+    addMsg('assistant',"Hi, I'm "+name+'. What’s on your mind?');chatOv.classList.add('on');document.getElementById('chatInput').focus();}
+  document.getElementById('chatClose').onclick=function(){chatOv.classList.remove('on')};
+  chatOv.onclick=function(e){if(e.target===chatOv)chatOv.classList.remove('on')};
+  async function sendChat(){var inp=document.getElementById('chatInput'),t=inp.value.trim();if(!t)return;inp.value='';
+    addMsg('user',t);hist.push({role:'user',content:t});
+    var typing=addMsg('assistant','…');
+    try{var r=await fetch('/api/site/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:hist,persona:persona})});var d=await r.json();typing.remove();
+      if(r.status===401){location.href='/login?next=/ai-friends';return}
+      if(r.status===402){addMsg('assistant','(Out of credits — top up in your account.)');return}
+      if(r.status===503){addMsg('assistant','(Chat isn’t enabled yet — an AI provider must be set in admin.)');return}
+      if(d.reply){addMsg('assistant',d.reply);hist.push({role:'assistant',content:d.reply});}else{addMsg('assistant','(No response.)');}
+    }catch(e){typing.remove();addMsg('assistant','(Something went wrong.)');}}
+  document.getElementById('chatSend').onclick=sendChat;
+  document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter')sendChat()});
+  document.querySelectorAll('#grid .fc[data-name]').forEach(function(c){c.onclick=function(){if(window.__OA_USER===false){location.href='/login?next=/ai-friends';return}openChat(c.dataset.name)}});
 </script>
-<style>.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:300;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}</style>
+<style>
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:400;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}
+.cov{position:fixed;inset:0;background:rgba(26,26,24,.45);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:300;padding:0}.cov.on{display:flex}
+.chatbox{background:var(--elevated);width:100%;max-width:520px;height:82vh;max-height:700px;border-radius:18px 18px 0 0;display:flex;flex-direction:column;border:1px solid var(--border);box-shadow:var(--shadow-lift)}
+@media(min-width:560px){.cov{align-items:center;padding:20px}.chatbox{border-radius:18px;height:72vh}}
+.chathead{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--border)}
+.chathead .cav{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-size:17px}
+.chathead h3{font-size:15px;font-weight:700}.chathead .x{margin-left:auto;cursor:pointer;color:var(--muted);background:none;border:none;font-size:18px}
+.msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:82%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.msg.u{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:4px}
+.msg.a{align-self:flex-start;background:var(--panel);color:var(--text);border-bottom-left-radius:4px}
+.chatin{display:flex;gap:8px;padding:14px;border-top:1px solid var(--border)}.chatin input{flex:1}
+</style>
 </body>
 </html>

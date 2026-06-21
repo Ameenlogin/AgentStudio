@@ -42,11 +42,13 @@
         <div style="display:flex;gap:8px"><input type="number" data-k="cost_upscale_2x" /><input type="number" data-k="cost_upscale_4x" /><input type="number" data-k="cost_upscale_8x" /></div></div>
     </div>
     <div class="panel">
-      <h3>Image provider <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--faint)">(OpenAI-compatible)</span></h3>
-      <div class="field"><div class="lbl">Base URL</div><input type="text" data-k="img_base_url" placeholder="https://integrate.api.nvidia.com/v1" /></div>
-      <div class="field"><div class="lbl">API key</div><input type="password" data-k="img_api_key" placeholder="sk-…" /></div>
-      <div class="field"><div class="lbl">Model</div><input type="text" data-k="img_model" placeholder="stabilityai/sdxl" /></div>
-      <p style="font-size:12.5px;color:var(--faint)">Set these to switch the tools from preview to live generation.</p>
+      <h3>AI provider <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--faint)">(OpenAI-compatible · xAI / NVIDIA)</span></h3>
+      <div class="field"><div class="lbl">Base URL</div><input type="text" data-k="img_base_url" placeholder="https://api.x.ai/v1" /></div>
+      <div class="field"><div class="lbl">API key</div><input type="password" data-k="img_api_key" placeholder="xai-… or nvapi-…" /></div>
+      <div class="field"><div class="lbl">Image model</div><input type="text" data-k="img_model" placeholder="grok-2-image" /></div>
+      <div class="field"><div class="lbl">Vision model · Deconstruct</div><input type="text" data-k="vision_model" placeholder="grok-2-vision-latest" /></div>
+      <div class="field"><div class="lbl">Chat model · AI Friends</div><input type="text" data-k="chat_model" placeholder="grok-2-latest" /></div>
+      <p style="font-size:12.5px;color:var(--faint)">Set base URL + key to switch every tool from preview to live.</p>
     </div>
     <div class="panel">
       <h3>Payments</h3>

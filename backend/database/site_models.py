@@ -69,11 +69,15 @@ DEFAULT_SETTINGS = {
     "cost_upscale_4x": "60",
     "cost_upscale_8x": "90",
     "cost_deconstruct": "5",
-    # Image generation provider (OpenAI-compatible /images/generations). Empty =
-    # tools run in preview mode until configured here in admin Settings.
-    "img_base_url": "",
+    # AI provider (OpenAI-compatible — works with xAI/Grok, NVIDIA NIM, etc.).
+    # One base URL + key powers image, vision (deconstruct) and chat (AI friends).
+    # Empty = those tools run in preview mode until configured in admin Settings.
+    "img_base_url": "",   # e.g. https://api.x.ai/v1  or  https://integrate.api.nvidia.com/v1
     "img_api_key": "",
-    "img_model": "",
+    "img_model": "",      # image model, e.g. grok-2-image
+    "vision_model": "",   # vision model for Deconstruct, e.g. grok-2-vision-latest
+    "chat_model": "",     # chat model for AI Friends, e.g. grok-2-latest
+    "cost_chat": "1",
     # Payment gateway keys (empty = "buy credits" shows coming-soon).
     "razorpay_key_id": "",
     "razorpay_key_secret": "",
