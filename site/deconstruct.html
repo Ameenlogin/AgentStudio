@@ -166,6 +166,7 @@
   document.getElementById('dz').ondrop=function(e){e.preventDefault();this.classList.remove('drag');addThumbs(e.dataTransfer.files)};
   document.getElementById('upload').onchange=function(){addThumbs(this.files)};
   document.getElementById('runBtn').onclick=function(){
+    if(window.__OA_USER===false){location.href='/login?next=/deconstruct';return}
     if(!queued){toast('Add some images first');return}
     toast('Deconstruction launches soon — backend in progress');
   };

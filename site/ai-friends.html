@@ -112,7 +112,7 @@
   var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');mb.onclick=function(){mm.classList.toggle('open')};
   function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
   var ov=document.getElementById('ov');
-  document.getElementById('createCard').onclick=function(){ov.classList.add('on')};
+  document.getElementById('createCard').onclick=function(){if(window.__OA_USER===false){location.href='/login?next=/ai-friends';return}ov.classList.add('on')};
   document.getElementById('cancel').onclick=function(){ov.classList.remove('on')};
   ov.onclick=function(e){if(e.target===ov)ov.classList.remove('on')};
   document.getElementById('traits').addEventListener('click',function(e){var t=e.target.closest('.chip2');if(t)t.classList.toggle('sel')});

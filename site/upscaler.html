@@ -154,6 +154,7 @@
   document.getElementById('clear').onclick=function(e){e.stopPropagation();imgURL=null;document.getElementById('chip').hidden=true;fileIn.value=''};
 
   document.getElementById('go').onclick=function(){
+    if(window.__OA_USER===false){location.href='/login?next=/upscaler';return}
     if(!imgURL){toast('Upload an image first');return}
     var r=document.getElementById('result'),btn=this;btn.disabled=true;
     r.innerHTML='<div class="fu-empty"><div class="fu-spinner"></div><h3 style="margin-top:16px">Enhancing…</h3></div>';

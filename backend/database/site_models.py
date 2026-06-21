@@ -29,6 +29,28 @@ class CreditTxn(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
+class Order(Base):
+    """A credit-purchase order (Razorpay). Created on checkout, marked paid after
+    the payment signature is verified server-side."""
+    __tablename__ = "orders"
+    id = Column(Integer, primary_key=True, index=True)
+    rzp_order_id = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("site_users.id"), index=True)
+    credits = Column(Integer)
+    amount = Column(Integer)          # in paise
+    status = Column(String, default="created")  # created | paid
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+# Credit packs (INR via Razorpay). Editable here; amounts charged are derived
+# server-side from this list so the client can't tamper with price↔credits.
+PACKAGES = [
+    {"key": "starter", "inr": 99,  "credits": 500,  "label": "Starter"},
+    {"key": "creator", "inr": 399, "credits": 2500, "label": "Creator"},
+    {"key": "studio",  "inr": 799, "credits": 6000, "label": "Studio"},
+]
+
+
 class SiteSetting(Base):
     """Key/value store for admin-tunable settings (costs, free credits, provider
     + payment keys). Strings; callers parse ints where needed."""

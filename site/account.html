@@ -40,6 +40,15 @@
   </div>
 </main>
 
+<div class="ov" id="buyOv">
+  <div class="modal">
+    <h2 style="font-family:var(--font-display);font-weight:500;font-size:22px;margin-bottom:4px">Buy credits</h2>
+    <p style="color:var(--muted);font-size:13.5px;margin-bottom:18px">Pay securely with card, UPI or netbanking via Razorpay.</p>
+    <div id="pkgs" style="display:grid;gap:10px"></div>
+    <button class="btn btn-ghost" id="buyCancel" style="width:100%;margin-top:16px">Cancel</button>
+  </div>
+</div>
+
 <footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Home</a></span></div></footer>
 
 <script>
@@ -55,10 +64,42 @@
     if(u.is_admin)document.getElementById('adminLink').style.display='inline-flex';
   });
   document.getElementById('logout').onclick=function(e){e.preventDefault();fetch('/api/site/logout',{method:'POST'}).then(()=>location.href='/')};
+  var CFG=null; fetch('/api/site/config').then(r=>r.json()).then(c=>{CFG=c});
+  var buyOv=document.getElementById('buyOv');
+  function loadRzp(){return new Promise(function(res,rej){if(window.Razorpay)return res();var s=document.createElement('script');s.src='https://checkout.razorpay.com/v1/checkout.js';s.onload=res;s.onerror=function(){rej(new Error('Could not load checkout'))};document.head.appendChild(s)})}
   document.getElementById('buy').onclick=function(){
-    fetch('/api/site/buy',{method:'POST'}).then(async r=>{var d=await r.json();toast(d.detail||'Redirecting…')}).catch(()=>toast('Payments coming soon'));
+    if(!CFG)return;
+    if(!CFG.pay_ready){toast('Payments are being set up — check back soon');return}
+    var box=document.getElementById('pkgs');box.innerHTML='';
+    (CFG.packages||[]).forEach(function(p){
+      var b=document.createElement('button');b.className='pkg';
+      b.innerHTML='<div><div class="pn">'+p.label+'</div><div class="pc">'+p.credits.toLocaleString()+' credits</div></div><div class="pp">₹'+p.inr+'</div>';
+      b.onclick=function(){startBuy(p.key,b)};box.appendChild(b);
+    });
+    buyOv.classList.add('on');
   };
+  document.getElementById('buyCancel').onclick=function(){buyOv.classList.remove('on')};
+  buyOv.onclick=function(e){if(e.target===buyOv)buyOv.classList.remove('on')};
+  function startBuy(key,btn){btn.disabled=true;
+    fetch('/api/site/buy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({package:key})})
+    .then(async r=>{var d=await r.json();if(!r.ok)throw new Error(d.detail||'Checkout failed');return d})
+    .then(async function(o){await loadRzp();
+      var rzp=new Razorpay({key:o.key_id,amount:o.amount,currency:o.currency,order_id:o.order_id,
+        name:'onaiagents',description:o.credits+' credits',prefill:{name:o.name,email:o.email},theme:{color:'#161513'},
+        handler:function(resp){fetch('/api/site/pay/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(resp)})
+          .then(r=>r.json()).then(function(d){buyOv.classList.remove('on');if(d.credits!=null)document.getElementById('bal').textContent=d.credits.toLocaleString()+' cr';toast('Payment complete — '+ (d.credits!=null?d.credits+' cr':'credits added'))})}});
+      rzp.open();btn.disabled=false;
+    }).catch(function(e){btn.disabled=false;toast(e.message)});
+  }
 </script>
-<style>.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:200;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}</style>
+<style>
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:300;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}
+.ov{position:fixed;inset:0;background:rgba(26,26,24,.4);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}.ov.on{display:flex}
+.modal{background:var(--elevated);border:1px solid var(--border);border-radius:18px;max-width:420px;width:100%;padding:26px;box-shadow:var(--shadow-lift)}
+.pkg{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:.16s}
+.pkg:hover{border-color:var(--ink);background:#fffdf8}
+.pkg .pn{font-weight:700;font-size:14px}.pkg .pc{font-size:12.5px;color:var(--muted);margin-top:2px}
+.pkg .pp{font-family:var(--font-display);font-size:22px;font-weight:500}
+</style>
 </body>
 </html>

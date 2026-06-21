@@ -1,6 +1,8 @@
 /* Shared nav login-state: turns "Sign in" into Account + credit balance (+ Admin). */
 (function () {
   fetch('/api/site/config').then(function (r) { return r.json(); }).then(function (c) {
+    window.__OA_USER = !!(c && c.logged_in);
+    window.__OA_CFG = c;
     document.querySelectorAll('.nav-right, .mobile-menu').forEach(function (box) {
       var signin = null;
       box.querySelectorAll('a').forEach(function (a) { if (a.textContent.trim() === 'Sign in') signin = a; });

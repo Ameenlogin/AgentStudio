@@ -82,7 +82,7 @@
   document.getElementById('yr').textContent=new Date().getFullYear();
   var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');mb.onclick=function(){mm.classList.toggle('open')};
   function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
-  document.querySelectorAll('[data-plan]').forEach(function(b){b.onclick=function(){toast(b.dataset.plan+' checkout launches soon')}});
+  document.querySelectorAll('[data-plan]').forEach(function(b){b.onclick=function(){location.href=(window.__OA_USER?'/account':'/login?next=/account')}});
 </script>
 </body>
 </html>

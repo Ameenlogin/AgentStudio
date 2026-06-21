@@ -1,11 +1,14 @@
 """onaiagents.com site API: accounts, credits, admin settings, credit-gated tools."""
 import re
+import hmac
+import hashlib
+import base64
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database.database import get_db
-from database.site_models import SiteUser, CreditTxn, SiteSetting, DEFAULT_SETTINGS
+from database.site_models import SiteUser, CreditTxn, SiteSetting, Order, PACKAGES, DEFAULT_SETTINGS
 from services import site_auth as auth
 
 router = APIRouter()
@@ -99,7 +102,8 @@ def config(user=Depends(auth.current_user), db: Session = Depends(get_db)):
         "free_credits": int(s.get("free_credits", "100") or 0),
         "costs": costs,
         "img_ready": bool(s.get("img_base_url") and s.get("img_api_key")),
-        "pay_ready": bool(s.get("razorpay_key_id") or s.get("stripe_pk")),
+        "pay_ready": bool(s.get("razorpay_key_id") and s.get("razorpay_key_secret")),
+        "packages": PACKAGES,
         "site_name": s.get("site_name", "onaiagents"),
     }
 
@@ -152,13 +156,61 @@ def generate(body: GenReq, user=Depends(auth.require_user), db: Session = Depend
 
 
 # ── buy credits ───────────────────────────────────────────────────────────────
+class BuyReq(BaseModel):
+    package: str
+
+
 @router.post("/buy")
-def buy(user=Depends(auth.require_user), db: Session = Depends(get_db)):
+def buy(body: BuyReq, user=Depends(auth.require_user), db: Session = Depends(get_db)):
     s = _settings(db)
-    if not (s.get("razorpay_key_id") or s.get("stripe_pk")):
-        raise HTTPException(503, "Payments aren't enabled yet. Add a gateway key in admin Settings.")
-    # Gateway order creation would go here once keys + webhooks are configured.
-    raise HTTPException(503, "Checkout is being finalized — gateway keys are set, webhook wiring pending.")
+    kid, ksec = s.get("razorpay_key_id"), s.get("razorpay_key_secret")
+    if not (kid and ksec):
+        raise HTTPException(503, "Payments aren't enabled yet. Add Razorpay keys in admin Settings.")
+    pkg = next((p for p in PACKAGES if p["key"] == body.package), None)
+    if not pkg:
+        raise HTTPException(400, "Unknown package.")
+    amount = pkg["inr"] * 100  # paise
+    try:
+        import requests
+        token = base64.b64encode(f"{kid}:{ksec}".encode()).decode()
+        r = requests.post("https://api.razorpay.com/v1/orders",
+                          headers={"Authorization": f"Basic {token}"},
+                          json={"amount": amount, "currency": "INR", "receipt": f"u{user.id}-{pkg['key']}",
+                                "notes": {"user_id": str(user.id), "credits": str(pkg["credits"])}},
+                          timeout=30)
+        r.raise_for_status()
+        oid = r.json()["id"]
+    except Exception as e:
+        raise HTTPException(502, f"Could not start checkout: {e}")
+    db.add(Order(rzp_order_id=oid, user_id=user.id, credits=pkg["credits"], amount=amount))
+    db.commit()
+    return {"order_id": oid, "key_id": kid, "amount": amount, "currency": "INR",
+            "credits": pkg["credits"], "name": user.name, "email": user.email}
+
+
+class VerifyReq(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+
+
+@router.post("/pay/verify")
+def pay_verify(body: VerifyReq, user=Depends(auth.require_user), db: Session = Depends(get_db)):
+    ksec = _settings(db).get("razorpay_key_secret")
+    if not ksec:
+        raise HTTPException(503, "Payments not configured.")
+    order = db.query(Order).filter(Order.rzp_order_id == body.razorpay_order_id).first()
+    if not order or order.user_id != user.id:
+        raise HTTPException(404, "Order not found.")
+    if order.status == "paid":
+        return {"status": "ok", "credits": user.credits, "already": True}
+    expected = hmac.new(ksec.encode(), f"{body.razorpay_order_id}|{body.razorpay_payment_id}".encode(),
+                        hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, body.razorpay_signature):
+        raise HTTPException(400, "Payment verification failed.")
+    order.status = "paid"
+    _grant(db, user, order.credits, f"Purchased {order.credits} credits")
+    return {"status": "ok", "credits": user.credits}
 
 
 # ── admin ─────────────────────────────────────────────────────────────────────
