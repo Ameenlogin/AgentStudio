@@ -3,128 +3,212 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Image Generation — onaiagents</title>
-<meta name="description" content="Prompt-to-image generation with professional workflows and 30+ NVIDIA models." />
+<title>Playground — AI Art Generator | onaiagents</title>
+<meta name="description" content="The onaiagents Playground for AI art and professional realism models." />
 <meta name="theme-color" content="#FAF9F5" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/styles.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --pg-bg:#FAF9F5;--pg-surface:#FFFFFF;--pg-surface-2:#F3F1EA;--pg-border:#E6E2D7;
+    --pg-text:#1A1A18;--pg-text-2:#6B6760;--pg-faint:#A6A095;--pg-primary:#161513;--header-h:64px;
+    --fs:"Inter",system-ui,sans-serif;--fd:"Newsreader",Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  ::selection{background:var(--pg-primary);color:#fff}
+  html{background:var(--pg-bg)}
+  body{font-family:var(--fs);background:var(--pg-bg);color:var(--pg-text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  @media(min-width:901px){body{overflow:hidden}}
+  a{text-decoration:none;color:inherit}
+
+  .pg-nav{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:rgba(250,249,245,.85);
+    backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid var(--pg-border);
+    display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;z-index:100}
+  .pg-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;letter-spacing:-.02em}
+  .pg-brand img{width:24px;height:24px}
+  .pg-links{display:flex;align-items:center;gap:12px}
+  .pg-links a{color:var(--pg-text-2);font-size:.9rem;font-weight:600;padding:8px 14px;border-radius:9px;transition:.2s}
+  .pg-links a:hover{color:var(--pg-text);background:var(--pg-surface-2)}
+  .pg-credits{background:var(--pg-text);color:#fff;font-weight:700;font-size:.82rem;padding:7px 13px;border-radius:9px;display:flex;align-items:center;gap:6px}
+  .pg-credits-icon{animation:pulse 2s infinite}
+  @keyframes pulse{50%{transform:scale(1.12)}}
+
+  .pg-wrap{display:flex;height:100vh;padding-top:var(--header-h)}
+  .pg-sidebar{width:390px;background:var(--pg-surface);border-right:1px solid var(--pg-border);
+    display:flex;flex-direction:column;overflow-y:auto;padding:1.5rem;flex-shrink:0}
+  .pg-sidebar::-webkit-scrollbar{width:5px}.pg-sidebar::-webkit-scrollbar-thumb{background:#dad5c7;border-radius:4px}
+  .pg-label{font-size:.72rem;font-weight:700;color:var(--pg-text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .pg-textarea{width:100%;background:var(--pg-bg);border:1px solid var(--pg-border);border-radius:11px;color:var(--pg-text);
+    font-family:inherit;font-size:.9rem;padding:12px 14px;margin-bottom:1.2rem;outline:none;transition:.2s;resize:vertical;min-height:96px;line-height:1.5}
+  .pg-textarea:focus{border-color:var(--pg-text);background:#fff}
+  .pg-active{display:flex;align-items:center;gap:12px;background:var(--pg-surface-2);border:1px solid var(--pg-border);border-radius:13px;padding:10px;margin-bottom:1.2rem}
+  .pg-active img{width:46px;height:46px;border-radius:9px;object-fit:cover;background:var(--pg-bg)}
+  .pg-active .t{font-size:.9rem;font-weight:700}
+  .pg-active .b{font-size:.7rem;color:var(--pg-text-2);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+  .pg-choice-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:1.2rem}
+  .pg-choice{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;text-align:left;background:var(--pg-bg);
+    border:1px solid var(--pg-border);color:var(--pg-text-2);padding:9px 12px;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;transition:.18s}
+  .pg-choice small{font-weight:500;font-size:.66rem;color:var(--pg-faint)}
+  .pg-choice:hover{border-color:#d8d2c4}
+  .pg-choice.active{background:var(--pg-text);border-color:var(--pg-text);color:#fff}
+  .pg-choice.active small{color:rgba(255,255,255,.7)}
+  .pg-grid-select{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:1.2rem}
+  .pg-grid-select.two{grid-template-columns:repeat(2,1fr)}
+  .pg-grid-opt{background:var(--pg-bg);border:1px solid var(--pg-border);color:var(--pg-text-2);padding:10px 5px;border-radius:10px;font-size:.8rem;font-weight:600;text-align:center;cursor:pointer;transition:.18s}
+  .pg-grid-opt:hover{border-color:#d8d2c4}
+  .pg-grid-opt.active{background:var(--pg-text);border-color:var(--pg-text);color:#fff}
+  .pg-file{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--pg-bg);border:1px dashed var(--pg-border);
+    border-radius:11px;padding:13px;font-size:.85rem;font-weight:600;color:var(--pg-text-2);cursor:pointer;margin-bottom:1.2rem;transition:.18s}
+  .pg-file:hover{border-color:var(--pg-text);color:var(--pg-text)}
+  input[type=range]{width:100%;accent-color:var(--pg-text);cursor:pointer;margin-bottom:1.6rem}
+  .pg-btn{width:100%;background:var(--pg-primary);color:#fff;border:none;padding:15px;border-radius:13px;font-weight:700;font-size:1rem;
+    cursor:pointer;transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:auto}
+  .pg-btn:hover{background:#000;transform:translateY(-2px)}
+  .pg-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .pg-cost-badge{background:rgba(255,255,255,.18);padding:3px 9px;border-radius:7px;font-size:.78rem;font-weight:700}
+
+  .pg-main{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:1.6rem}
+  .pg-result-area{flex:1;min-height:420px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--pg-border);border-radius:18px;background:var(--pg-surface);position:relative;overflow:hidden;margin-bottom:1.4rem}
+  .pg-placeholder{text-align:center;color:var(--pg-text-2)}
+  .pg-placeholder h2{font-family:var(--fd);font-weight:500;font-size:1.5rem;margin-top:8px;color:var(--pg-text)}
+  .pg-gen{display:none;flex-direction:column;align-items:center;gap:14px}
+  .pg-gen.on{display:flex}.pg-result-area.busy .pg-placeholder{display:none}
+  .pg-spinner{width:46px;height:46px;border:3px solid var(--pg-border);border-top-color:var(--pg-text);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pg-gallery h3{font-size:.9rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .pg-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .pg-filter{background:var(--pg-surface);border:1px solid var(--pg-border);color:var(--pg-text-2);padding:8px 14px;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;transition:.18s}
+  .pg-filter:hover{border-color:var(--pg-text);color:var(--pg-text)}
+  .pg-filter.active{background:var(--pg-text);color:#fff;border-color:var(--pg-text)}
+  .pg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .pg-card{background:var(--pg-surface);border:1px solid var(--pg-border);border-radius:13px;overflow:hidden;cursor:pointer;transition:.2s}
+  .pg-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift,0 12px 30px -16px rgba(40,36,28,.3))}
+  .pg-card.selected{border-color:var(--pg-text);box-shadow:0 0 0 1px var(--pg-text)}
+  .pg-card .pic{aspect-ratio:1;background:var(--pg-surface-2);display:flex;align-items:center;justify-content:center;color:var(--pg-faint)}
+  .pg-card .cap{padding:10px 12px}
+  .pg-card .cap b{font-size:.82rem;font-weight:700;display:block}
+  .pg-card .cap span{font-size:.72rem;color:var(--pg-text-2)}
+
+  @media(max-width:900px){
+    .pg-wrap{flex-direction:column;height:auto}
+    .pg-sidebar{width:100%;border-right:none;border-bottom:1px solid var(--pg-border)}
+    .pg-main{overflow:visible}
+    body{overflow:auto}
+  }
+  @media(prefers-reduced-motion:reduce){.pg-spinner,.pg-credits-icon{animation:none}}
+</style>
 </head>
 <body>
-<nav>
-  <div class="wrap nav-in">
-    <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
-    <div class="nav-links">
-      <a href="/#tools" class="active">Tools</a>
-      <a href="/agentstudio">AgentStudio</a>
-      <a href="/#why">Why</a>
-      <a href="/#pricing">Pricing</a>
-    </div>
-    <div class="nav-right">
-      <a class="btn-text" href="#">Sign in</a>
-      <a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a>
-    </div>
-    <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-    </button>
-  </div>
-  <div class="mobile-menu" id="mm">
-    <a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a>
-    <a href="/#why">Why</a><a href="/#pricing">Pricing</a><a href="#">Sign in</a>
-    <a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a>
+<nav class="pg-nav">
+  <a href="/" class="pg-brand"><img src="/spark-ink.png" alt="" onerror="this.style.display='none'"/> Playground</a>
+  <div class="pg-links">
+    <a href="/#tools"><i data-lucide="arrow-left" style="width:16px;height:16px;vertical-align:-3px"></i> Back</a>
+    <div class="pg-credits"><i data-lucide="gem" class="pg-credits-icon" style="width:14px;height:14px"></i> <span>100</span></div>
   </div>
 </nav>
 
-<main class="wrap tool">
-  <div class="tool-head">
-    <span class="overline">Tools — Image Generation</span>
-    <h1>Image Generation</h1>
-    <p>Describe it, pick a model, and create — professional workflows on 30+ NVIDIA models.</p>
-  </div>
+<div class="pg-wrap">
+  <aside class="pg-sidebar">
+    <label class="pg-label"><i data-lucide="cpu" style="width:14px;height:14px"></i> Active model</label>
+    <div class="pg-active">
+      <img id="amImg" src="/spark-ink.png" alt="" onerror="this.style.visibility='hidden'"/>
+      <div><div class="t" id="amTitle">FLUX.1 [dev]</div><div class="b" id="amBase">Image · best quality</div></div>
+    </div>
 
-  <div class="studio">
-    <form class="panel sticky" id="genForm" autocomplete="off">
-      <div class="field">
-        <div class="lbl">Prompt <span class="hint">be descriptive</span></div>
-        <textarea id="prompt" placeholder="A serene Himalayan valley at golden hour, cinematic, ultra-detailed, volumetric light…"></textarea>
-      </div>
-      <div class="field">
-        <div class="lbl">Negative <span class="hint">optional</span></div>
-        <input type="text" id="negative" placeholder="blurry, low quality, watermark" />
-      </div>
-      <div class="field">
-        <div class="lbl">Model</div>
-        <select id="model">
-          <option>FLUX.1 [dev]</option>
-          <option>Stable Diffusion XL</option>
-          <option>SDXL Turbo</option>
-          <option>Playground v2.5</option>
-          <option>Stable Diffusion 3 Medium</option>
-        </select>
-      </div>
-      <div class="field">
-        <div class="lbl">Aspect ratio</div>
-        <div class="chips" data-group="ratio">
-          <span class="opt sel">1:1</span><span class="opt">3:2</span><span class="opt">2:3</span><span class="opt">16:9</span><span class="opt">9:16</span>
-        </div>
-      </div>
-      <div class="field">
-        <div class="lbl">Style</div>
-        <div class="chips" data-group="style">
-          <span class="opt sel">Auto</span><span class="opt">Photoreal</span><span class="opt">Cinematic</span><span class="opt">Anime</span><span class="opt">3D</span>
-        </div>
-      </div>
-      <div class="field">
-        <div class="lbl">Images</div>
-        <div class="chips" data-group="count">
-          <span class="opt">1</span><span class="opt sel">2</span><span class="opt">4</span>
-        </div>
-      </div>
-      <button class="btn btn-primary gen-btn" id="genBtn" type="submit">Generate</button>
-      <div class="cost"><b id="costN">2</b>&nbsp;credits&nbsp;·&nbsp;1 per image</div>
-    </form>
+    <label class="pg-label"><i data-lucide="message-square-text" style="width:14px;height:14px"></i> Prompt</label>
+    <textarea id="prompt" class="pg-textarea" placeholder="Describe the scene in extreme detail…"></textarea>
 
-    <div class="panel" style="padding:0">
-      <div class="canvas" id="canvas">
-        <div class="empty">
-          <div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>
-          <h4>Your creations appear here</h4>
-          <p>Write a prompt and hit Generate to preview the studio.</p>
-        </div>
+    <label class="pg-label"><i data-lucide="message-square-dashed" style="width:14px;height:14px"></i> Negative prompt</label>
+    <textarea id="neg" class="pg-textarea" style="min-height:60px" placeholder="What to avoid…"></textarea>
+
+    <label class="pg-label"><i data-lucide="palette" style="width:14px;height:14px"></i> Style</label>
+    <div class="pg-choice-strip" data-group="style">
+      <button class="pg-choice active" type="button">Hyperreal<small>Glossy photo detail</small></button>
+      <button class="pg-choice" type="button">Photoreal<small>Natural camera look</small></button>
+      <button class="pg-choice" type="button">Anime<small>Illustrated polish</small></button>
+      <button class="pg-choice" type="button">Cinematic<small>Film lighting</small></button>
+    </div>
+
+    <label class="pg-label"><i data-lucide="person-standing" style="width:14px;height:14px"></i> Composition</label>
+    <div class="pg-choice-strip" data-group="pose">
+      <button class="pg-choice active" type="button">Default<small>Balanced</small></button>
+      <button class="pg-choice" type="button">Portrait<small>Face focused</small></button>
+      <button class="pg-choice" type="button">Wide<small>Full scene</small></button>
+      <button class="pg-choice" type="button">Close up<small>Intimate crop</small></button>
+      <button class="pg-choice" type="button">Profile<small>Side angle</small></button>
+    </div>
+
+    <label class="pg-label"><i data-lucide="aspect-ratio" style="width:14px;height:14px"></i> Aspect ratio</label>
+    <div class="pg-grid-select" data-group="aspect">
+      <div class="pg-grid-opt">3:4</div><div class="pg-grid-opt active">9:16</div><div class="pg-grid-opt">1:1</div>
+      <div class="pg-grid-opt">4:3</div><div class="pg-grid-opt">16:9</div>
+    </div>
+
+    <label class="pg-label"><i data-lucide="image-plus" style="width:14px;height:14px"></i> Image to image (max 3)</label>
+    <label class="pg-file" for="ref"><i data-lucide="image-plus" style="width:16px;height:16px"></i> <span id="refName">Add images (0/3)</span></label>
+    <input type="file" id="ref" accept="image/*" multiple hidden />
+
+    <label class="pg-label"><i data-lucide="sliders-horizontal" style="width:14px;height:14px"></i> Strength · <span id="strVal">0.65</span></label>
+    <input type="range" id="str" min="0.1" max="1.0" step="0.05" value="0.65" />
+
+    <label class="pg-label"><i data-lucide="maximize" style="width:14px;height:14px"></i> Resolution</label>
+    <div class="pg-grid-select two" data-group="res">
+      <div class="pg-grid-opt active">1K Standard</div><div class="pg-grid-opt">2K Ultra</div>
+    </div>
+
+    <button id="genBtn" class="pg-btn"><i data-lucide="sparkles" style="width:18px;height:18px"></i> Generate <span class="pg-cost-badge" id="costBadge">40 CR</span></button>
+  </aside>
+
+  <main class="pg-main">
+    <div class="pg-result-area" id="resultArea">
+      <div class="pg-placeholder" id="ph">
+        <i data-lucide="image" style="width:60px;height:60px;opacity:.45"></i>
+        <h2>Awaiting your prompt</h2>
+        <p style="font-size:.9rem;margin-top:4px">Pick a model below and generate.</p>
+      </div>
+      <div class="pg-gen" id="gen"><div class="pg-spinner"></div><div style="color:var(--pg-text-2);font-weight:600;letter-spacing:.5px">Processing request…</div></div>
+    </div>
+
+    <div class="pg-gallery">
+      <h3><i data-lucide="grid-3x3" style="width:15px;height:15px"></i> Models</h3>
+      <div class="pg-filters">
+        <button class="pg-filter active">All models</button>
+        <button class="pg-filter">Image</button>
+        <button class="pg-filter">xAI</button>
+      </div>
+      <div class="pg-grid" id="models">
+        <div class="pg-card selected" data-t="FLUX.1 [dev]" data-b="Image · best quality" data-c="40"><div class="pic"><i data-lucide="sparkles" style="width:26px;height:26px"></i></div><div class="cap"><b>FLUX.1 [dev]</b><span>Premium · 40 CR</span></div></div>
+        <div class="pg-card" data-t="Grok Image · Fast" data-b="xAI · fast" data-c="15"><div class="pic"><i data-lucide="zap" style="width:26px;height:26px"></i></div><div class="cap"><b>Grok Image · Fast</b><span>Standard · 15 CR</span></div></div>
+        <div class="pg-card" data-t="Grok Image · Quality" data-b="xAI · quality" data-c="40"><div class="pic"><i data-lucide="gem" style="width:26px;height:26px"></i></div><div class="cap"><b>Grok Image · Quality</b><span>Quality · 40 CR</span></div></div>
+        <div class="pg-card" data-t="SDXL" data-b="Image · versatile" data-c="15"><div class="pic"><i data-lucide="image" style="width:26px;height:26px"></i></div><div class="cap"><b>SDXL</b><span>Standard · 15 CR</span></div></div>
+        <div class="pg-card" data-t="Playground v2.5" data-b="Image · aesthetic" data-c="40"><div class="pic"><i data-lucide="palette" style="width:26px;height:26px"></i></div><div class="cap"><b>Playground v2.5</b><span>Premium · 40 CR</span></div></div>
+        <div class="pg-card" data-t="SD3 Medium" data-b="Image · balanced" data-c="15"><div class="pic"><i data-lucide="layers" style="width:26px;height:26px"></i></div><div class="cap"><b>SD3 Medium</b><span>Standard · 15 CR</span></div></div>
       </div>
     </div>
-  </div>
-</main>
-
-<footer><div class="wrap foot-in">
-  <span>© <span id="yr"></span> onaiagents · onaiagents.com</span>
-  <span><a href="/" style="color:var(--muted)">← Back to all tools</a></span>
-</div></footer>
+  </main>
+</div>
 
 <script>
-  document.getElementById('yr').textContent=new Date().getFullYear();
-  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');
-  mb.addEventListener('click',function(){var o=mm.classList.toggle('open');mb.setAttribute('aria-expanded',o)});
-  document.querySelectorAll('.chips').forEach(function(g){
-    g.addEventListener('click',function(e){var t=e.target.closest('.opt');if(!t)return;
-      g.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel')});t.classList.add('sel');
-      if(g.dataset.group==='count')document.getElementById('costN').textContent=parseInt(t.textContent,10)||1;});
-  });
-  var canvas=document.getElementById('canvas');
-  function count(){var s=document.querySelector('[data-group=count] .opt.sel');return parseInt(s&&s.textContent,10)||1}
-  document.getElementById('genForm').addEventListener('submit',function(e){
-    e.preventDefault();var p=document.getElementById('prompt');if(!p.value.trim()){p.focus();return}
-    var n=count(),btn=document.getElementById('genBtn');btn.disabled=true;
-    var g='<div class="results">';for(var i=0;i<n;i++)g+='<div class="shot skel"></div>';g+='</div>';canvas.innerHTML=g;
-    setTimeout(function(){
-      canvas.innerHTML='<div class="empty"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/><circle cx="12" cy="12" r="3"/></svg></div>'
-      +'<h4>Generation launches soon</h4><p>This is a live design preview. Real NVIDIA-powered generation arrives with the credits update — your prompt &amp; settings are ready for it.</p>'
-      +'<a class="btn btn-primary btn-lg" style="margin-top:18px" href="/agentstudio">Meanwhile, try AgentStudio — free</a></div>';
-      btn.disabled=false;
-    },1500);
-  });
+  function setGroup(g,el){g.querySelectorAll('.pg-choice,.pg-grid-opt').forEach(function(o){o.classList.remove('active')});el.classList.add('active')}
+  document.querySelectorAll('[data-group]').forEach(function(g){g.addEventListener('click',function(e){var t=e.target.closest('.pg-choice,.pg-grid-opt');if(t)setGroup(g,t)})});
+  var str=document.getElementById('str');str.oninput=function(){document.getElementById('strVal').textContent=parseFloat(this.value).toFixed(2)};
+  document.getElementById('ref').onchange=function(){document.getElementById('refName').textContent='Added '+Math.min(this.files.length,3)+' (max 3)'};
+  document.querySelectorAll('.pg-filter').forEach(function(f){f.onclick=function(){document.querySelectorAll('.pg-filter').forEach(function(x){x.classList.remove('active')});f.classList.add('active')}});
+  document.querySelectorAll('#models .pg-card').forEach(function(c){c.onclick=function(){
+    document.querySelectorAll('#models .pg-card').forEach(function(x){x.classList.remove('selected')});c.classList.add('selected');
+    document.getElementById('amTitle').textContent=c.dataset.t;document.getElementById('amBase').textContent=c.dataset.b;
+    document.getElementById('costBadge').textContent=c.dataset.c+' CR';
+  }});
+  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
+  var ra=document.getElementById('resultArea'),gen=document.getElementById('gen'),btn=document.getElementById('genBtn');
+  btn.onclick=function(){var p=document.getElementById('prompt');if(!p.value.trim()){p.focus();return}
+    btn.disabled=true;ra.classList.add('busy');gen.classList.add('on');
+    setTimeout(function(){gen.classList.remove('on');ra.classList.remove('busy');btn.disabled=false;toast('Image generation launches soon — backend in progress')},1700);};
+  if(window.lucide)lucide.createIcons();
 </script>
+<style>.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--pg-primary);color:#fff;padding:12px 20px;border-radius:9px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:200;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}</style>
 </body>
 </html>
