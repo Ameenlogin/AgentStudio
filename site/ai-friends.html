@@ -43,7 +43,10 @@
   .chip2:hover{border-color:var(--text)}.chip2.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
   .mfoot{display:flex;gap:10px;margin-top:24px}
   .mfoot .btn{flex:1}
-  @media(prefers-reduced-motion:reduce){.fc{transition:none}}
+  .af-hero,.fc{opacity:0;animation:afin .62s cubic-bezier(.16,1,.3,1) forwards}
+  .af-grid .fc:nth-child(2){animation-delay:.05s}.af-grid .fc:nth-child(3){animation-delay:.1s}.af-grid .fc:nth-child(4){animation-delay:.15s}.af-grid .fc:nth-child(5){animation-delay:.2s}.af-grid .fc:nth-child(6){animation-delay:.25s}
+  @keyframes afin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.fc,.af-hero{animation:none!important;opacity:1!important}.fc{transition:none}}
   @media(max-width:560px){.af{padding:28px 16px 40px}}
 </style>
 <script defer src="/nav.js"></script>
