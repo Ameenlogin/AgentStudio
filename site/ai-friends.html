@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>AI Friends — onaiagents</title>
+<meta name="description" content="Chat with expressive AI characters — voice, memory, and personality included." />
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+    <div class="nav-links"><a href="/#tools" class="active">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a></div>
+    <div class="nav-right"><a class="btn-text" href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  </div>
+  <div class="mobile-menu" id="mm"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a><a href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
+</nav>
+
+<main class="wrap tool">
+  <div class="tool-head">
+    <span class="overline">Tools — AI Friends</span>
+    <h1>AI Friends</h1>
+    <p>A cast of expressive AI characters with voice, memory, and personality. Meet them below.</p>
+  </div>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+    Voice chat with memory launches soon — this is a preview of the cast.
+  </div>
+
+  <div class="friends">
+    <div class="friend">
+      <div class="av" style="background:var(--violet)">N</div>
+      <h3>Nova</h3><p>A creative muse for brainstorming, naming, and pushing ideas further.</p>
+      <button class="btn btn-ghost" data-name="Nova">Start chat →</button>
+    </div>
+    <div class="friend">
+      <div class="av" style="background:var(--cyan)">A</div>
+      <h3>Atlas</h3><p>A patient study tutor who explains anything, step by step.</p>
+      <button class="btn btn-ghost" data-name="Atlas">Start chat →</button>
+    </div>
+    <div class="friend">
+      <div class="av" style="background:var(--green)">S</div>
+      <h3>Sage</h3><p>A calm wellness companion for reflection and daily check-ins.</p>
+      <button class="btn btn-ghost" data-name="Sage">Start chat →</button>
+    </div>
+    <div class="friend">
+      <div class="av" style="background:var(--gold)">P</div>
+      <h3>Pixel</h3><p>A sharp coding buddy for quick reviews, snippets, and rubber-ducking.</p>
+      <button class="btn btn-ghost" data-name="Pixel">Start chat →</button>
+    </div>
+    <div class="friend">
+      <div class="av" style="background:var(--red)">L</div>
+      <h3>Luna</h3><p>A vivid storyteller for fiction, worldbuilding, and bedtime tales.</p>
+      <button class="btn btn-ghost" data-name="Luna">Start chat →</button>
+    </div>
+    <div class="friend">
+      <div class="av" style="background:var(--ink)">M</div>
+      <h3>Max</h3><p>An upbeat coach for fitness, habits, and staying accountable.</p>
+      <button class="btn btn-ghost" data-name="Max">Start chat →</button>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Back to all tools</a></span></div></footer>
+
+<script>
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');mb.onclick=function(){mm.classList.toggle('open')};
+  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
+  document.querySelectorAll('.friend button').forEach(function(b){b.onclick=function(){toast('Chat with '+b.dataset.name+' launches soon')}});
+</script>
+</body>
+</html>

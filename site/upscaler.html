@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Upscaler — onaiagents</title>
+<meta name="description" content="Enlarge and sharpen images up to 8K with detail-preserving neural upscaling." />
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+    <div class="nav-links"><a href="/#tools" class="active">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a></div>
+    <div class="nav-right"><a class="btn-text" href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  </div>
+  <div class="mobile-menu" id="mm"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a><a href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
+</nav>
+
+<main class="wrap tool">
+  <div class="tool-head">
+    <span class="overline">Tools — Upscaler</span>
+    <h1>Upscaler</h1>
+    <p>Enlarge and sharpen images up to 8K — detail-preserving neural upscaling for photos, art and faces.</p>
+  </div>
+
+  <div class="studio">
+    <form class="panel sticky" id="form" autocomplete="off">
+      <div class="field">
+        <div class="lbl">Source image</div>
+        <label class="drop" for="file">
+          <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg></span>
+          <b>Drop an image or browse</b><span>PNG, JPG or WEBP · up to 20 MB</span>
+        </label>
+        <input id="file" type="file" accept="image/*" hidden />
+      </div>
+      <div class="field"><div class="lbl">Scale</div>
+        <div class="chips" data-group="scale"><span class="opt">2×</span><span class="opt sel">4×</span><span class="opt">8×</span></div></div>
+      <div class="field"><div class="lbl">Model</div>
+        <select><option>Real-ESRGAN x4</option><option>SwinIR</option><option>4x-UltraSharp</option><option>GFPGAN (faces)</option></select></div>
+      <div class="field"><div class="lbl">Optimize for</div>
+        <div class="chips" data-group="opt"><span class="opt sel">Photo</span><span class="opt">Art</span><span class="opt">Anime</span><span class="opt">Face</span></div></div>
+      <button class="btn btn-primary gen-btn" id="go" type="submit">Enhance</button>
+      <div class="cost"><b>3</b>&nbsp;credits per image</div>
+    </form>
+
+    <div class="panel" style="padding:0">
+      <div class="canvas" id="canvas">
+        <div class="empty">
+          <div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7V3h4M21 7V3h-4M3 17v4h4M21 17v4h-4"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></div>
+          <h4>Upscaled result appears here</h4>
+          <p>Upload an image, pick a scale, and hit Enhance to preview the studio.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Back to all tools</a></span></div></footer>
+
+<script>
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');
+  mb.onclick=function(){mm.classList.toggle('open')};
+  document.querySelectorAll('.chips').forEach(function(g){g.onclick=function(e){var t=e.target.closest('.opt');if(!t)return;g.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel')});t.classList.add('sel')}});
+  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
+  document.getElementById('file').onchange=function(){if(this.files[0])document.querySelector('.drop b').textContent=this.files[0].name};
+  document.getElementById('form').onsubmit=function(e){e.preventDefault();var c=document.getElementById('canvas'),b=document.getElementById('go');b.disabled=true;
+    c.innerHTML='<div class="results" style="grid-template-columns:1fr;max-width:420px"><div class="shot skel" style="aspect-ratio:16/10"></div></div>';
+    setTimeout(function(){c.innerHTML='<div class="empty"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></div><h4>Upscaling launches soon</h4><p>This is a live design preview. Real neural upscaling arrives with the credits update.</p><a class="btn btn-primary btn-lg" style="margin-top:18px" href="/agentstudio">Meanwhile, try AgentStudio — free</a></div>';b.disabled=false;},1500);};
+</script>
+</body>
+</html>

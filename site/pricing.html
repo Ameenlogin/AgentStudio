@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Pricing — onaiagents</title>
+<meta name="description" content="Simple credit packs for the creative tools. AgentStudio is free forever." />
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+    <div class="nav-links"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing" class="active">Pricing</a></div>
+    <div class="nav-right"><a class="btn-text" href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  </div>
+  <div class="mobile-menu" id="mm"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a><a href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
+</nav>
+
+<main class="wrap tool">
+  <div class="tool-head">
+    <span class="overline">Pricing</span>
+    <h1>Simple credits. No surprises.</h1>
+    <p>AgentStudio is free forever — bring your own key. The creative tools run on credits. Example pricing below.</p>
+  </div>
+
+  <div class="plans">
+    <div class="plan">
+      <span class="pname">Free</span>
+      <div class="price">$0</div>
+      <div class="pdesc">AgentStudio, unlimited — on your own NVIDIA key.</div>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>AgentStudio, unlimited</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Bring your own key, no login</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Community support</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>No card required</li>
+      </ul>
+      <a class="btn btn-ghost btn-lg" href="/agentstudio">Open AgentStudio</a>
+    </div>
+
+    <div class="plan pop">
+      <span class="pname">Pro · Most popular</span>
+      <div class="price">$12<small> / month</small></div>
+      <div class="pdesc">For regular creators across every tool.</div>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>1,500 credits / month</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>All creative tools</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Up to 4K upscales</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Priority queue</li>
+      </ul>
+      <button class="btn btn-primary btn-lg" style="background:#fff;color:var(--ink)" data-plan="Pro">Get Pro</button>
+    </div>
+
+    <div class="plan">
+      <span class="pname">Studio</span>
+      <div class="price">$39<small> / month</small></div>
+      <div class="pdesc">For heavy output and commercial work.</div>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>6,000 credits / month</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Up to 8K upscales</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Fastest queue</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>Commercial license</li>
+      </ul>
+      <button class="btn btn-ghost btn-lg" data-plan="Studio">Get Studio</button>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:var(--faint);font-size:13px;margin-top:22px">
+    Credits roll over while subscribed · Top-up packs available · Cancel anytime · Pay with card, UPI or PayPal
+  </p>
+</main>
+
+<footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Back to all tools</a></span></div></footer>
+
+<script>
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');mb.onclick=function(){mm.classList.toggle('open')};
+  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
+  document.querySelectorAll('[data-plan]').forEach(function(b){b.onclick=function(){toast(b.dataset.plan+' checkout launches soon')}});
+</script>
+</body>
+</html>

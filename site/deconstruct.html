@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Deconstruct — onaiagents</title>
+<meta name="description" content="Reverse-engineer any image into an editable prompt and a node graph you can remix." />
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+    <div class="nav-links"><a href="/#tools" class="active">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a></div>
+    <div class="nav-right"><a class="btn-text" href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  </div>
+  <div class="mobile-menu" id="mm"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a><a href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
+</nav>
+
+<main class="wrap tool">
+  <div class="tool-head">
+    <span class="overline">Tools — Deconstruct</span>
+    <h1>Deconstruct</h1>
+    <p>Reverse-engineer any image into an editable prompt, settings, and a node graph you can remix.</p>
+  </div>
+
+  <div class="studio">
+    <form class="panel sticky" id="form" autocomplete="off">
+      <div class="field">
+        <div class="lbl">Image to analyze</div>
+        <label class="drop" for="file">
+          <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          <b>Drop an image or browse</b><span>We extract prompt, style &amp; parameters</span>
+        </label>
+        <input id="file" type="file" accept="image/*" hidden />
+      </div>
+      <div class="field"><div class="lbl">Detail level</div>
+        <div class="chips" data-group="d"><span class="opt">Concise</span><span class="opt sel">Balanced</span><span class="opt">Exhaustive</span></div></div>
+      <div class="field"><div class="lbl">Include</div>
+        <div class="chips" data-group="i"><span class="opt sel">Prompt</span><span class="opt sel">Negative</span><span class="opt sel">Params</span><span class="opt">Palette</span></div></div>
+      <button class="btn btn-primary gen-btn" id="go" type="submit">Deconstruct</button>
+      <div class="cost"><b>2</b>&nbsp;credits per image</div>
+    </form>
+
+    <div class="panel" style="padding:0">
+      <div class="canvas" id="canvas">
+        <div class="empty">
+          <div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
+          <h4>Drop an image to reveal its prompt</h4>
+          <p>We turn any picture back into an editable recipe you can tweak and re-run.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Back to all tools</a></span></div></footer>
+
+<script>
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');mb.onclick=function(){mm.classList.toggle('open')};
+  document.querySelectorAll('.chips').forEach(function(g){g.onclick=function(e){var t=e.target.closest('.opt');if(!t)return;
+    if(g.dataset.group==='i'){t.classList.toggle('sel')}else{g.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel')});t.classList.add('sel')}}});
+  document.getElementById('file').onchange=function(){if(this.files[0])document.querySelector('.drop b').textContent=this.files[0].name};
+  document.getElementById('form').onsubmit=function(e){e.preventDefault();var c=document.getElementById('canvas'),b=document.getElementById('go');b.disabled=true;
+    c.innerHTML='<div style="width:100%;max-width:520px;text-align:left"><div class="shot skel" style="aspect-ratio:6/2;border-radius:7px;margin-bottom:12px"></div><div class="shot skel" style="aspect-ratio:10/1;border-radius:7px;margin-bottom:8px"></div><div class="shot skel" style="aspect-ratio:14/1;border-radius:7px"></div></div>';
+    setTimeout(function(){c.innerHTML='<div class="empty"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></div><h4>Deconstruction launches soon</h4><p>This is a live design preview. Real image-to-prompt analysis arrives with the credits update.</p><a class="btn btn-primary btn-lg" style="margin-top:18px" href="/agentstudio">Meanwhile, try AgentStudio — free</a></div>';b.disabled=false;},1500);};
+</script>
+</body>
+</html>
