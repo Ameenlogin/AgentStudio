@@ -15,7 +15,7 @@ interface SparkProps {
 // under "/agentstudio/" (hosted alongside the marketing site).
 const B = import.meta.env.BASE_URL;
 const SRC: Record<string, string> = {
-  copper: `${B}spark.png`,
+  copper: `${B}spark-ink.png`,
   ink: `${B}spark-ink.png`,
   white: `${B}spark-white.png`,
 };

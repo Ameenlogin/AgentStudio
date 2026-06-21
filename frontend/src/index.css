@@ -9,9 +9,9 @@
   --color-text:        #20201E;
   --color-muted:       #6E6A60;
   --color-faint:       #A8A294;
-  --color-copper:      #D97757;
-  --color-copper-lo:   #C15F40;
-  --color-copper-wash: #F6E9E1;
+  --color-copper:      #181818;
+  --color-copper-lo:   #000000;
+  --color-copper-wash: #ECEAE3;
   --color-cyan:        #5B6CB0;
   --color-green:       #5F8B57;
   --color-red:         #C4554D;
@@ -24,7 +24,7 @@
 
   --shadow-card: 0 1px 2px rgba(50,46,38,0.04), 0 1px 3px rgba(50,46,38,0.05);
   --shadow-lift: 0 4px 18px rgba(50,46,38,0.09), 0 1px 3px rgba(50,46,38,0.05);
-  --shadow-glow-copper: 0 0 20px rgba(217,119,87,0.15);
+  --shadow-glow-copper: 0 0 20px rgba(20,20,20,0.15);
   --shadow-glow-cyan: 0 0 20px rgba(91,108,176,0.15);
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -46,7 +46,7 @@ body {
 /* ── Studio canvas ──────────────────────────────────────────────────────── */
 .studio-canvas {
   background:
-    radial-gradient(1100px 600px at 82% -12%, rgba(217,119,87,0.07), transparent 60%),
+    radial-gradient(1100px 600px at 82% -12%, rgba(20,20,20,0.07), transparent 60%),
     radial-gradient(820px 560px at -5% 108%, rgba(91,108,176,0.045), transparent 55%),
     var(--color-bg);
 }
@@ -85,7 +85,7 @@ body {
   position: absolute;
   inset: -38%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(217,119,87,0.40), transparent 66%);
+  background: radial-gradient(circle, rgba(20,20,20,0.40), transparent 66%);
   animation: spark-glow 2.4s ease-in-out infinite;
   z-index: 0;
 }
@@ -113,7 +113,7 @@ body {
   content: "";
   position: absolute; inset: -60%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(217,119,87,0.16), transparent 64%);
+  background: radial-gradient(circle, rgba(20,20,20,0.16), transparent 64%);
 }
 @keyframes spark-float {
   0%, 100% { transform: translateY(0); }
@@ -170,19 +170,19 @@ body {
 }
 .node-think-live .think-pip {
   background: var(--color-copper);
-  box-shadow: 0 0 0 0 rgba(217,119,87,0.45);
+  box-shadow: 0 0 0 0 rgba(20,20,20,0.45);
   animation: pip-pulse 1.5s ease-out infinite;
 }
 @keyframes pip-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(217,119,87,0.5); transform: scale(0.9); }
-  70%  { box-shadow: 0 0 0 7px rgba(217,119,87,0); transform: scale(1.1); }
-  100% { box-shadow: 0 0 0 0 rgba(217,119,87,0); transform: scale(0.9); }
+  0%   { box-shadow: 0 0 0 0 rgba(20,20,20,0.5); transform: scale(0.9); }
+  70%  { box-shadow: 0 0 0 7px rgba(20,20,20,0); transform: scale(1.1); }
+  100% { box-shadow: 0 0 0 0 rgba(20,20,20,0); transform: scale(0.9); }
 }
 
 /* tool running spinner dot */
 .dot-spin {
   width: 11px; height: 11px; border-radius: 50%;
-  border: 1.6px solid rgba(217,119,87,0.2);
+  border: 1.6px solid rgba(20,20,20,0.2);
   border-top-color: var(--color-copper);
   animation: orbital-spin 0.7s linear infinite;
 }
@@ -255,7 +255,7 @@ body {
   margin-left: 1px;
   vertical-align: text-bottom;
   animation: caret-blink 0.9s ease-in-out infinite;
-  box-shadow: 0 0 4px rgba(217,119,87,0.4);
+  box-shadow: 0 0 4px rgba(20,20,20,0.4);
   border-radius: 1px;
 }
 @keyframes caret-blink {
@@ -320,7 +320,7 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid rgba(217,119,87,0.15);
+  border: 2px solid rgba(20,20,20,0.15);
   border-top-color: var(--color-copper);
   animation: orbital-spin 0.75s linear infinite;
 }
@@ -529,7 +529,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
   overflow-y: auto;
   border: 1px solid rgba(255,255,255,0.06);
 }
-.tool-stream-live { border-color: rgba(217,119,87,0.35); }
+.tool-stream-live { border-color: rgba(20,20,20,0.35); }
 .tool-stream .cursor::after {
   content: "▋";
   color: var(--color-copper);
@@ -592,7 +592,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
   overflow: hidden;
   border: 1px solid var(--color-border);
   background:
-    radial-gradient(120% 80% at 15% 0%, rgba(217,119,87,0.10), transparent 60%),
+    radial-gradient(120% 80% at 15% 0%, rgba(20,20,20,0.10), transparent 60%),
     linear-gradient(160deg, #2b2722, #1c1a17);
   box-shadow: var(--shadow-lift);
   font-family: var(--font-sans);
@@ -802,7 +802,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
   position: absolute; top: 50%; left: 50%; width: 26px; height: 26px;
   margin: -13px 0 0 -13px; border-radius: 50%;
   border: 2px solid var(--color-copper);
-  box-shadow: 0 0 0 3px rgba(217,119,87,0.25);
+  box-shadow: 0 0 0 3px rgba(20,20,20,0.25);
   animation: ac-reticle 1.1s ease-out infinite;
 }
 @keyframes ac-reticle {
@@ -872,7 +872,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
   background: var(--color-elevated);
   transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
 }
-.worker-row.running { border-color: rgba(217,119,87,0.4); background: var(--color-copper-wash); }
+.worker-row.running { border-color: rgba(20,20,20,0.4); background: var(--color-copper-wash); }
 .worker-row.done    { border-color: var(--color-border-soft); opacity: 0.78; }
 .worker-role {
   font-size: 9.5px;
@@ -886,7 +886,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
   color: var(--color-muted);
   flex-shrink: 0;
 }
-.worker-row.running .worker-role { background: rgba(217,119,87,0.16); color: var(--color-copper-lo); }
+.worker-row.running .worker-role { background: rgba(20,20,20,0.16); color: var(--color-copper-lo); }
 .worker-status-dot {
   width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
   background: var(--color-faint);
@@ -929,7 +929,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 17p
 .think-stream::after {
   content: "";
   position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(217,119,87,0.06), transparent);
+  background: linear-gradient(90deg, transparent, rgba(20,20,20,0.06), transparent);
   background-size: 220% 100%;
   animation: think-sweep 2.4s linear infinite;
   border-radius: 6px;

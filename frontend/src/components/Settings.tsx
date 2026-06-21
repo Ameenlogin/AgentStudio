@@ -43,7 +43,7 @@ function Card({ icon: Icon, title, children }: any) {
 }
 
 const inputCls =
-  'w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-copper)] focus:shadow-[0_0_0_3px_rgba(217,119,87,0.16)] transition font-mono';
+  'w-full px-3.5 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-copper)] focus:shadow-[0_0_0_3px_rgba(20,20,20,0.16)] transition font-mono';
 
 export default function Settings() {
   const [s, setS] = useState<any>({ ...DEFAULTS, api_key: '', api_key_2: '', api_key_3: '' });
