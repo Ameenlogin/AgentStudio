@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <script src="https://unpkg.com/lucide@latest"></script>
+<script defer src="/nav.js"></script>
 <style>
   :root{
     --pg-bg:#FAF9F5;--pg-surface:#FFFFFF;--pg-surface-2:#F3F1EA;--pg-border:#E6E2D7;
@@ -205,8 +206,17 @@
   function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
   var ra=document.getElementById('resultArea'),gen=document.getElementById('gen'),btn=document.getElementById('genBtn');
   btn.onclick=function(){var p=document.getElementById('prompt');if(!p.value.trim()){p.focus();return}
+    var cost=parseInt((document.getElementById('costBadge').textContent||'40'),10)||40;
     btn.disabled=true;ra.classList.add('busy');gen.classList.add('on');
-    setTimeout(function(){gen.classList.remove('on');ra.classList.remove('busy');btn.disabled=false;toast('Image generation launches soon — backend in progress')},1700);};
+    fetch('/api/site/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({tool:'playground',prompt:p.value,model_cost:cost})})
+    .then(async function(r){var d=await r.json();gen.classList.remove('on');ra.classList.remove('busy');btn.disabled=false;
+      if(r.status===401){toast('Please sign in to generate');setTimeout(function(){location.href='/login?next=/playground'},900);return}
+      if(r.status===402){toast(d.detail||'Not enough credits');return}
+      if(d.status==='ok'&&d.image){ra.innerHTML='<img src="'+d.image+'" alt="result" style="max-width:100%;max-height:100%;border-radius:12px">';toast('Done · '+(d.credits)+' cr left');return}
+      toast(d.message||"Live generation isn't enabled yet");
+    }).catch(function(){gen.classList.remove('on');ra.classList.remove('busy');btn.disabled=false;toast('Something went wrong')});
+  };
   if(window.lucide)lucide.createIcons();
 </script>
 <style>.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--pg-primary);color:#fff;padding:12px 20px;border-radius:9px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:200;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}</style>

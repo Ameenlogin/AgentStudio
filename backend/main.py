@@ -26,6 +26,7 @@ async def health_check():
 # ── Database ────────────────────────────────────────────────────────────────
 from database.database import engine, Base
 from database.models import Setting
+from database import site_models  # noqa: F401 — registers site tables on Base
 from sqlalchemy.orm import Session
 
 Base.metadata.create_all(bind=engine)
@@ -73,6 +74,21 @@ with Session(engine) as session:
     row.desktop_granted = True
     session.commit()
 
+# ── Site (onaiagents) seed: default settings + admin account ──────────────────
+import os as _os
+from database.site_models import SiteSetting as _SS, SiteUser as _SU, DEFAULT_SETTINGS as _DS
+from services.site_auth import hash_password as _hashpw
+with Session(engine) as _s:
+    for _k, _v in _DS.items():
+        if not _s.query(_SS).filter(_SS.key == _k).first():
+            _s.add(_SS(key=_k, value=_v))
+    _admin_email = (_os.environ.get("ADMIN_EMAIL") or "admin@onaiagents.com").strip().lower()
+    if not _s.query(_SU).filter(_SU.email == _admin_email).first():
+        _pw = _os.environ.get("ADMIN_PASSWORD") or "Onai$Admin2026"
+        _s.add(_SU(email=_admin_email, name="Admin", password_hash=_hashpw(_pw),
+                   credits=1000000, is_admin=True))
+    _s.commit()
+
 # ── Routers (absolute imports — the original crash was here) ──────────────────
 from api import (chat, settings as settings_router, conversations,
                  permissions as permissions_router, files as files_router,
@@ -84,6 +100,9 @@ app.include_router(permissions_router.router, prefix="/api/permissions")
 app.include_router(files_router.router, prefix="/api/files")
 app.include_router(search_router.router, prefix="/api/search")
 app.include_router(skills_router.router, prefix="/api/skills")
+
+from api import site as site_router
+app.include_router(site_router.router, prefix="/api/site")
 
 # ── Serve the AgentStudio app under /agentstudio, the marketing site at / ─────
 _root = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Account — onaiagents</title>
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<nav><div class="wrap nav-in">
+  <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+  <div class="nav-links"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/pricing">Pricing</a></div>
+  <div class="nav-right"><a class="btn-text" id="adminLink" href="/admin" style="display:none">Admin</a><a class="btn btn-ghost" id="logout" href="#">Log out</a></div>
+</div></nav>
+
+<main class="acct">
+  <p class="overline">Account</p>
+  <h1 style="font-family:var(--font-display);font-weight:500;font-size:clamp(1.8rem,4vw,2.6rem);letter-spacing:-.02em;margin-top:12px" id="hi">Your account</h1>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:28px">
+    <div class="card" style="display:block">
+      <p class="overline">Credit balance</p>
+      <div class="balance" id="bal" style="margin:14px 0 6px">—</div>
+      <p style="color:var(--muted);font-size:14px">Credits power the creative tools. AgentStudio is always free.</p>
+      <button class="btn btn-primary" id="buy" style="margin-top:18px">Buy credits</button>
+    </div>
+    <div class="card" style="display:block">
+      <p class="overline">Profile</p>
+      <table class="utbl" style="margin-top:14px">
+        <tr><td style="color:var(--muted)">Name</td><td style="text-align:right" id="pName">—</td></tr>
+        <tr><td style="color:var(--muted)">Email</td><td style="text-align:right" id="pEmail">—</td></tr>
+        <tr><td style="color:var(--muted)">Plan</td><td style="text-align:right">Pay-as-you-go</td></tr>
+      </table>
+      <a class="btn btn-ghost" href="/agentstudio" style="margin-top:18px;width:100%">Open AgentStudio (free) →</a>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Home</a></span></div></footer>
+
+<script>
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2800)}
+  fetch('/api/site/me').then(r=>r.json()).then(d=>{
+    if(!d.user){location.href='/login?next=/account';return}
+    var u=d.user;
+    document.getElementById('hi').textContent='Hi, '+(u.name||u.email);
+    document.getElementById('bal').textContent=u.credits.toLocaleString()+' cr';
+    document.getElementById('pName').textContent=u.name||'—';
+    document.getElementById('pEmail').textContent=u.email;
+    if(u.is_admin)document.getElementById('adminLink').style.display='inline-flex';
+  });
+  document.getElementById('logout').onclick=function(e){e.preventDefault();fetch('/api/site/logout',{method:'POST'}).then(()=>location.href='/')};
+  document.getElementById('buy').onclick=function(){
+    fetch('/api/site/buy',{method:'POST'}).then(async r=>{var d=await r.json();toast(d.detail||'Redirecting…')}).catch(()=>toast('Payments coming soon'));
+  };
+</script>
+<style>.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:200;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}</style>
+</body>
+</html>

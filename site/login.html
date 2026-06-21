@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign in — onaiagents</title>
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<nav><div class="wrap nav-in">
+  <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+  <div class="nav-right"><a class="btn-text" href="/">← Back to site</a></div>
+</div></nav>
+
+<main class="narrow">
+  <div style="text-align:center;margin-bottom:24px">
+    <h1 style="font-family:var(--font-display);font-weight:500;font-size:2rem;letter-spacing:-.02em" id="title">Welcome back</h1>
+    <p style="color:var(--muted);margin-top:6px;font-size:14.5px" id="sub">Sign in to your onaiagents account.</p>
+  </div>
+
+  <div class="tabs">
+    <button id="tabLogin" class="on" type="button">Sign in</button>
+    <button id="tabReg" type="button">Create account</button>
+  </div>
+
+  <div class="panel">
+    <div class="err" id="err" style="display:none"></div>
+    <form id="form">
+      <div class="field" id="nameRow" style="display:none">
+        <div class="lbl">Name</div>
+        <input type="text" id="name" placeholder="Your name" autocomplete="name" />
+      </div>
+      <div class="field">
+        <div class="lbl">Email</div>
+        <input type="email" id="email" placeholder="you@email.com" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <div class="lbl">Password</div>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <button class="btn btn-primary" id="submit" type="submit" style="width:100%;margin-top:4px">Sign in</button>
+    </form>
+    <p style="text-align:center;color:var(--faint);font-size:12.5px;margin-top:16px" id="freeNote"></p>
+  </div>
+</main>
+
+<script>
+  var mode='login';
+  var q=new URLSearchParams(location.search); var next=q.get('next')||'/account';
+  function setMode(m){mode=m;
+    document.getElementById('tabLogin').classList.toggle('on',m==='login');
+    document.getElementById('tabReg').classList.toggle('on',m==='register');
+    document.getElementById('nameRow').style.display=m==='register'?'block':'none';
+    document.getElementById('title').textContent=m==='register'?'Create your account':'Welcome back';
+    document.getElementById('sub').textContent=m==='register'?'Start with free credits — no card needed.':'Sign in to your onaiagents account.';
+    document.getElementById('submit').textContent=m==='register'?'Create account':'Sign in';
+    document.getElementById('password').autocomplete=m==='register'?'new-password':'current-password';
+    document.getElementById('err').style.display='none';
+  }
+  document.getElementById('tabLogin').onclick=function(){setMode('login')};
+  document.getElementById('tabReg').onclick=function(){setMode('register')};
+  fetch('/api/site/config').then(r=>r.json()).then(c=>{document.getElementById('freeNote').textContent='New accounts get '+c.free_credits+' free credits.';});
+
+  document.getElementById('form').onsubmit=function(e){e.preventDefault();
+    var err=document.getElementById('err'),btn=document.getElementById('submit');
+    btn.disabled=true;
+    fetch('/api/site/'+(mode==='register'?'register':'login'),{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:document.getElementById('email').value,password:document.getElementById('password').value,name:document.getElementById('name').value})})
+    .then(async r=>{var d=await r.json();if(!r.ok)throw new Error(d.detail||'Something went wrong');location.href=next;})
+    .catch(e=>{err.textContent=e.message;err.style.display='block';btn.disabled=false;});
+  };
+</script>
+</body>
+</html>

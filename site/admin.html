@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin · Settings — onaiagents</title>
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<style>
+  .seca{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.seca{grid-template-columns:1fr}}
+  .panel h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:16px}
+  .savebar{position:sticky;bottom:0;background:rgba(250,249,245,.92);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:14px 0;margin-top:24px;display:flex;justify-content:flex-end;gap:12px;align-items:center}
+</style>
+</head>
+<body>
+<nav><div class="wrap nav-in">
+  <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+  <div class="nav-right"><a class="btn-text" href="/account">Account</a><a class="btn btn-ghost" id="logout" href="#">Log out</a></div>
+</div></nav>
+
+<main class="acct" id="app" style="display:none">
+  <p class="overline">Admin</p>
+  <h1 style="font-family:var(--font-display);font-weight:500;font-size:clamp(1.8rem,4vw,2.6rem);letter-spacing:-.02em;margin-top:12px">Settings</h1>
+  <p style="color:var(--muted);margin-top:8px">Tune credits, costs, the image provider and payment keys. Changes apply immediately.</p>
+
+  <div class="seca" style="margin-top:26px">
+    <div class="panel">
+      <h3>General &amp; credits</h3>
+      <div class="field"><div class="lbl">Site name</div><input type="text" data-k="site_name" /></div>
+      <div class="field"><div class="lbl">Free credits on signup</div><input type="number" data-k="free_credits" /></div>
+    </div>
+    <div class="panel">
+      <h3>Tool costs (credits)</h3>
+      <div class="field"><div class="lbl">Image generation</div><input type="number" data-k="cost_playground" /></div>
+      <div class="field"><div class="lbl">Fast generation</div><input type="number" data-k="cost_gen_fast" /></div>
+      <div class="field"><div class="lbl">Deconstruct</div><input type="number" data-k="cost_deconstruct" /></div>
+      <div class="field"><div class="lbl">Upscale 2× / 4× / 8×</div>
+        <div style="display:flex;gap:8px"><input type="number" data-k="cost_upscale_2x" /><input type="number" data-k="cost_upscale_4x" /><input type="number" data-k="cost_upscale_8x" /></div></div>
+    </div>
+    <div class="panel">
+      <h3>Image provider <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--faint)">(OpenAI-compatible)</span></h3>
+      <div class="field"><div class="lbl">Base URL</div><input type="text" data-k="img_base_url" placeholder="https://integrate.api.nvidia.com/v1" /></div>
+      <div class="field"><div class="lbl">API key</div><input type="password" data-k="img_api_key" placeholder="sk-…" /></div>
+      <div class="field"><div class="lbl">Model</div><input type="text" data-k="img_model" placeholder="stabilityai/sdxl" /></div>
+      <p style="font-size:12.5px;color:var(--faint)">Set these to switch the tools from preview to live generation.</p>
+    </div>
+    <div class="panel">
+      <h3>Payments</h3>
+      <div class="field"><div class="lbl">Razorpay key id</div><input type="text" data-k="razorpay_key_id" placeholder="rzp_live_…" /></div>
+      <div class="field"><div class="lbl">Razorpay key secret</div><input type="password" data-k="razorpay_key_secret" /></div>
+      <div class="field"><div class="lbl">Stripe publishable key</div><input type="text" data-k="stripe_pk" placeholder="pk_live_…" /></div>
+      <div class="field"><div class="lbl">Stripe secret key</div><input type="password" data-k="stripe_sk" /></div>
+    </div>
+  </div>
+
+  <div class="savebar">
+    <span id="saved" style="color:var(--green);font-size:13px;font-weight:600;display:none">Saved ✓</span>
+    <button class="btn btn-primary" id="save">Save settings</button>
+  </div>
+
+  <div class="hr"></div>
+  <div class="panel" style="margin-top:8px">
+    <h3>Users &amp; credits</h3>
+    <table class="utbl"><thead><tr><th>Email</th><th>Name</th><th>Credits</th><th>Grant</th></tr></thead><tbody id="users"></tbody></table>
+  </div>
+</main>
+
+<footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · admin</span><span><a href="/" style="color:var(--muted)">← Home</a></span></div></footer>
+
+<script>
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
+  document.getElementById('logout').onclick=function(e){e.preventDefault();fetch('/api/site/logout',{method:'POST'}).then(()=>location.href='/')};
+
+  fetch('/api/site/admin/settings').then(async r=>{
+    if(r.status===401||r.status===403){location.href='/login?next=/admin';return}
+    var d=await r.json();document.getElementById('app').style.display='block';
+    var s=d.settings||{};
+    document.querySelectorAll('[data-k]').forEach(function(el){if(s[el.dataset.k]!=null)el.value=s[el.dataset.k]});
+    loadUsers();
+  });
+
+  document.getElementById('save').onclick=function(){
+    var out={};document.querySelectorAll('[data-k]').forEach(function(el){out[el.dataset.k]=el.value});
+    var b=this;b.disabled=true;
+    fetch('/api/site/admin/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({settings:out})})
+      .then(r=>r.json()).then(()=>{b.disabled=false;var s=document.getElementById('saved');s.style.display='inline';setTimeout(function(){s.style.display='none'},2000)})
+      .catch(()=>{b.disabled=false;toast('Save failed')});
+  };
+
+  function loadUsers(){fetch('/api/site/admin/users').then(r=>r.json()).then(d=>{
+    var tb=document.getElementById('users');tb.innerHTML='';
+    (d.users||[]).forEach(function(u){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+u.email+(u.is_admin?' <span class="tag" style="color:var(--violet)">admin</span>':'')+'</td><td>'+(u.name||'—')+'</td><td>'+u.credits.toLocaleString()+'</td>'+
+        '<td><div style="display:flex;gap:6px"><input type="number" value="100" style="width:80px;padding:6px 8px" id="g'+u.id+'"><button class="btn btn-ghost" style="padding:6px 12px" data-u="'+u.id+'">Add</button></div></td>';
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll('[data-u]').forEach(function(b){b.onclick=function(){
+      var id=b.dataset.u,amt=parseInt(document.getElementById('g'+id).value,10)||0;
+      fetch('/api/site/admin/grant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:parseInt(id,10),amount:amt})})
+        .then(r=>r.json()).then(()=>{toast('Granted '+amt+' credits');loadUsers()});
+    }});
+  });}
+</script>
+<style>.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:200;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}</style>
+</body>
+</html>
