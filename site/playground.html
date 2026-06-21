@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Image Generation — onaiagents</title>
+<meta name="description" content="Prompt-to-image generation with professional workflows and 30+ NVIDIA models, in a warm, fast studio." />
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<div class="ambient"><span class="orb a"></span><span class="orb b"></span><span class="orb c"></span></div>
+
+<nav>
+  <div class="wrap nav-in">
+    <a class="brand" href="/">
+      <img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents
+    </a>
+    <div class="nav-links">
+      <a href="/#tools" class="active">Tools</a>
+      <a href="/agentstudio">AgentStudio</a>
+      <a href="/#why">Why us</a>
+      <a href="/#pricing">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <a class="btn btn-ghost" href="#" id="signin">Sign in</a>
+      <a class="btn btn-primary" href="/agentstudio">Open AgentStudio →</a>
+    </div>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+  <div class="mobile-menu" id="mm">
+    <a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a>
+    <a href="/#why">Why us</a><a href="/#pricing">Pricing</a><a href="#">Sign in</a>
+    <a class="btn btn-primary" href="/agentstudio">Open AgentStudio →</a>
+  </div>
+</nav>
+
+<main class="wrap tool">
+  <div class="tool-head reveal in">
+    <div class="tchip" style="background:rgba(91,108,176,.10);color:var(--cyan)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+    </div>
+    <div>
+      <h1>Image Generation</h1>
+      <p>Describe it, pick a model, and create — pro workflows on 30+ NVIDIA models.</p>
+    </div>
+  </div>
+
+  <div class="studio">
+    <!-- Controls -->
+    <form class="panel sticky" id="genForm" autocomplete="off">
+      <div class="field">
+        <div class="lbl">Prompt <span class="hint">be descriptive</span></div>
+        <textarea id="prompt" placeholder="A serene Himalayan valley at golden hour, cinematic, ultra-detailed, volumetric light…"></textarea>
+      </div>
+      <div class="field">
+        <div class="lbl">Negative <span class="hint">optional</span></div>
+        <input type="text" id="negative" placeholder="blurry, low quality, watermark" />
+      </div>
+      <div class="field">
+        <div class="lbl">Model</div>
+        <select id="model">
+          <option>FLUX.1 [dev]</option>
+          <option>Stable Diffusion XL</option>
+          <option>SDXL Turbo</option>
+          <option>Playground v2.5</option>
+          <option>Stable Diffusion 3 Medium</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="lbl">Aspect ratio</div>
+        <div class="chips" data-group="ratio">
+          <span class="opt sel">1:1</span><span class="opt">3:2</span><span class="opt">2:3</span>
+          <span class="opt">16:9</span><span class="opt">9:16</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="lbl">Style</div>
+        <div class="chips" data-group="style">
+          <span class="opt sel">Auto</span><span class="opt">Photoreal</span><span class="opt">Cinematic</span>
+          <span class="opt">Anime</span><span class="opt">3D</span><span class="opt">Art</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="lbl">Images</div>
+        <div class="chips" data-group="count">
+          <span class="opt">1</span><span class="opt sel">2</span><span class="opt">4</span>
+        </div>
+      </div>
+      <button class="btn btn-primary gen-btn" id="genBtn" type="submit">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg>
+        Generate
+      </button>
+      <div class="cost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a1.5 1.5 0 0 1 0 3H10a1.5 1.5 0 0 0 0 3H15"/></svg>
+        <span><b id="costN">2</b> credits · <span id="costEach">1</span>/image</span></div>
+    </form>
+
+    <!-- Canvas -->
+    <div class="panel" style="padding:14px">
+      <div class="canvas" id="canvas">
+        <div class="empty" id="empty">
+          <div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>
+          <h4>Your creations appear here</h4>
+          <p>Write a prompt and hit Generate to preview the studio.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer><div class="wrap foot-in">
+  <span>© <span id="yr"></span> onaiagents · onaiagents.com</span>
+  <span><a href="/" style="color:var(--muted)">← Back to all tools</a></span>
+</div></footer>
+
+<script>
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');
+  mb.addEventListener('click',function(){var o=mm.classList.toggle('open');mb.setAttribute('aria-expanded',o)});
+
+  /* chip groups: single-select */
+  document.querySelectorAll('.chips').forEach(function(g){
+    g.addEventListener('click',function(e){
+      var t=e.target.closest('.opt'); if(!t)return;
+      g.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel')});
+      t.classList.add('sel');
+      if(g.dataset.group==='count'){var n=parseInt(t.textContent,10)||1;document.getElementById('costN').textContent=n}
+    });
+  });
+
+  var canvas=document.getElementById('canvas');
+  function count(){var s=document.querySelector('[data-group=count] .opt.sel');return parseInt(s&&s.textContent,10)||1}
+
+  document.getElementById('genForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var p=document.getElementById('prompt');
+    if(!p.value.trim()){p.focus();return}
+    var n=count(),btn=document.getElementById('genBtn');
+    btn.disabled=true;
+    var grid='<div class="results">';for(var i=0;i<n;i++)grid+='<div class="shot skel"></div>';grid+='</div>';
+    canvas.innerHTML=grid;
+    setTimeout(function(){
+      canvas.innerHTML='<div class="empty"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/><circle cx="12" cy="12" r="3"/></svg></div>'
+      +'<h4>Generation launches soon</h4><p>This is a live design preview. Real NVIDIA-powered generation arrives with the credits update — your prompt &amp; settings are ready for it.</p>'
+      +'<a class="btn btn-primary" style="margin-top:16px" href="/agentstudio">Meanwhile, try AgentStudio (free) →</a></div>';
+      btn.disabled=false;
+    },1500);
+  });
+</script>
+</body>
+</html>

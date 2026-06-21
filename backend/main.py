@@ -117,9 +117,15 @@ async def serve_site(full_path: str = ""):
     if full_path.startswith("api/") or full_path.startswith("agentstudio"):
         return JSONResponse({"error": "Not found"}, status_code=404)
     if full_path:
-        target = os.path.join(site_dir, full_path)
-        if os.path.isfile(target):
-            return FileResponse(target)
+        # Resolve inside site_dir only (block path traversal like ../).
+        target = os.path.realpath(os.path.join(site_dir, full_path))
+        base = os.path.realpath(site_dir)
+        if target == base or target.startswith(base + os.sep):
+            if os.path.isfile(target):
+                return FileResponse(target)
+            # Clean URLs: /playground -> playground.html
+            if os.path.isfile(target + ".html"):
+                return FileResponse(target + ".html")
     index = os.path.join(site_dir, "index.html")
     if os.path.isfile(index):
         return FileResponse(index)
