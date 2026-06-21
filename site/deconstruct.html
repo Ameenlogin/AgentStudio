@@ -3,13 +3,65 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Deconstruct — onaiagents</title>
-<meta name="description" content="Reverse-engineer any image into an editable prompt and a node graph you can remix." />
+<title>Visual Deconstruction — onaiagents</title>
+<meta name="description" content="Reverse-engineer images into pixel-perfect prompts." />
 <meta name="theme-color" content="#FAF9F5" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
+<style>
+  .tw{max-width:1200px;margin:0 auto;padding:0 24px}
+  .crumb{display:flex;align-items:center;gap:8px;margin:30px 0 24px;font-size:12px;font-weight:600;color:var(--faint)}
+  .crumb a{color:var(--text);display:flex;align-items:center;gap:4px}
+  .crumb a:hover{color:var(--ink)}
+  /* glass header card */
+  .ghead{background:rgba(255,255,255,.72);backdrop-filter:blur(28px) saturate(1.4);border:1px solid var(--border);
+    border-radius:22px;padding:24px;box-shadow:var(--shadow-card);margin-bottom:26px}
+  .ghead .top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px}
+  .ghead h1{font-family:var(--font-display);font-weight:500;font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.02em;margin:0;line-height:1.05}
+  .ghead .lead{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px}
+  .lbadge{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--green);display:inline-flex;align-items:center;gap:6px}
+  .lbadge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .desc{font-size:.9rem;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .crbadge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;background:var(--ink-wash);
+    border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text);font-family:"JetBrains Mono",monospace}
+  /* controls */
+  .ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:18px}
+  .ctrl{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--elevated);border:1px solid var(--border);border-radius:12px;min-height:44px}
+  .ctrl.click{cursor:pointer;transition:.16s}.ctrl.click:hover{border-color:var(--text)}
+  .tgl-l{font-size:12px;font-weight:700;transition:color .3s}
+  .tgl{position:relative;width:40px;height:20px;border-radius:9999px;background:var(--ink);border:none;cursor:pointer;padding:0;flex-shrink:0}
+  .tgl .knob{position:absolute;left:3px;top:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+  .tgl.on .knob{transform:translateX(20px)}
+  .run{display:flex;align-items:center;gap:8px;padding:11px 20px;border-radius:12px;background:var(--ink);color:#fff;font-size:.875rem;font-weight:600;border:none;cursor:pointer;min-height:44px;transition:.18s}
+  .run:hover{background:var(--ink-lo);transform:translateY(-1px)}
+  .ghost2{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:12px;background:var(--elevated);border:1px solid var(--border);font-size:.85rem;font-weight:600;color:var(--text);cursor:pointer;min-height:44px}
+  .ghost2:hover{border-color:var(--text)}
+  .meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:16px}
+  .wbox{display:flex;align-items:center;gap:12px;min-width:min(100%,330px);padding:12px 14px;border-radius:14px;background:var(--bg);border:1px solid var(--border)}
+  .wbox .wt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .wbox .wm{font-size:11px;color:var(--muted);margin-top:3px}
+  .wbox input[type=range]{flex:1;accent-color:var(--ink);cursor:pointer}
+  .wcount{min-width:42px;padding:9px 10px;border-radius:10px;background:var(--ink-wash);border:1px solid var(--border);font-size:14px;font-weight:700;text-align:center;font-family:"JetBrains Mono",monospace}
+  .qsum{display:inline-flex;align-items:center;gap:8px;padding:12px 14px;border-radius:14px;background:var(--bg);border:1px solid var(--border);font-size:.8125rem;font-weight:600;color:var(--muted)}
+  /* drop zone */
+  .dz{cursor:pointer;text-align:center;padding:48px 20px;margin-bottom:24px;border:1.5px dashed var(--border);border-radius:18px;
+    background:var(--elevated);color:var(--faint);transition:.2s}
+  .dz:hover,.dz.drag{border-color:var(--ink);color:var(--ink);background:#fffdf8}
+  .dz svg{opacity:.7}
+  /* grid */
+  .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+  .rcard{background:var(--elevated);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .rthumb{aspect-ratio:1;background:var(--panel)}
+  .rmeta{padding:12px 14px;font-size:12px;color:var(--muted)}
+  .animate-scale-in{animation:scaleIn .6s cubic-bezier(.16,1,.3,1) both}
+  @keyframes scaleIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
+  .btn-spring:active{transform:scale(.96)}
+  @media(max-width:560px){.tw{padding:0 16px}.ghead{padding:18px}}
+  @media(prefers-reduced-motion:reduce){.animate-scale-in,.lbadge::before{animation:none}}
+</style>
 </head>
 <body>
 <nav>
@@ -22,41 +74,59 @@
   <div class="mobile-menu" id="mm"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a><a href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
 </nav>
 
-<main class="wrap tool">
-  <div class="tool-head">
-    <span class="overline">Tools — Deconstruct</span>
-    <h1>Deconstruct</h1>
-    <p>Reverse-engineer any image into an editable prompt, settings, and a node graph you can remix.</p>
+<main style="padding-bottom:60px">
+<div class="tw">
+  <div class="crumb">
+    <a href="/"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Home</a>
+    <span>›</span><span>Visual Deconstruction</span>
   </div>
 
-  <div class="studio">
-    <form class="panel sticky" id="form" autocomplete="off">
-      <div class="field">
-        <div class="lbl">Image to analyze</div>
-        <label class="drop" for="file">
-          <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
-          <b>Drop an image or browse</b><span>We extract prompt, style &amp; parameters</span>
-        </label>
-        <input id="file" type="file" accept="image/*" hidden />
-      </div>
-      <div class="field"><div class="lbl">Detail level</div>
-        <div class="chips" data-group="d"><span class="opt">Concise</span><span class="opt sel">Balanced</span><span class="opt">Exhaustive</span></div></div>
-      <div class="field"><div class="lbl">Include</div>
-        <div class="chips" data-group="i"><span class="opt sel">Prompt</span><span class="opt sel">Negative</span><span class="opt sel">Params</span><span class="opt">Palette</span></div></div>
-      <button class="btn btn-primary gen-btn" id="go" type="submit">Deconstruct</button>
-      <div class="cost"><b>2</b>&nbsp;credits per image</div>
-    </form>
-
-    <div class="panel" style="padding:0">
-      <div class="canvas" id="canvas">
-        <div class="empty">
-          <div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
-          <h4>Drop an image to reveal its prompt</h4>
-          <p>We turn any picture back into an editable recipe you can tweak and re-run.</p>
+  <div class="ghead animate-scale-in">
+    <div class="top">
+      <div>
+        <div class="lead">
+          <h1>Visual Deconstruction</h1>
+          <span class="lbadge">Live</span>
         </div>
+        <p class="desc">Reverse-engineer images into pixel-perfect prompts with high-reasoning analysis.
+          <span class="crbadge" id="costBadge">5 Cr / Image</span></p>
+      </div>
+      <div class="ctrls" style="margin-top:0">
+        <div class="ctrl click btn-spring" id="modeToggle">
+          <span class="tgl-l" id="lFast" style="color:var(--ink)">Fast</span>
+          <button class="tgl" id="tgl" aria-label="Toggle pro mode"><span class="knob"></span></button>
+          <span class="tgl-l" id="lPro" style="color:var(--faint)">Pro</span>
+        </div>
+        <button class="ghost2 btn-spring" id="exportBtn" style="display:none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Export TXT
+        </button>
+        <button class="run btn-spring" id="runBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Deconstruct All
+        </button>
       </div>
     </div>
+    <div class="meta-row">
+      <div class="wbox">
+        <div style="min-width:74px"><div class="wt">Workers</div><div class="wm" id="wmeta">Auto sizing queue</div></div>
+        <input id="wrange" type="range" min="1" max="20" value="4" />
+        <div class="wcount" id="wcount">4</div>
+      </div>
+      <button class="ghost2 btn-spring" id="fxBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
+        <span id="fxLabel">Card FX On</span>
+      </button>
+      <div class="qsum" id="qsum">0 queued</div>
+    </div>
   </div>
+
+  <div class="dz animate-scale-in" id="dz">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.4"/><path d="M21 15l-4.7-4.7a1.6 1.6 0 0 0-2.2 0L5 19.4"/><path d="M12 6v6"/><path d="M9 9h6"/></svg>
+    <div style="margin-top:12px;font-size:14px;font-weight:600;color:var(--text)">Drop images or click to upload</div>
+    <div style="font-size:12.5px;margin-top:2px">PNG, JPG or WEBP — analyze as many as you like</div>
+  </div>
+  <input type="file" id="upload" multiple accept="image/*" hidden />
+  <div class="rgrid" id="grid"></div>
+</div>
 </main>
 
 <footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Back to all tools</a></span></div></footer>
@@ -64,12 +134,40 @@
 <script>
   document.getElementById('yr').textContent=new Date().getFullYear();
   var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');mb.onclick=function(){mm.classList.toggle('open')};
-  document.querySelectorAll('.chips').forEach(function(g){g.onclick=function(e){var t=e.target.closest('.opt');if(!t)return;
-    if(g.dataset.group==='i'){t.classList.toggle('sel')}else{g.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel')});t.classList.add('sel')}}});
-  document.getElementById('file').onchange=function(){if(this.files[0])document.querySelector('.drop b').textContent=this.files[0].name};
-  document.getElementById('form').onsubmit=function(e){e.preventDefault();var c=document.getElementById('canvas'),b=document.getElementById('go');b.disabled=true;
-    c.innerHTML='<div style="width:100%;max-width:520px;text-align:left"><div class="shot skel" style="aspect-ratio:6/2;border-radius:7px;margin-bottom:12px"></div><div class="shot skel" style="aspect-ratio:10/1;border-radius:7px;margin-bottom:8px"></div><div class="shot skel" style="aspect-ratio:14/1;border-radius:7px"></div></div>';
-    setTimeout(function(){c.innerHTML='<div class="empty"><div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></div><h4>Deconstruction launches soon</h4><p>This is a live design preview. Real image-to-prompt analysis arrives with the credits update.</p><a class="btn btn-primary btn-lg" style="margin-top:18px" href="/agentstudio">Meanwhile, try AgentStudio — free</a></div>';b.disabled=false;},1500);};
+  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
+
+  var pro=false;
+  document.getElementById('modeToggle').onclick=function(){
+    pro=!pro;document.getElementById('tgl').classList.toggle('on',pro);
+    document.getElementById('lFast').style.color=pro?'var(--faint)':'var(--ink)';
+    document.getElementById('lPro').style.color=pro?'var(--ink)':'var(--faint)';
+    document.getElementById('costBadge').textContent=(pro?10:5)+' Cr / Image';
+  };
+  var wr=document.getElementById('wrange');
+  wr.oninput=function(){document.getElementById('wcount').textContent=this.value;document.getElementById('wmeta').textContent=this.value+' parallel workers';};
+  var fx=true;document.getElementById('fxBtn').onclick=function(){fx=!fx;document.getElementById('fxLabel').textContent='Card FX '+(fx?'On':'Off')};
+
+  var queued=0;
+  function addThumbs(files){
+    var grid=document.getElementById('grid');
+    Array.prototype.forEach.call(files,function(f){
+      queued++;var c=document.createElement('div');c.className='rcard animate-scale-in';
+      var url=URL.createObjectURL(f);
+      c.innerHTML='<div class="rthumb" style="background-image:url('+url+');background-size:cover;background-position:center"></div><div class="rmeta">'+f.name.slice(0,28)+'</div>';
+      grid.appendChild(c);
+    });
+    document.getElementById('qsum').textContent=queued+' queued';
+    document.getElementById('exportBtn').style.display=queued?'inline-flex':'none';
+  }
+  document.getElementById('dz').onclick=function(){document.getElementById('upload').click()};
+  document.getElementById('dz').ondragover=function(e){e.preventDefault();this.classList.add('drag')};
+  document.getElementById('dz').ondragleave=function(){this.classList.remove('drag')};
+  document.getElementById('dz').ondrop=function(e){e.preventDefault();this.classList.remove('drag');addThumbs(e.dataTransfer.files)};
+  document.getElementById('upload').onchange=function(){addThumbs(this.files)};
+  document.getElementById('runBtn').onclick=function(){
+    if(!queued){toast('Add some images first');return}
+    toast('Deconstruction launches soon — backend in progress');
+  };
 </script>
 </body>
 </html>
