@@ -1,0 +1,88 @@
+# onaiagents.com — WordPress (real comfyAIcloud theme) + MariaDB, routed alongside
+# the AgentStudio app. Applied on the VPS at /docker/agentstudio/docker-compose.yml
+# once the IP mitigation clears. Theme is mounted from /docker/agentstudio/wp-theme
+# (extracted there, NOT committed to the public repo — it's proprietary).
+#
+# Routing: /agentstudio* and /api/* -> FastAPI app; everything else -> WordPress.
+
+services:
+  app:
+    build:
+      context: ./src
+    image: agentstudio:latest
+    restart: unless-stopped
+    environment:
+      - AGENT_STUDIO_DB=/data/agent_studio.db
+    volumes:
+      - app_data:/data
+    expose:
+      - "8000"
+
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      - MARIADB_DATABASE=wordpress
+      - MARIADB_USER=wp
+      - MARIADB_PASSWORD=__WP_DB_PW__
+      - MARIADB_RANDOM_ROOT_PASSWORD=yes
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      - WORDPRESS_DB_HOST=db
+      - WORDPRESS_DB_USER=wp
+      - WORDPRESS_DB_PASSWORD=__WP_DB_PW__
+      - WORDPRESS_DB_NAME=wordpress
+      - |
+        WORDPRESS_CONFIG_EXTRA=
+        if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $$_SERVER['HTTPS'] = 'on'; }
+        define('WP_HOME','https://onaiagents.com');
+        define('WP_SITEURL','https://onaiagents.com');
+    volumes:
+      - wp_data:/var/www/html
+      - /docker/agentstudio/wp-theme/comfyAIcloud.com:/var/www/html/wp-content/themes/comfyAIcloud.com
+    expose:
+      - "80"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+      - wordpress
+    ports:
+      - "80:80"
+      - "443:443"
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+configs:
+  caddyfile:
+    content: |
+      onaiagents.com, www.onaiagents.com {
+        encode zstd gzip
+        @app path /agentstudio* /api/*
+        handle @app {
+          reverse_proxy app:8000
+        }
+        handle {
+          reverse_proxy wordpress:80
+        }
+      }
+
+volumes:
+  app_data:
+  db_data:
+  wp_data:
+  caddy_data:
+  caddy_config:
