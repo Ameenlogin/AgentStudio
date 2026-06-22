@@ -8,173 +8,216 @@
 <meta name="theme-color" content="#FAF9F5" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/styles.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  .af{max-width:1080px;margin:0 auto;padding:44px 24px 60px}
-  .af-hero{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:30px;padding-bottom:24px;border-bottom:1px solid var(--border)}
-  .af-kicker{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-  .af-hero h1{font-family:var(--font-display);font-weight:500;font-size:clamp(2rem,4.4vw,2.9rem);letter-spacing:-.02em;line-height:1.03}
-  .af-hero p{color:var(--muted);margin-top:10px;max-width:520px;font-size:15px}
-  .af-count{font-size:13px;font-weight:600;color:var(--muted)}
-  .af-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-  .fc{background:var(--elevated);border:1px solid var(--border);border-radius:16px;padding:24px;transition:.2s;cursor:pointer;text-align:left}
-  .fc:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}
-  .fc .av{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:23px;color:#fff;margin-bottom:16px}
-  .fc h3{font-size:16px;font-weight:600;margin-bottom:4px}
-  .fc p{color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:14px}
-  .fc .chat{font-size:13px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
-  .create{border:1.5px dashed var(--border);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:212px}
+  :root{
+    --bg:#FAF9F5;--surf:#FFFFFF;--surf2:#F4F3EF;--line:#E7E3D9;--line2:#EFEDE6;
+    --text:#16150F;--t2:#6B6B72;--faint:#9A9AA2;--ink:#161513;--ink2:#000;--hdr:64px;
+    --violet:#7C3AED;--cyan:#4F46E5;--green:#0D9488;--amber:#D97706;--rose:#E11D6B;
+    --fs:"Inter",system-ui,sans-serif;
+    --sh:0 1px 2px rgba(20,18,12,.04),0 12px 32px -16px rgba(20,18,12,.2);
+    --sh-lg:0 30px 60px -28px rgba(20,18,12,.32);--ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}::selection{background:var(--ink);color:#fff}
+  body{font-family:var(--fs);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+  a{text-decoration:none;color:inherit}
+
+  .nav{position:sticky;top:0;z-index:60;background:rgba(250,249,245,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--line2)}
+  .nav-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:18px;height:var(--hdr);padding:0 24px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;letter-spacing:-.02em}
+  .brand img{width:23px;height:23px}
+  .nav .links{display:flex;gap:24px;margin-left:10px}
+  .nav .links a{color:var(--t2);font-size:14.5px;font-weight:600}.nav .links a:hover{color:var(--text)}
+  .nav .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:11px;font-weight:700;font-size:14px;padding:10px 18px;cursor:pointer;border:1px solid transparent;transition:.2s var(--ease)}
+  .btn-ink{background:var(--ink);color:#fff}.btn-ink:hover{background:var(--ink2);transform:translateY(-1px)}
+  .btn-line{border-color:var(--line);background:var(--surf);color:var(--text)}.btn-line:hover{border-color:var(--ink)}
+  @media(max-width:760px){.nav .links{display:none}}
+
+  .af{max-width:1080px;margin:0 auto;padding:46px 24px 70px}
+  .hero{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:32px;padding-bottom:26px;border-bottom:1px solid var(--line)}
+  .kick{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--violet);margin-bottom:12px}
+  .hero h1{font-weight:800;letter-spacing:-.03em;font-size:clamp(2rem,4.6vw,3rem);line-height:1.02}
+  .hero p{color:var(--t2);margin-top:12px;max-width:520px;font-size:15.5px}
+  .count{font-size:13px;font-weight:700;color:var(--t2);background:var(--surf);border:1px solid var(--line);padding:8px 14px;border-radius:99px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+  .fc{background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:24px;transition:.26s var(--ease);cursor:pointer;text-align:left;opacity:0;animation:rise .6s var(--ease) forwards}
+  .fc:hover{transform:translateY(-5px);box-shadow:var(--sh-lg)}
+  @keyframes rise{to{opacity:1}}
+  .fc .av{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;color:#fff;margin-bottom:16px}
+  .fc h3{font-size:16.5px;font-weight:800;margin-bottom:4px}
+  .fc p{color:var(--t2);font-size:13.5px;line-height:1.5;margin-bottom:14px}
+  .fc .chat{font-size:13.5px;font-weight:700;color:var(--violet);display:inline-flex;align-items:center;gap:6px}
+  .fc:hover .chat{gap:9px}
+  .create{border:1.5px dashed var(--line);background:var(--surf2);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:230px}
   .create:hover{border-color:var(--ink);background:#fffdf8}
-  .create .plus{width:52px;height:52px;border-radius:14px;background:var(--ink);color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
-  .create h3{font-size:15px;font-weight:700}.create p{color:var(--muted);font-size:12.5px;margin-top:4px}
-  /* modal */
-  .ov{position:fixed;inset:0;background:rgba(26,26,24,.4);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+  .create .plus{width:56px;height:56px;border-radius:16px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .create .plus svg{width:26px;height:26px}
+  .create h3{font-size:15.5px;font-weight:800}.create p{color:var(--t2);font-size:12.5px;margin-top:4px}
+
+  /* Overlay + wizard */
+  .ov{position:fixed;inset:0;background:rgba(22,21,15,.45);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
   .ov.on{display:flex}
-  .modal{background:var(--elevated);border:1px solid var(--border);border-radius:18px;max-width:440px;width:100%;padding:26px;box-shadow:var(--shadow-lift);max-height:90vh;overflow:auto}
-  .modal h2{font-family:var(--font-display);font-weight:500;font-size:22px;margin-bottom:4px}
-  .modal .sub{color:var(--muted);font-size:13.5px;margin-bottom:20px}
-  .mlbl{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 8px;display:block}
-  .mlbl:first-of-type{margin-top:0}
-  .modal input[type=text],.modal select,.modal textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font:inherit;font-size:14px;color:var(--text);outline:none}
-  .modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--text);background:#fff}
-  .chips{display:flex;flex-wrap:wrap;gap:7px}
-  .chip2{padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s}
-  .chip2:hover{border-color:var(--text)}.chip2.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .mfoot{display:flex;gap:10px;margin-top:24px}
-  .mfoot .btn{flex:1}
-  .af-hero,.fc{opacity:0;animation:afin .62s cubic-bezier(.16,1,.3,1) forwards}
-  .af-grid .fc:nth-child(2){animation-delay:.05s}.af-grid .fc:nth-child(3){animation-delay:.1s}.af-grid .fc:nth-child(4){animation-delay:.15s}.af-grid .fc:nth-child(5){animation-delay:.2s}.af-grid .fc:nth-child(6){animation-delay:.25s}
-  @keyframes afin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-  @media(prefers-reduced-motion:reduce){.fc,.af-hero{animation:none!important;opacity:1!important}.fc{transition:none}}
-  @media(max-width:560px){.af{padding:28px 16px 40px}}
+  .modal{background:var(--surf);border:1px solid var(--line);border-radius:20px;max-width:460px;width:100%;box-shadow:var(--sh-lg);max-height:92vh;overflow:auto}
+  .mhead{padding:22px 26px 0}
+  .steps{display:flex;gap:6px;margin-bottom:18px}
+  .steps i{height:4px;flex:1;border-radius:99px;background:var(--line)}
+  .steps i.on{background:var(--ink)}
+  .mhead h2{font-size:21px;font-weight:800;letter-spacing:-.02em}
+  .mhead .sub{color:var(--t2);font-size:13.5px;margin-top:4px}
+  .mbody{padding:18px 26px 0}
+  .step{display:none}.step.on{display:block}
+  .mlbl{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);margin:14px 0 9px;display:block}.mlbl:first-child{margin-top:0}
+  .modal input[type=text],.modal textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:12px 14px;font:inherit;font-size:14px;color:var(--text);outline:none}
+  .modal input:focus,.modal textarea:focus{border-color:var(--ink);background:#fff}
+  .avpick{display:flex;flex-wrap:wrap;gap:10px}
+  .avopt{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;cursor:pointer;border:3px solid transparent;transition:.15s}
+  .avopt.sel{border-color:var(--ink);transform:scale(1.05)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:8px 13px;border:1px solid var(--line);border-radius:9px;background:var(--bg);font-size:13px;font-weight:700;color:var(--t2);cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--ink)}.chip.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .voices{display:grid;gap:8px}
+  .voice{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--line);border-radius:11px;background:var(--bg);cursor:pointer;font-size:13.5px;font-weight:600}
+  .voice.sel{border-color:var(--ink);background:#fffdf8}
+  .voice .vi{width:30px;height:30px;border-radius:50%;background:var(--surf2);display:flex;align-items:center;justify-content:center;color:var(--ink)}
+  .mfoot{display:flex;gap:10px;padding:20px 26px 24px}.mfoot .btn{flex:1}
+
+  /* Chat */
+  .cov{position:fixed;inset:0;background:rgba(22,21,15,.5);backdrop-filter:blur(5px);display:none;align-items:flex-end;justify-content:center;z-index:210;padding:0}.cov.on{display:flex}
+  .chatbox{background:var(--surf);width:100%;max-width:520px;height:84vh;max-height:720px;border-radius:20px 20px 0 0;display:flex;flex-direction:column;border:1px solid var(--line);box-shadow:var(--sh-lg)}
+  @media(min-width:560px){.cov{align-items:center;padding:20px}.chatbox{border-radius:20px;height:72vh}}
+  .chead{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line)}
+  .chead .cav{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px}
+  .chead h3{font-size:15px;font-weight:800}.chead .x{margin-left:auto;cursor:pointer;color:var(--t2);background:none;border:none;font-size:18px}
+  .msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:82%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap}
+  .msg.u{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:4px}
+  .msg.a{align-self:flex-start;background:var(--surf2);color:var(--text);border-bottom-left-radius:4px}
+  .cin{display:flex;gap:8px;padding:14px;border-top:1px solid var(--line)}.cin input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 14px;font:inherit;font-size:14px;outline:none}
+  @media(prefers-reduced-motion:reduce){.fc{animation:none;opacity:1}}
 </style>
-<script defer src="/nav.js"></script>
 </head>
 <body>
-<nav>
-  <div class="wrap nav-in">
-    <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
-    <div class="nav-links"><a href="/#tools" class="active">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a></div>
-    <div class="nav-right"><a class="btn-text" href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
-    <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
-  </div>
-  <div class="mobile-menu" id="mm"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a><a href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
-</nav>
+<nav class="nav"><div class="nav-in">
+  <a class="brand" href="/"><img src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+  <div class="links"><a href="/playground">Generate</a><a href="/upscaler">Upscale</a><a href="/agentstudio">AgentStudio</a><a href="/pricing">Pricing</a></div>
+  <div class="right"><a class="btn btn-line" href="/account">Sign in</a><a class="btn btn-ink" href="/agentstudio">Open AgentStudio</a></div>
+</div></nav>
 
 <main class="af">
-  <div class="af-hero">
+  <div class="hero">
     <div>
-      <div class="af-kicker">Voice-first companions</div>
+      <div class="kick">Voice-first companions</div>
       <h1>AI Friends</h1>
-      <p>Tap any friend to step back into chat fast — voice, memory and personality, in one polished place.</p>
+      <p>Tap any friend to step back into chat fast — voice, memory and personality, in one bright place.</p>
     </div>
-    <div class="af-count" id="count">5 active friends</div>
+    <div class="count" id="count">5 friends</div>
   </div>
 
-  <div class="af-grid" id="grid">
-    <button type="button" class="fc create" id="createCard">
-      <div class="plus">+</div>
-      <h3>Create AI Friend</h3>
-      <p>Design a personality &amp; voice</p>
-    </button>
-
-    <div class="fc" data-name="Nova"><div class="av" style="background:var(--violet)">N</div><h3>Nova</h3><p>A creative muse for brainstorming, naming, and pushing ideas further.</p><span class="chat">Open chat →</span></div>
-    <div class="fc" data-name="Atlas"><div class="av" style="background:var(--cyan)">A</div><h3>Atlas</h3><p>A patient study tutor who explains anything, step by step.</p><span class="chat">Open chat →</span></div>
-    <div class="fc" data-name="Sage"><div class="av" style="background:var(--green)">S</div><h3>Sage</h3><p>A calm wellness companion for reflection and daily check-ins.</p><span class="chat">Open chat →</span></div>
-    <div class="fc" data-name="Pixel"><div class="av" style="background:var(--gold)">P</div><h3>Pixel</h3><p>A sharp coding buddy for quick reviews and rubber-ducking.</p><span class="chat">Open chat →</span></div>
-    <div class="fc" data-name="Luna"><div class="av" style="background:var(--red)">L</div><h3>Luna</h3><p>A vivid storyteller for fiction, worldbuilding and bedtime tales.</p><span class="chat">Open chat →</span></div>
+  <div class="grid" id="grid">
+    <button type="button" class="fc create" id="createCard"><div class="plus"><i data-lucide="plus"></i></div><h3>Create AI Friend</h3><p>Design a personality &amp; voice</p></button>
+    <div class="fc" data-n="Nova"><div class="av" style="background:var(--violet)">N</div><h3>Nova</h3><p>A creative muse for brainstorming, naming and pushing ideas further.</p><span class="chat">Open chat <i data-lucide="arrow-right" style="width:14px;height:14px"></i></span></div>
+    <div class="fc" data-n="Atlas"><div class="av" style="background:var(--cyan)">A</div><h3>Atlas</h3><p>A patient tutor who explains anything, step by step.</p><span class="chat">Open chat <i data-lucide="arrow-right" style="width:14px;height:14px"></i></span></div>
+    <div class="fc" data-n="Sage"><div class="av" style="background:var(--green)">S</div><h3>Sage</h3><p>A calm wellness companion for reflection and check-ins.</p><span class="chat">Open chat <i data-lucide="arrow-right" style="width:14px;height:14px"></i></span></div>
+    <div class="fc" data-n="Pixel"><div class="av" style="background:var(--amber)">P</div><h3>Pixel</h3><p>A sharp coding buddy for reviews and rubber-ducking.</p><span class="chat">Open chat <i data-lucide="arrow-right" style="width:14px;height:14px"></i></span></div>
+    <div class="fc" data-n="Luna"><div class="av" style="background:var(--rose)">L</div><h3>Luna</h3><p>A vivid storyteller for fiction and worldbuilding.</p><span class="chat">Open chat <i data-lucide="arrow-right" style="width:14px;height:14px"></i></span></div>
   </div>
 </main>
 
-<div class="ov" id="ov">
-  <div class="modal">
-    <h2>Create AI Friend</h2>
-    <p class="sub">Give your companion a name, personality and voice.</p>
-    <span class="mlbl">Name</span>
-    <input type="text" id="fName" placeholder="e.g. Orion" />
-    <span class="mlbl">Personality</span>
-    <div class="chips" id="traits">
-      <span class="chip2 sel">Warm</span><span class="chip2">Witty</span><span class="chip2">Calm</span><span class="chip2">Bold</span><span class="chip2">Curious</span><span class="chip2">Playful</span>
+<!-- Create wizard -->
+<div class="ov" id="ov"><div class="modal">
+  <div class="mhead">
+    <div class="steps"><i class="on" data-s="1"></i><i data-s="2"></i><i data-s="3"></i><i data-s="4"></i></div>
+    <h2 id="wzTitle">Choose an avatar</h2><div class="sub" id="wzSub">Pick a look for your friend.</div>
+  </div>
+  <div class="mbody">
+    <div class="step on" data-step="1">
+      <span class="mlbl">Avatar</span>
+      <div class="avpick" id="avpick">
+        <span class="avopt sel" style="background:var(--violet)" data-c="var(--violet)">N</span>
+        <span class="avopt" style="background:var(--cyan)" data-c="var(--cyan)">A</span>
+        <span class="avopt" style="background:var(--green)" data-c="var(--green)">S</span>
+        <span class="avopt" style="background:var(--amber)" data-c="var(--amber)">P</span>
+        <span class="avopt" style="background:var(--rose)" data-c="var(--rose)">L</span>
+        <span class="avopt" style="background:var(--ink)" data-c="var(--ink)">M</span>
+      </div>
     </div>
-    <span class="mlbl">Voice</span>
-    <select id="voice"><option>Soft · Female</option><option>Warm · Male</option><option>Bright · Neutral</option><option>Deep · Male</option></select>
-    <span class="mlbl">Tagline</span>
-    <input type="text" id="fTag" placeholder="One line about them" />
-    <div class="mfoot">
-      <button class="btn btn-ghost" id="cancel">Cancel</button>
-      <button class="btn btn-primary" id="createBtn">Create friend</button>
+    <div class="step" data-step="2">
+      <span class="mlbl">Personality</span>
+      <div class="chips" id="traits"><span class="chip sel">Warm</span><span class="chip">Witty</span><span class="chip">Calm</span><span class="chip">Bold</span><span class="chip">Curious</span><span class="chip">Playful</span><span class="chip">Wise</span></div>
+      <span class="mlbl">In their own words</span>
+      <textarea id="persona" rows="3" placeholder="e.g. an upbeat mentor who keeps things concise"></textarea>
+    </div>
+    <div class="step" data-step="3">
+      <span class="mlbl">Voice</span>
+      <div class="voices" id="voices">
+        <div class="voice sel"><span class="vi"><i data-lucide="volume-2" style="width:15px;height:15px"></i></span> Soft · Female</div>
+        <div class="voice"><span class="vi"><i data-lucide="volume-2" style="width:15px;height:15px"></i></span> Warm · Male</div>
+        <div class="voice"><span class="vi"><i data-lucide="volume-2" style="width:15px;height:15px"></i></span> Bright · Neutral</div>
+        <div class="voice"><span class="vi"><i data-lucide="volume-2" style="width:15px;height:15px"></i></span> Deep · Male</div>
+      </div>
+    </div>
+    <div class="step" data-step="4">
+      <span class="mlbl">Name</span><input type="text" id="fName" placeholder="e.g. Orion" />
+      <span class="mlbl">Tagline</span><input type="text" id="fTag" placeholder="One line about them" />
     </div>
   </div>
-</div>
-
-<div class="cov" id="chatOv">
-  <div class="chatbox">
-    <div class="chathead">
-      <div class="cav" id="chatAv">N</div>
-      <div><h3 id="chatName">Nova</h3><div style="font-size:12px;color:var(--muted)">AI friend</div></div>
-      <button class="x" id="chatClose" aria-label="Close">✕</button>
-    </div>
-    <div class="msgs" id="chatMsgs"></div>
-    <div class="chatin"><input type="text" id="chatInput" placeholder="Message…" /><button class="btn btn-primary" id="chatSend">Send</button></div>
+  <div class="mfoot">
+    <button class="btn btn-line" id="wzBack">Back</button>
+    <button class="btn btn-ink" id="wzNext">Next</button>
   </div>
-</div>
+</div></div>
 
-<footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Back to all tools</a></span></div></footer>
+<!-- Chat -->
+<div class="cov" id="chatOv"><div class="chatbox">
+  <div class="chead"><div class="cav" id="cAv">N</div><div><h3 id="cName">Nova</h3><div style="font-size:12px;color:var(--t2)">AI friend</div></div><button class="x" id="cClose">✕</button></div>
+  <div class="msgs" id="msgs"></div>
+  <div class="cin"><input type="text" id="cInput" placeholder="Message…" /><button class="btn btn-ink" id="cSend">Send</button></div>
+</div></div>
 
 <script>
-  document.getElementById('yr').textContent=new Date().getFullYear();
-  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');mb.onclick=function(){mm.classList.toggle('open')};
-  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
-  var ov=document.getElementById('ov');
-  document.getElementById('createCard').onclick=function(){if(window.__OA_USER===false){location.href='/login?next=/ai-friends';return}ov.classList.add('on')};
-  document.getElementById('cancel').onclick=function(){ov.classList.remove('on')};
+  function toast(m){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#161513;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:300;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)';d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},2800)}
+  /* Wizard */
+  var ov=document.getElementById('ov'),step=1;
+  var titles=['Choose an avatar','Give them a personality','Pick a voice','Name your friend'],subs=['Pick a look for your friend.','How should they feel to talk to?','Voice &amp; memory included.','Almost done.'];
+  function setStep(n){step=Math.max(1,Math.min(4,n));
+    document.querySelectorAll('.step').forEach(function(s){s.classList.toggle('on',+s.dataset.step===step)});
+    document.querySelectorAll('.steps i').forEach(function(i){i.classList.toggle('on',+i.dataset.s<=step)});
+    document.getElementById('wzTitle').textContent=titles[step-1];document.getElementById('wzSub').innerHTML=subs[step-1];
+    document.getElementById('wzBack').style.visibility=step===1?'hidden':'visible';
+    document.getElementById('wzNext').textContent=step===4?'Create friend':'Next';
+  }
+  function openWizard(){if(window.__OA_USER===false){location.href='/login?next=/ai-friends';return}step=1;setStep(1);ov.classList.add('on')}
+  document.getElementById('createCard').onclick=openWizard;
   ov.onclick=function(e){if(e.target===ov)ov.classList.remove('on')};
-  document.getElementById('traits').addEventListener('click',function(e){var t=e.target.closest('.chip2');if(t)t.classList.toggle('sel')});
-  document.getElementById('createBtn').onclick=function(){var n=document.getElementById('fName');if(!n.value.trim()){n.focus();return}ov.classList.remove('on');toast('AI Friends launches soon — '+n.value.trim()+' is saved')};
-  var PERSONAS={
-    Nova:"You are Nova, a creative muse who helps brainstorm, name things and push ideas further. Warm, imaginative, concise.",
-    Atlas:"You are Atlas, a patient tutor who explains anything step by step with simple examples. Encouraging and clear.",
-    Sage:"You are Sage, a calm wellness companion for reflection and daily check-ins. Gentle, supportive, non-judgmental.",
-    Pixel:"You are Pixel, a sharp coding buddy. Give concise, correct help and rubber-duck debugging.",
-    Luna:"You are Luna, a vivid storyteller for fiction and worldbuilding. Evocative and playful."
-  };
-  var AVCOL={Nova:'var(--violet)',Atlas:'var(--cyan)',Sage:'var(--green)',Pixel:'var(--gold)',Luna:'var(--red)'};
-  var chatOv=document.getElementById('chatOv'),chatMsgs=document.getElementById('chatMsgs');
-  var hist=[],persona='';
-  function addMsg(role,text){var m=document.createElement('div');m.className='msg '+(role==='user'?'u':'a');m.textContent=text;chatMsgs.appendChild(m);chatMsgs.scrollTop=chatMsgs.scrollHeight;return m;}
-  function openChat(name){persona=PERSONAS[name]||('You are '+name+', a friendly AI companion.');hist=[];chatMsgs.innerHTML='';
-    document.getElementById('chatName').textContent=name;
-    var av=document.getElementById('chatAv');av.textContent=name[0];av.style.background=AVCOL[name]||'var(--ink)';
-    addMsg('assistant',"Hi, I'm "+name+'. What’s on your mind?');chatOv.classList.add('on');document.getElementById('chatInput').focus();}
-  document.getElementById('chatClose').onclick=function(){chatOv.classList.remove('on')};
+  document.getElementById('wzBack').onclick=function(){setStep(step-1)};
+  document.getElementById('wzNext').onclick=function(){if(step<4){setStep(step+1);return}var n=document.getElementById('fName');if(!n.value.trim()){n.focus();return}ov.classList.remove('on');toast('“'+n.value.trim()+'” is ready — chat launching for new friends soon')};
+  document.getElementById('avpick').onclick=function(e){var t=e.target.closest('.avopt');if(!t)return;this.querySelectorAll('.avopt').forEach(function(o){o.classList.remove('sel')});t.classList.add('sel')};
+  document.getElementById('traits').onclick=function(e){var t=e.target.closest('.chip');if(t)t.classList.toggle('sel')};
+  document.getElementById('voices').onclick=function(e){var t=e.target.closest('.voice');if(!t)return;this.querySelectorAll('.voice').forEach(function(o){o.classList.remove('sel')});t.classList.add('sel')};
+
+  /* Chat */
+  var PERS={Nova:"You are Nova, a creative muse who helps brainstorm and push ideas further. Warm, imaginative, concise.",Atlas:"You are Atlas, a patient tutor who explains step by step. Encouraging and clear.",Sage:"You are Sage, a calm wellness companion. Gentle, supportive.",Pixel:"You are Pixel, a sharp coding buddy. Concise, correct help.",Luna:"You are Luna, a vivid storyteller. Evocative and playful."};
+  var AC={Nova:'var(--violet)',Atlas:'var(--cyan)',Sage:'var(--green)',Pixel:'var(--amber)',Luna:'var(--rose)'};
+  var chatOv=document.getElementById('chatOv'),msgs=document.getElementById('msgs'),hist=[],persona='';
+  function add(role,t){var m=document.createElement('div');m.className='msg '+(role==='user'?'u':'a');m.textContent=t;msgs.appendChild(m);msgs.scrollTop=msgs.scrollHeight;return m}
+  function openChat(name){if(window.__OA_USER===false){location.href='/login?next=/ai-friends';return}persona=PERS[name]||('You are '+name+'.');hist=[];msgs.innerHTML='';document.getElementById('cName').textContent=name;var a=document.getElementById('cAv');a.textContent=name[0];a.style.background=AC[name]||'var(--ink)';add('assistant',"Hi, I'm "+name+'. What’s on your mind?');chatOv.classList.add('on');document.getElementById('cInput').focus()}
+  document.getElementById('cClose').onclick=function(){chatOv.classList.remove('on')};
   chatOv.onclick=function(e){if(e.target===chatOv)chatOv.classList.remove('on')};
-  async function sendChat(){var inp=document.getElementById('chatInput'),t=inp.value.trim();if(!t)return;inp.value='';
-    addMsg('user',t);hist.push({role:'user',content:t});
-    var typing=addMsg('assistant','…');
-    try{var r=await fetch('/api/site/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:hist,persona:persona})});var d=await r.json();typing.remove();
+  async function send(){var inp=document.getElementById('cInput'),t=inp.value.trim();if(!t)return;inp.value='';add('user',t);hist.push({role:'user',content:t});var ty=add('assistant','…');
+    try{var r=await fetch('/api/site/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:hist,persona:persona})});var d=await r.json();ty.remove();
       if(r.status===401){location.href='/login?next=/ai-friends';return}
-      if(r.status===402){addMsg('assistant','(Out of credits — top up in your account.)');return}
-      if(r.status===503){addMsg('assistant','(Chat isn’t enabled yet — an AI provider must be set in admin.)');return}
-      if(d.reply){addMsg('assistant',d.reply);hist.push({role:'assistant',content:d.reply});}else{addMsg('assistant','(No response.)');}
-    }catch(e){typing.remove();addMsg('assistant','(Something went wrong.)');}}
-  document.getElementById('chatSend').onclick=sendChat;
-  document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter')sendChat()});
-  document.querySelectorAll('#grid .fc[data-name]').forEach(function(c){c.onclick=function(){if(window.__OA_USER===false){location.href='/login?next=/ai-friends';return}openChat(c.dataset.name)}});
+      if(r.status===402){add('assistant','(Out of credits — top up in your account.)');return}
+      if(r.status===503){add('assistant','(Chat isn’t enabled yet — an AI provider must be set in admin.)');return}
+      if(d.reply){add('assistant',d.reply);hist.push({role:'assistant',content:d.reply})}else add('assistant','(No response.)');
+    }catch(e){ty.remove();add('assistant','(Something went wrong.)')}}
+  document.getElementById('cSend').onclick=send;
+  document.getElementById('cInput').addEventListener('keydown',function(e){if(e.key==='Enter')send()});
+  document.querySelectorAll('#grid .fc[data-n]').forEach(function(c,i){c.style.animationDelay=(i*.05)+'s';c.onclick=function(){openChat(c.dataset.n)}});
+  fetch('/api/site/config').then(function(r){return r.json()}).then(function(c){window.__OA_USER=!!(c&&c.logged_in)}).catch(function(){});
+  if(window.lucide)lucide.createIcons();
 </script>
-<style>
-.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:400;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}
-.cov{position:fixed;inset:0;background:rgba(26,26,24,.45);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;z-index:300;padding:0}.cov.on{display:flex}
-.chatbox{background:var(--elevated);width:100%;max-width:520px;height:82vh;max-height:700px;border-radius:18px 18px 0 0;display:flex;flex-direction:column;border:1px solid var(--border);box-shadow:var(--shadow-lift)}
-@media(min-width:560px){.cov{align-items:center;padding:20px}.chatbox{border-radius:18px;height:72vh}}
-.chathead{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--border)}
-.chathead .cav{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-size:17px}
-.chathead h3{font-size:15px;font-weight:700}.chathead .x{margin-left:auto;cursor:pointer;color:var(--muted);background:none;border:none;font-size:18px}
-.msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:82%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap}
-.msg.u{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:4px}
-.msg.a{align-self:flex-start;background:var(--panel);color:var(--text);border-bottom-left-radius:4px}
-.chatin{display:flex;gap:8px;padding:14px;border-top:1px solid var(--border)}.chatin input{flex:1}
-</style>
 </body>
 </html>

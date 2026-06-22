@@ -4,110 +4,118 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Playground — AI Art Generator | onaiagents</title>
-<meta name="description" content="The onaiagents Playground for AI art and professional realism models." />
+<meta name="description" content="The onaiagents Playground — generate AI art with 30+ models in a bright, fast studio." />
 <meta name="theme-color" content="#FAF9F5" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 <script src="https://unpkg.com/lucide@latest"></script>
-<script defer src="/nav.js"></script>
 <style>
   :root{
-    --pg-bg:#FAF9F5;--pg-surface:#FFFFFF;--pg-surface-2:#F3F1EA;--pg-border:#E6E2D7;
-    --pg-text:#1A1A18;--pg-text-2:#6B6760;--pg-faint:#A6A095;--pg-primary:#161513;--header-h:64px;
-    --fs:"Inter",system-ui,sans-serif;--fd:"Newsreader",Georgia,serif;
+    --bg:#FAF9F5;--surf:#FFFFFF;--surf2:#F4F3EF;--line:#E7E3D9;--line2:#EFEDE6;
+    --text:#16150F;--t2:#6B6B72;--faint:#9A9AA2;--ink:#161513;--ink2:#000;--hdr:64px;
+    --fs:"Inter",system-ui,sans-serif;
+    --sh:0 1px 2px rgba(20,18,12,.04),0 10px 30px -16px rgba(20,18,12,.18);
+    --ease:cubic-bezier(.16,1,.3,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  ::selection{background:var(--pg-primary);color:#fff}
-  html{background:var(--pg-bg)}
-  body{font-family:var(--fs);background:var(--pg-bg);color:var(--pg-text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--ink);color:#fff}
+  html{background:var(--bg)}
+  body{font-family:var(--fs);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
   @media(min-width:901px){body{overflow:hidden}}
   a{text-decoration:none;color:inherit}
 
-  .pg-nav{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:rgba(250,249,245,.85);
-    backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid var(--pg-border);
-    display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;z-index:100}
-  .pg-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;letter-spacing:-.02em}
+  .pg-nav{position:fixed;top:0;left:0;right:0;height:var(--hdr);background:rgba(250,249,245,.85);
+    backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;padding:0 1.3rem;z-index:100}
+  .pg-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.05rem;letter-spacing:-.02em}
   .pg-brand img{width:24px;height:24px}
-  .pg-links{display:flex;align-items:center;gap:12px}
-  .pg-links a{color:var(--pg-text-2);font-size:.9rem;font-weight:600;padding:8px 14px;border-radius:9px;transition:.2s}
-  .pg-links a:hover{color:var(--pg-text);background:var(--pg-surface-2)}
-  .pg-credits{background:var(--pg-text);color:#fff;font-weight:700;font-size:.82rem;padding:7px 13px;border-radius:9px;display:flex;align-items:center;gap:6px}
-  .pg-credits-icon{animation:pulse 2s infinite}
-  @keyframes pulse{50%{transform:scale(1.12)}}
+  .pg-brand .sep{color:var(--faint);font-weight:400}
+  .pg-links{display:flex;align-items:center;gap:10px}
+  .pg-links a{color:var(--t2);font-size:.9rem;font-weight:600;padding:8px 14px;border-radius:10px;transition:.2s}
+  .pg-links a:hover{color:var(--text);background:var(--surf2)}
+  .pg-credits{background:var(--ink);color:#fff;font-weight:800;font-size:.82rem;padding:8px 14px;border-radius:10px;display:flex;align-items:center;gap:6px}
+  .pg-credits-i{animation:pulse 2s infinite}@keyframes pulse{50%{transform:scale(1.14)}}
 
-  .pg-wrap{display:flex;height:100vh;padding-top:var(--header-h)}
-  .pg-sidebar{width:390px;background:var(--pg-surface);border-right:1px solid var(--pg-border);
-    display:flex;flex-direction:column;overflow-y:auto;padding:1.5rem;flex-shrink:0}
-  .pg-sidebar::-webkit-scrollbar{width:5px}.pg-sidebar::-webkit-scrollbar-thumb{background:#dad5c7;border-radius:4px}
-  .pg-label{font-size:.72rem;font-weight:700;color:var(--pg-text-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-  .pg-textarea{width:100%;background:var(--pg-bg);border:1px solid var(--pg-border);border-radius:11px;color:var(--pg-text);
-    font-family:inherit;font-size:.9rem;padding:12px 14px;margin-bottom:1.2rem;outline:none;transition:.2s;resize:vertical;min-height:96px;line-height:1.5}
-  .pg-textarea:focus{border-color:var(--pg-text);background:#fff}
-  .pg-active{display:flex;align-items:center;gap:12px;background:var(--pg-surface-2);border:1px solid var(--pg-border);border-radius:13px;padding:10px;margin-bottom:1.2rem}
-  .pg-active img{width:46px;height:46px;border-radius:9px;object-fit:cover;background:var(--pg-bg)}
-  .pg-active .t{font-size:.9rem;font-weight:700}
-  .pg-active .b{font-size:.7rem;color:var(--pg-text-2);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
-  .pg-choice-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:1.2rem}
-  .pg-choice{flex:0 0 auto;display:flex;flex-direction:column;gap:2px;text-align:left;background:var(--pg-bg);
-    border:1px solid var(--pg-border);color:var(--pg-text-2);padding:9px 12px;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;transition:.18s}
-  .pg-choice small{font-weight:500;font-size:.66rem;color:var(--pg-faint)}
-  .pg-choice:hover{border-color:#d8d2c4}
-  .pg-choice.active{background:var(--pg-text);border-color:var(--pg-text);color:#fff}
+  .pg-wrap{display:flex;height:100vh;padding-top:var(--hdr)}
+  .pg-sidebar{width:390px;background:var(--surf);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;padding:1.5rem;flex-shrink:0}
+  .pg-sidebar::-webkit-scrollbar{width:6px}.pg-sidebar::-webkit-scrollbar-thumb{background:#e0dccf;border-radius:4px}
+  .pg-label{font-size:.72rem;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .pg-textarea,.pg-input,.pg-select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;color:var(--text);font:inherit;font-size:.9rem;padding:12px 14px;margin-bottom:1.25rem;outline:none;transition:.18s;resize:vertical}
+  .pg-textarea:focus,.pg-input:focus,.pg-select:focus{border-color:var(--ink);background:#fff}
+  .pg-textarea{min-height:96px;line-height:1.5}
+
+  .pg-active{background:var(--surf2);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:1.25rem;display:flex;gap:12px;align-items:center;animation:flash .5s var(--ease)}
+  @keyframes flash{from{box-shadow:0 0 0 2px var(--ink) inset}to{box-shadow:none}}
+  .pg-active-img{width:50px;height:50px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,#EEF0FF,#F7EEFF);display:flex;align-items:center;justify-content:center;color:var(--ink)}
+  .pg-active-t{font-weight:800;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pg-active-b{font-size:.66rem;font-weight:800;color:var(--t2);background:var(--bg);border:1px solid var(--line);padding:2px 7px;border-radius:5px;display:inline-block;margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+
+  .pg-choice-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:1.25rem}
+  .pg-choice{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:13px;padding:11px 12px;text-align:left;font-weight:700;font-size:.84rem;cursor:pointer;transition:.2s var(--ease)}
+  .pg-choice small{display:block;margin-top:3px;color:var(--faint);font-size:.68rem;font-weight:600}
+  .pg-choice:hover{border-color:#d8d2c4;transform:translateY(-2px)}
+  .pg-choice.active{background:var(--ink);border-color:var(--ink);color:#fff}
   .pg-choice.active small{color:rgba(255,255,255,.7)}
-  .pg-grid-select{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:1.2rem}
+
+  .pg-grid-select{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:1.25rem}
   .pg-grid-select.two{grid-template-columns:repeat(2,1fr)}
-  .pg-grid-opt{background:var(--pg-bg);border:1px solid var(--pg-border);color:var(--pg-text-2);padding:10px 5px;border-radius:10px;font-size:.8rem;font-weight:600;text-align:center;cursor:pointer;transition:.18s}
+  .pg-grid-opt{background:var(--bg);border:1px solid var(--line);color:var(--t2);padding:11px 5px;border-radius:10px;font-size:.8rem;font-weight:700;text-align:center;cursor:pointer;transition:.18s}
   .pg-grid-opt:hover{border-color:#d8d2c4}
-  .pg-grid-opt.active{background:var(--pg-text);border-color:var(--pg-text);color:#fff}
-  .pg-file{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--pg-bg);border:1px dashed var(--pg-border);
-    border-radius:11px;padding:13px;font-size:.85rem;font-weight:600;color:var(--pg-text-2);cursor:pointer;margin-bottom:1.2rem;transition:.18s}
-  .pg-file:hover{border-color:var(--pg-text);color:var(--pg-text)}
-  input[type=range]{width:100%;accent-color:var(--pg-text);cursor:pointer;margin-bottom:1.6rem}
-  .pg-btn{width:100%;background:var(--pg-primary);color:#fff;border:none;padding:15px;border-radius:13px;font-weight:700;font-size:1rem;
-    cursor:pointer;transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:auto}
-  .pg-btn:hover{background:#000;transform:translateY(-2px)}
-  .pg-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
-  .pg-cost-badge{background:rgba(255,255,255,.18);padding:3px 9px;border-radius:7px;font-size:.78rem;font-weight:700}
+  .pg-grid-opt.active{background:var(--ink);border-color:var(--ink);color:#fff}
 
-  .pg-main{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:1.6rem}
-  .pg-result-area{flex:1;min-height:420px;display:flex;align-items:center;justify-content:center;
-    border:1px solid var(--pg-border);border-radius:18px;background:var(--pg-surface);position:relative;overflow:hidden;margin-bottom:1.4rem}
-  .pg-placeholder{text-align:center;color:var(--pg-text-2)}
-  .pg-placeholder h2{font-family:var(--fd);font-weight:500;font-size:1.5rem;margin-top:8px;color:var(--pg-text)}
-  .pg-gen{display:none;flex-direction:column;align-items:center;gap:14px}
-  .pg-gen.on{display:flex}.pg-result-area.busy .pg-placeholder{display:none}
-  .pg-spinner{width:46px;height:46px;border:3px solid var(--pg-border);border-top-color:var(--pg-text);border-radius:50%;animation:spin .8s linear infinite}
+  .pg-file{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--bg);border:1px dashed var(--line);border-radius:12px;padding:13px;font-size:.85rem;font-weight:700;color:var(--t2);cursor:pointer;margin-bottom:1.25rem;transition:.18s}
+  .pg-file:hover{border-color:var(--ink);color:var(--ink)}
+  input[type=range]{width:100%;accent-color:var(--ink);cursor:pointer;margin-bottom:1.75rem}
+
+  .pg-btn{width:100%;background:var(--ink);color:#fff;border:none;padding:15px;border-radius:14px;font-weight:800;font-size:1rem;cursor:pointer;transition:.25s var(--ease);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:auto}
+  .pg-btn:hover{background:var(--ink2);transform:translateY(-2px);box-shadow:var(--sh)}
+  .pg-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  .pg-cost{background:rgba(255,255,255,.18);padding:3px 9px;border-radius:7px;font-size:.78rem;font-weight:800}
+
+  .pg-main{flex:1;overflow-y:auto;background:var(--bg);display:flex;flex-direction:column}
+  .pg-result{padding:2rem;border-bottom:1px solid var(--line);background:radial-gradient(circle at top,#fff,var(--bg) 70%);min-height:560px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+  .pg-ph{text-align:center;color:var(--t2);animation:float 6s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-10px)}}
+  .pg-ph .big{width:64px;height:64px;border:1px solid var(--line);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:var(--ink)}
+  .pg-ph h2{font-size:1.4rem;font-weight:800;color:var(--text);letter-spacing:-.02em}
+  .pg-gen{display:none;flex-direction:column;align-items:center;gap:1rem}.pg-gen.on{display:flex}.pg-result.busy .pg-ph{display:none}
+  .pg-spin{width:46px;height:46px;border:3px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:spin .85s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .pg-gallery h3{font-size:.9rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-  .pg-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-  .pg-filter{background:var(--pg-surface);border:1px solid var(--pg-border);color:var(--pg-text-2);padding:8px 14px;border-radius:9px;font-size:.82rem;font-weight:600;cursor:pointer;transition:.18s}
-  .pg-filter:hover{border-color:var(--pg-text);color:var(--pg-text)}
-  .pg-filter.active{background:var(--pg-text);color:#fff;border-color:var(--pg-text)}
-  .pg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-  .pg-card{background:var(--pg-surface);border:1px solid var(--pg-border);border-radius:13px;overflow:hidden;cursor:pointer;transition:.2s}
-  .pg-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift,0 12px 30px -16px rgba(40,36,28,.3))}
-  .pg-card.selected{border-color:var(--pg-text);box-shadow:0 0 0 1px var(--pg-text)}
-  .pg-card .pic{aspect-ratio:1;background:var(--pg-surface-2);display:flex;align-items:center;justify-content:center;color:var(--pg-faint)}
-  .pg-card .cap{padding:10px 12px}
-  .pg-card .cap b{font-size:.82rem;font-weight:700;display:block}
-  .pg-card .cap span{font-size:.72rem;color:var(--pg-text-2)}
+  .pg-out{max-width:520px;width:100%}
+  .pg-out img{width:100%;border-radius:14px;box-shadow:var(--sh)}
+  .pg-actions{display:flex;gap:12px;margin-top:1.25rem;justify-content:center;flex-wrap:wrap}
+  .pg-act{background:var(--surf);color:var(--text);border:1px solid var(--line);padding:10px 20px;border-radius:11px;font-weight:700;font-size:.9rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.18s}
+  .pg-act:hover{border-color:var(--ink)}
+  .pg-act.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
 
-  @media(max-width:900px){
-    .pg-wrap{flex-direction:column;height:auto}
-    .pg-sidebar{width:100%;border-right:none;border-bottom:1px solid var(--pg-border)}
-    .pg-main{overflow:visible}
-    body{overflow:auto}
-  }
-  @media(prefers-reduced-motion:reduce){.pg-spinner,.pg-credits-icon{animation:none}}
+  .pg-gallery{padding:2rem}
+  .pg-gtitle{font-size:.95rem;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .pg-filters{display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap}
+  .pg-filter{background:var(--surf);border:1px solid var(--line);color:var(--t2);padding:8px 16px;border-radius:99px;font-size:.85rem;font-weight:700;cursor:pointer;transition:.2s}
+  .pg-filter:hover{color:var(--text)}.pg-filter.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pg-cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.1rem}
+  .pg-card{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:2/3;border:1px solid var(--line);transition:.3s var(--ease);cursor:pointer;background:var(--surf2)}
+  .pg-card:hover{transform:translateY(-6px);border-color:var(--ink);box-shadow:var(--sh)}
+  .pg-card.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+  .pg-card .pic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(22,21,19,.32)}
+  .pg-card .pic svg{width:46px;height:46px;stroke-width:1.4}
+  .pg-card .base{position:absolute;top:10px;left:10px;z-index:2;font-size:.6rem;font-weight:900;background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--text);padding:3px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em}
+  .pg-card .best{position:absolute;top:10px;right:10px;z-index:2;background:var(--ink);color:#fff;font-size:.6rem;font-weight:900;padding:3px 7px;border-radius:5px;display:flex;align-items:center;gap:3px}
+  .pg-card .info{position:absolute;bottom:0;left:0;right:0;padding:16px;z-index:2;background:linear-gradient(transparent,rgba(255,255,255,.96))}
+  .pg-card .info .nm{font-size:.92rem;font-weight:800;color:var(--text);line-height:1.2}
+  .pg-card .info .cr{font-size:.72rem;color:var(--t2);margin-top:2px}
+  .pg-card.sel .info::after{content:"Selected";display:inline-block;margin-top:7px;padding:3px 9px;border-radius:99px;background:var(--ink);color:#fff;font-size:.6rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+
+  @media(max-width:900px){.pg-wrap{flex-direction:column;height:auto}.pg-sidebar{width:100%;border-right:none;border-bottom:1px solid var(--line)}.pg-main{overflow:visible}body{overflow:auto}}
+  @media(prefers-reduced-motion:reduce){.pg-spin,.pg-ph,.pg-credits-i{animation:none}}
 </style>
 </head>
 <body>
 <nav class="pg-nav">
-  <a href="/" class="pg-brand"><img src="/spark-ink.png" alt="" onerror="this.style.display='none'"/> Playground</a>
+  <a class="pg-brand" href="/"><img src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents <span class="sep">/ Playground</span></a>
   <div class="pg-links">
-    <a href="/#tools"><i data-lucide="arrow-left" style="width:16px;height:16px;vertical-align:-3px"></i> Back</a>
-    <div class="pg-credits"><i data-lucide="gem" class="pg-credits-icon" style="width:14px;height:14px"></i> <span>100</span></div>
+    <a href="/"><i data-lucide="arrow-left" style="width:15px;height:15px;vertical-align:-3px"></i> Home</a>
+    <div class="pg-credits"><i data-lucide="gem" class="pg-credits-i" style="width:14px;height:14px"></i> <span id="cr">—</span></div>
   </div>
 </nav>
 
@@ -115,8 +123,8 @@
   <aside class="pg-sidebar">
     <label class="pg-label"><i data-lucide="cpu" style="width:14px;height:14px"></i> Active model</label>
     <div class="pg-active">
-      <img id="amImg" src="/spark-ink.png" alt="" onerror="this.style.visibility='hidden'"/>
-      <div><div class="t" id="amTitle">FLUX.1 [dev]</div><div class="b" id="amBase">Image · best quality</div></div>
+      <div class="pg-active-img"><i data-lucide="sparkles" style="width:24px;height:24px"></i></div>
+      <div style="min-width:0"><div class="pg-active-t" id="amT">FLUX.1 [dev]</div><span class="pg-active-b" id="amB">Image · best</span></div>
     </div>
 
     <label class="pg-label"><i data-lucide="message-square-text" style="width:14px;height:14px"></i> Prompt</label>
@@ -126,7 +134,7 @@
     <textarea id="neg" class="pg-textarea" style="min-height:60px" placeholder="What to avoid…"></textarea>
 
     <label class="pg-label"><i data-lucide="palette" style="width:14px;height:14px"></i> Style</label>
-    <div class="pg-choice-strip" data-group="style">
+    <div class="pg-choice-strip" data-g="style">
       <button class="pg-choice active" type="button">Hyperreal<small>Glossy photo detail</small></button>
       <button class="pg-choice" type="button">Photoreal<small>Natural camera look</small></button>
       <button class="pg-choice" type="button">Anime<small>Illustrated polish</small></button>
@@ -134,91 +142,84 @@
     </div>
 
     <label class="pg-label"><i data-lucide="person-standing" style="width:14px;height:14px"></i> Composition</label>
-    <div class="pg-choice-strip" data-group="pose">
+    <div class="pg-choice-strip" data-g="pose">
       <button class="pg-choice active" type="button">Default<small>Balanced</small></button>
       <button class="pg-choice" type="button">Portrait<small>Face focused</small></button>
       <button class="pg-choice" type="button">Wide<small>Full scene</small></button>
       <button class="pg-choice" type="button">Close up<small>Intimate crop</small></button>
       <button class="pg-choice" type="button">Profile<small>Side angle</small></button>
+      <button class="pg-choice" type="button">Top-down<small>Overhead</small></button>
     </div>
 
     <label class="pg-label"><i data-lucide="aspect-ratio" style="width:14px;height:14px"></i> Aspect ratio</label>
-    <div class="pg-grid-select" data-group="aspect">
+    <div class="pg-grid-select" data-g="aspect">
       <div class="pg-grid-opt">3:4</div><div class="pg-grid-opt active">9:16</div><div class="pg-grid-opt">1:1</div>
       <div class="pg-grid-opt">4:3</div><div class="pg-grid-opt">16:9</div>
     </div>
 
     <label class="pg-label"><i data-lucide="image-plus" style="width:14px;height:14px"></i> Image to image (max 3)</label>
-    <label class="pg-file" for="ref"><i data-lucide="image-plus" style="width:16px;height:16px"></i> <span id="refName">Add images (0/3)</span></label>
+    <label class="pg-file" for="ref"><i data-lucide="image-plus" style="width:16px;height:16px"></i> <span id="refN">Add images (0/3)</span></label>
     <input type="file" id="ref" accept="image/*" multiple hidden />
 
-    <label class="pg-label"><i data-lucide="sliders-horizontal" style="width:14px;height:14px"></i> Strength · <span id="strVal">0.65</span></label>
-    <input type="range" id="str" min="0.1" max="1.0" step="0.05" value="0.65" />
+    <label class="pg-label"><i data-lucide="sliders-horizontal" style="width:14px;height:14px"></i> Strength · <span id="strV">0.65</span></label>
+    <input type="range" id="str" min="0.1" max="1" step="0.05" value="0.65" />
 
     <label class="pg-label"><i data-lucide="maximize" style="width:14px;height:14px"></i> Resolution</label>
-    <div class="pg-grid-select two" data-group="res">
-      <div class="pg-grid-opt active">1K Standard</div><div class="pg-grid-opt">2K Ultra</div>
-    </div>
+    <div class="pg-grid-select two" data-g="res"><div class="pg-grid-opt active">1K Standard</div><div class="pg-grid-opt">2K Ultra</div></div>
 
-    <button id="genBtn" class="pg-btn"><i data-lucide="sparkles" style="width:18px;height:18px"></i> Generate <span class="pg-cost-badge" id="costBadge">40 CR</span></button>
+    <button id="gen" class="pg-btn"><i data-lucide="sparkles" style="width:18px;height:18px"></i> Generate <span class="pg-cost" id="cost">40 CR</span></button>
   </aside>
 
   <main class="pg-main">
-    <div class="pg-result-area" id="resultArea">
-      <div class="pg-placeholder" id="ph">
-        <i data-lucide="image" style="width:60px;height:60px;opacity:.45"></i>
+    <div class="pg-result" id="result">
+      <div class="pg-ph" id="ph">
+        <div class="big"><i data-lucide="image" style="width:30px;height:30px"></i></div>
         <h2>Awaiting your prompt</h2>
-        <p style="font-size:.9rem;margin-top:4px">Pick a model below and generate.</p>
+        <p style="font-size:.9rem;margin-top:5px">Select a model below and generate.</p>
       </div>
-      <div class="pg-gen" id="gen"><div class="pg-spinner"></div><div style="color:var(--pg-text-2);font-weight:600;letter-spacing:.5px">Processing request…</div></div>
+      <div class="pg-gen" id="genwrap"><div class="pg-spin"></div><div style="color:var(--t2);font-weight:700;letter-spacing:.4px">Processing request…</div></div>
     </div>
 
     <div class="pg-gallery">
-      <h3><i data-lucide="grid-3x3" style="width:15px;height:15px"></i> Models</h3>
-      <div class="pg-filters">
-        <button class="pg-filter active">All models</button>
-        <button class="pg-filter">Image</button>
-        <button class="pg-filter">xAI</button>
-      </div>
-      <div class="pg-grid" id="models">
-        <div class="pg-card selected" data-t="FLUX.1 [dev]" data-b="Image · best quality" data-c="40"><div class="pic"><i data-lucide="sparkles" style="width:26px;height:26px"></i></div><div class="cap"><b>FLUX.1 [dev]</b><span>Premium · 40 CR</span></div></div>
-        <div class="pg-card" data-t="Grok Image · Fast" data-b="xAI · fast" data-c="15"><div class="pic"><i data-lucide="zap" style="width:26px;height:26px"></i></div><div class="cap"><b>Grok Image · Fast</b><span>Standard · 15 CR</span></div></div>
-        <div class="pg-card" data-t="Grok Image · Quality" data-b="xAI · quality" data-c="40"><div class="pic"><i data-lucide="gem" style="width:26px;height:26px"></i></div><div class="cap"><b>Grok Image · Quality</b><span>Quality · 40 CR</span></div></div>
-        <div class="pg-card" data-t="SDXL" data-b="Image · versatile" data-c="15"><div class="pic"><i data-lucide="image" style="width:26px;height:26px"></i></div><div class="cap"><b>SDXL</b><span>Standard · 15 CR</span></div></div>
-        <div class="pg-card" data-t="Playground v2.5" data-b="Image · aesthetic" data-c="40"><div class="pic"><i data-lucide="palette" style="width:26px;height:26px"></i></div><div class="cap"><b>Playground v2.5</b><span>Premium · 40 CR</span></div></div>
-        <div class="pg-card" data-t="SD3 Medium" data-b="Image · balanced" data-c="15"><div class="pic"><i data-lucide="layers" style="width:26px;height:26px"></i></div><div class="cap"><b>SD3 Medium</b><span>Standard · 15 CR</span></div></div>
+      <div class="pg-gtitle"><i data-lucide="grid-3x3" style="width:16px;height:16px"></i> Models</div>
+      <div class="pg-filters"><button class="pg-filter active">All models</button><button class="pg-filter">Premium</button><button class="pg-filter">Standard</button></div>
+      <div class="pg-cardgrid" id="models">
+        <div class="pg-card sel" data-t="FLUX.1 [dev]" data-b="Image · best" data-c="40"><div class="pic"><i data-lucide="sparkles"></i></div><span class="base">Premium</span><span class="best"><i data-lucide="star" style="width:9px;height:9px"></i> Best</span><div class="info"><div class="nm">FLUX.1 [dev]</div><div class="cr">40 credits</div></div></div>
+        <div class="pg-card" data-t="Grok Image · Fast" data-b="xAI · fast" data-c="15"><div class="pic"><i data-lucide="zap"></i></div><span class="base">Standard</span><div class="info"><div class="nm">Grok · Fast</div><div class="cr">15 credits</div></div></div>
+        <div class="pg-card" data-t="Grok Image · Quality" data-b="xAI · quality" data-c="40"><div class="pic"><i data-lucide="gem"></i></div><span class="base">Premium</span><span class="best"><i data-lucide="star" style="width:9px;height:9px"></i> Best</span><div class="info"><div class="nm">Grok · Quality</div><div class="cr">40 credits</div></div></div>
+        <div class="pg-card" data-t="Stable Diffusion XL" data-b="Image · versatile" data-c="15"><div class="pic"><i data-lucide="image"></i></div><span class="base">Standard</span><div class="info"><div class="nm">SDXL</div><div class="cr">15 credits</div></div></div>
+        <div class="pg-card" data-t="Playground v2.5" data-b="Image · aesthetic" data-c="40"><div class="pic"><i data-lucide="palette"></i></div><span class="base">Premium</span><div class="info"><div class="nm">Playground v2.5</div><div class="cr">40 credits</div></div></div>
+        <div class="pg-card" data-t="SD3 Medium" data-b="Image · balanced" data-c="15"><div class="pic"><i data-lucide="layers"></i></div><span class="base">Standard</span><div class="info"><div class="nm">SD3 Medium</div><div class="cr">15 credits</div></div></div>
       </div>
     </div>
   </main>
 </div>
 
 <script>
-  function setGroup(g,el){g.querySelectorAll('.pg-choice,.pg-grid-opt').forEach(function(o){o.classList.remove('active')});el.classList.add('active')}
-  document.querySelectorAll('[data-group]').forEach(function(g){g.addEventListener('click',function(e){var t=e.target.closest('.pg-choice,.pg-grid-opt');if(t)setGroup(g,t)})});
-  var str=document.getElementById('str');str.oninput=function(){document.getElementById('strVal').textContent=parseFloat(this.value).toFixed(2)};
-  document.getElementById('ref').onchange=function(){document.getElementById('refName').textContent='Added '+Math.min(this.files.length,3)+' (max 3)'};
+  function sg(g,el){g.querySelectorAll('.pg-choice,.pg-grid-opt').forEach(function(o){o.classList.remove('active')});el.classList.add('active')}
+  document.querySelectorAll('[data-g]').forEach(function(g){g.addEventListener('click',function(e){var t=e.target.closest('.pg-choice,.pg-grid-opt');if(t)sg(g,t)})});
+  var str=document.getElementById('str');str.oninput=function(){document.getElementById('strV').textContent=(+this.value).toFixed(2)};
+  document.getElementById('ref').onchange=function(){document.getElementById('refN').textContent='Added '+Math.min(this.files.length,3)+' (max 3)'};
   document.querySelectorAll('.pg-filter').forEach(function(f){f.onclick=function(){document.querySelectorAll('.pg-filter').forEach(function(x){x.classList.remove('active')});f.classList.add('active')}});
   document.querySelectorAll('#models .pg-card').forEach(function(c){c.onclick=function(){
-    document.querySelectorAll('#models .pg-card').forEach(function(x){x.classList.remove('selected')});c.classList.add('selected');
-    document.getElementById('amTitle').textContent=c.dataset.t;document.getElementById('amBase').textContent=c.dataset.b;
-    document.getElementById('costBadge').textContent=c.dataset.c+' CR';
+    document.querySelectorAll('#models .pg-card').forEach(function(x){x.classList.remove('sel')});c.classList.add('sel');
+    document.getElementById('amT').textContent=c.dataset.t;document.getElementById('amB').textContent=c.dataset.b;document.getElementById('cost').textContent=c.dataset.c+' CR';
   }});
-  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
-  var ra=document.getElementById('resultArea'),gen=document.getElementById('gen'),btn=document.getElementById('genBtn');
+  function toast(m){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#161513;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:200;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)';d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},2800)}
+  fetch('/api/site/config').then(function(r){return r.json()}).then(function(c){document.getElementById('cr').textContent=(c.logged_in&&c.user)?c.user.credits:'Sign in'});
+  var ra=document.getElementById('result'),gw=document.getElementById('genwrap'),btn=document.getElementById('gen');
   btn.onclick=function(){var p=document.getElementById('prompt');if(!p.value.trim()){p.focus();return}
-    var cost=parseInt((document.getElementById('costBadge').textContent||'40'),10)||40;
-    btn.disabled=true;ra.classList.add('busy');gen.classList.add('on');
-    fetch('/api/site/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({tool:'playground',prompt:p.value,model_cost:cost})})
-    .then(async function(r){var d=await r.json();gen.classList.remove('on');ra.classList.remove('busy');btn.disabled=false;
+    var cost=parseInt(document.getElementById('cost').textContent,10)||40;
+    btn.disabled=true;ra.classList.add('busy');gw.classList.add('on');
+    fetch('/api/site/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'playground',prompt:p.value,model_cost:cost})})
+    .then(async function(r){var d=await r.json();gw.classList.remove('on');ra.classList.remove('busy');btn.disabled=false;
       if(r.status===401){toast('Please sign in to generate');setTimeout(function(){location.href='/login?next=/playground'},900);return}
       if(r.status===402){toast(d.detail||'Not enough credits');return}
-      if(d.status==='ok'&&d.image){ra.innerHTML='<img src="'+d.image+'" alt="result" style="max-width:100%;max-height:100%;border-radius:12px">';toast('Done · '+(d.credits)+' cr left');return}
-      toast(d.message||"Live generation isn't enabled yet");
-    }).catch(function(){gen.classList.remove('on');ra.classList.remove('busy');btn.disabled=false;toast('Something went wrong')});
+      if(d.status==='ok'&&d.image){ra.innerHTML='<div class="pg-out"><img src="'+d.image+'" alt="result"><div class="pg-actions"><a class="pg-act primary" href="'+d.image+'" download><i data-lucide="download" style="width:16px;height:16px"></i> Download</a><button class="pg-act" onclick="location.reload()"><i data-lucide="refresh-cw" style="width:16px;height:16px"></i> New</button></div></div>';document.getElementById('cr').textContent=d.credits;if(window.lucide)lucide.createIcons();return}
+      toast(d.message||"Live generation isn't enabled yet — set a provider in admin");
+    }).catch(function(){gw.classList.remove('on');ra.classList.remove('busy');btn.disabled=false;toast('Something went wrong')});
   };
   if(window.lucide)lucide.createIcons();
 </script>
-<style>.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--pg-primary);color:#fff;padding:12px 20px;border-radius:9px;font-size:14px;font-weight:500;opacity:0;transition:.3s;z-index:200;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%)}</style>
 </body>
 </html>
