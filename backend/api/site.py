@@ -114,7 +114,8 @@ class GenReq(BaseModel):
     prompt: str | None = None
     scale: str | None = None
     model_cost: int | None = None
-    image: str | None = None  # data URL, for vision (deconstruct)
+    image: str | None = None  # data URL, for vision (deconstruct) / source (upscale)
+    face: bool | None = None  # upscale: gentler sharpening to keep faces natural
 
 
 def _cost_for(tool: str, scale: str | None, s: dict) -> int:
@@ -176,7 +177,55 @@ def generate(body: GenReq, user=Depends(auth.require_user), db: Session = Depend
         except Exception as e:
             raise HTTPException(502, f"Deconstruct failed: {e}")
 
-    # Other tools (e.g. upscale) — preview until a provider is wired.
+    # ── Upscale (real, local — Lanczos resample + detail enhance via Pillow) ──
+    if body.tool == "upscale":
+        if not body.image:
+            raise HTTPException(400, "Upload an image to upscale.")
+        try:
+            import io
+            from PIL import Image, ImageFilter, ImageEnhance
+            raw = body.image.split(",", 1)[1] if body.image.startswith("data:") else body.image
+            im = Image.open(io.BytesIO(base64.b64decode(raw)))
+            im.load()
+            has_alpha = im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info)
+            im = im.convert("RGBA" if has_alpha else "RGB")
+            w, h = im.size
+            scale = (body.scale or "4x").lower()
+            if scale in ("8x", "8k"):
+                factor = min(8.0, 7680.0 / max(w, h))   # reach ~8K on the long edge, capped at 8×
+            elif scale == "2x":
+                factor = 2.0
+            else:
+                factor = 4.0
+            tw, th = int(w * max(1.0, factor)), int(h * max(1.0, factor))
+            # safety caps: never exceed 7680px long edge or ~40MP total
+            longest = max(tw, th)
+            if longest > 7680:
+                k = 7680.0 / longest; tw, th = max(1, int(tw * k)), max(1, int(th * k))
+            if tw * th > 40_000_000:
+                k = (40_000_000 / (tw * th)) ** 0.5; tw, th = max(1, int(tw * k)), max(1, int(th * k))
+            up = im.resize((tw, th), Image.LANCZOS)
+            # gentle, natural detail enhancement (softer when face mode keeps skin smooth)
+            face = body.face is None or body.face
+            radius, percent = (1.0, 55) if face else (1.4, 95)
+            up = up.filter(ImageFilter.UnsharpMask(radius=radius, percent=percent, threshold=2))
+            up = ImageEnhance.Contrast(up).enhance(1.04)
+            up = ImageEnhance.Color(up).enhance(1.05)
+            buf = io.BytesIO()
+            if has_alpha:
+                up.save(buf, "PNG", optimize=True); mime = "image/png"
+            else:
+                up.save(buf, "JPEG", quality=92, optimize=True, progressive=True); mime = "image/jpeg"
+            out = "data:%s;base64,%s" % (mime, base64.b64encode(buf.getvalue()).decode())
+            _grant(db, user, -cost, f"upscale {scale}")
+            return {"status": "ok", "image": out, "width": tw, "height": th,
+                    "src_w": w, "src_h": h, "credits": user.credits}
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(502, f"Upscale failed: {e}")
+
+    # Other tools — preview until a provider is wired.
     return {"status": "preview", "credits": user.credits, "message": _PREVIEW}
 
 

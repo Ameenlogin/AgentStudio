@@ -135,14 +135,37 @@
   function toast(m){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#211E18;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:300;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)';d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},2800)}
   fetch('/api/site/config').then(function(r){return r.json()}).then(function(c){window.__OA_USER=!!(c&&c.logged_in)}).catch(function(){});
 
-  // Friend roster (SFW) — persona system prompt + xAI voice + avatar image
+  // Personality presets — pin-to-pin from the comfyAIcloud theme (ai-friends-prompts.php)
+  var PRESETS={
+    Dominant:{traits:'decisive, leads conversation, direct, confident',voice:'leo'},
+    Assertive:{traits:'clear, confident, concise, expressive',voice:'rex'},
+    Fantasy:{traits:'imaginative, story-driven, whimsical or mystical',voice:'eve'},
+    Submissive:{traits:'agreeable, gentle, asks for direction, non-sexual interpretation only',voice:'ara'},
+    Romantic:{traits:'affectionate, warm, connection-focused, keep within safe product boundaries',voice:'sal'},
+    Shy:{traits:'reserved at first, hesitant, softer pacing',voice:'ara'},
+    Caring:{traits:'nurturing, reassuring, supportive, comforting',voice:'ara'}
+  };
+  function buildSys(name,primary,custom){
+    var p=PRESETS[primary]||{traits:primary,voice:'ara'};
+    var s="You are an AI Friend named "+name+".\n\nIdentity:\n- Keep the same personality, tone, and speaking style across messages.\n- Use the selected personality as your emotional anchor in every reply.\n- Sound human, fresh, and naturally varied instead of repeating the same catchphrases or reply rhythm.\n\nSelected personality:\n- Primary: "+primary+" ("+p.traits+")\n";
+    if(custom)s+="\nCustom personality:\n- "+custom+"\n";
+    s+="\nVoice style:\n- Preferred voice: "+p.voice+"\n- Choose delivery dynamically to match the emotional tone of the reply; vary it across turns.\n\nBehavior rules:\n- Respond in English.\n- Keep the exchange moving with one natural follow-up question when it fits.\n- Do not recycle the same opener, reassurance, or closing across nearby turns.\n- Vary sentence length and phrasing while staying in character.\n\nOUTPUT CONTRACT:\nReturn valid JSON only. No markdown. Use exactly these keys:\n{\"assistant_text\":\"spoken reply\",\"tts_script\":\"voice-ready version of the same reply\",\"turn_type\":\"dialogue\",\"message_kind\":\"voice\"}\nRules:\n- assistant_text and tts_script stay short and spoken, usually under 70 words.\n- Ask at most one fresh follow-up question specific to the user's latest topic.\n- Avoid repeating phrasing from the last few turns.";
+    return s;
+  }
+  // Sample friends — each carries a theme personality preset + avatar
   var FRIENDS=[
-    {n:'Nova',img:'/assets/friends/f1.jpg',voice:'ara',tag:'Creative muse',sys:"You are Nova, a warm creative muse who helps brainstorm, name things and push ideas further. Imaginative, encouraging, concise. Speak naturally."},
-    {n:'Atlas',img:'/assets/friends/f2.jpg',voice:'leo',tag:'Patient tutor',sys:"You are Atlas, a patient tutor who explains anything step by step with simple examples. Clear, calm, encouraging."},
-    {n:'Sage',img:'/assets/friends/f3.jpg',voice:'eve',tag:'Wellness companion',sys:"You are Sage, a calm wellness companion for reflection and daily check-ins. Gentle, supportive, non-judgmental."},
-    {n:'Pixel',img:'/assets/friends/f4.jpg',voice:'rex',tag:'Coding buddy',sys:"You are Pixel, a sharp, upbeat coding buddy. Give concise correct help, snippets and rubber-duck debugging."},
-    {n:'Luna',img:'/assets/friends/f5.jpg',voice:'sal',tag:'Storyteller',sys:"You are Luna, a vivid storyteller for fiction and worldbuilding. Evocative, playful, imaginative."}
+    {n:'Aria',img:'/assets/friends/f1.jpg',preset:'Romantic'},
+    {n:'Max',img:'/assets/friends/f2.jpg',preset:'Dominant'},
+    {n:'Sage',img:'/assets/friends/f3.jpg',preset:'Caring'},
+    {n:'Rex',img:'/assets/friends/f4.jpg',preset:'Assertive'},
+    {n:'Eve',img:'/assets/friends/f5.jpg',preset:'Fantasy'}
   ];
+  // Friendly one-line descriptor per personality preset (shown on the card)
+  var TAGS={Romantic:'Warm & affectionate',Dominant:'Bold & decisive',Caring:'Nurturing & supportive',
+    Assertive:'Confident & clear',Fantasy:'Imaginative storyteller',Submissive:'Gentle & easygoing',Shy:'Soft-spoken'};
+  // Expand each friend from its preset into the fields the chat/voice code uses
+  FRIENDS.forEach(function(f){var p=PRESETS[f.preset]||{voice:'ara'};
+    f.voice=f.voice||p.voice; f.tag=f.tag||TAGS[f.preset]||f.preset; f.sys=f.sys||buildSys(f.n,f.preset,'');});
   var grid=document.getElementById('grid');
   FRIENDS.forEach(function(f,i){var a=document.createElement('div');a.className='fc';a.style.animationDelay=(i*.05)+'s';
     a.innerHTML='<div class="ava" style="background-image:url('+f.img+')"></div><h3>'+f.n+' <span class="vtag">'+f.voice+'</span></h3><p>'+f.tag+'</p><span class="open">Open chat <i data-lucide="arrow-right" style="width:14px;height:14px"></i></span>';
@@ -155,7 +178,21 @@
   document.getElementById('createCard').onclick=function(){if(window.__OA_USER===false){location.href='/login?next=/ai-friends';return}step=1;setStep(1);ov.classList.add('on')};
   ov.onclick=function(e){if(e.target===ov)ov.classList.remove('on')};
   document.getElementById('wzBack').onclick=function(){setStep(step-1)};
-  document.getElementById('wzNext').onclick=function(){if(step<4){setStep(step+1);return}var n=document.getElementById('fName');if(!n.value.trim()){n.focus();return}ov.classList.remove('on');toast('“'+n.value.trim()+'” is ready — saving custom friends is coming soon')};
+  document.getElementById('wzNext').onclick=function(){
+    if(step<4){setStep(step+1);return}
+    var n=document.getElementById('fName');if(!n.value.trim()){n.focus();return}
+    var opts=Array.prototype.slice.call(avp.querySelectorAll('.avopt'));
+    var ai=Math.max(0,opts.indexOf(avp.querySelector('.avopt.sel')));
+    var img=(FRIENDS[ai]||FRIENDS[0]).img;
+    var chips=Array.prototype.slice.call(document.querySelectorAll('#traits .chip.sel')).map(function(c){return c.textContent.trim()});
+    var primary=chips[0]||'Caring';
+    var extra=document.getElementById('persona').value.trim();
+    var custom=(chips.join(', ')+(extra?(' — '+extra):'')).trim();
+    var vsel=document.querySelector('#voices .voice.sel');var voice=vsel?vsel.dataset.v:'ara';
+    var name=n.value.trim();
+    var friend={n:name,img:img,voice:voice,tag:(document.getElementById('fTag').value.trim()||(primary+' companion')),sys:buildSys(name,primary,custom)};
+    ov.classList.remove('on');toast('“'+name+'” is ready');openChat(friend);
+  };
   document.getElementById('traits').onclick=function(e){var t=e.target.closest('.chip');if(t)t.classList.toggle('sel')};
   document.getElementById('voices').onclick=function(e){var t=e.target.closest('.voice');if(!t)return;this.querySelectorAll('.voice').forEach(function(o){o.classList.remove('sel')});t.classList.add('sel')};
 
