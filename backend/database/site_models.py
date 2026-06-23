@@ -97,7 +97,14 @@ DEFAULT_SETTINGS = {
     "vision_model": "",   # vision model for Deconstruct, e.g. grok-2-vision-latest
     "chat_model": "",     # chat model for AI Friends, e.g. grok-2-latest
     "cost_chat": "1",
-    "cost_voice": "2",    # per voice (TTS) playback
+    "cost_voice": "2",    # legacy single voice cost (fallback for the 15s tier)
+    # Voice (TTS) per-duration billing tiers — mirror the theme's cat_cost_voice_*.
+    # The selected tier sets both the spoken-reply length and the credit cost.
+    "cost_voice_15s": "30",    # ~70 words
+    "cost_voice_30s": "60",    # ~150 words
+    "cost_voice_60s": "120",   # ~300 words  (1 min)
+    "cost_voice_120s": "240",  # ~600 words  (2 min)
+    "cost_voice_300s": "600",  # ~1500 words (5 min)
     # Payment gateway keys (empty = "buy credits" shows coming-soon).
     "razorpay_key_id": "",
     "razorpay_key_secret": "",

@@ -77,8 +77,9 @@
   .modal input:focus,.modal textarea:focus,.modal select:focus{border-color:var(--indigo);background:#fff;box-shadow:0 0 0 3px rgba(79,70,229,.09)}
   .modal select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236E6A5F' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;cursor:pointer}
   /* avatar step */
-  .av-drop{position:relative;border:2px dashed var(--line);border-radius:16px;padding:26px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg)}
-  .av-drop:hover{border-color:var(--indigo);background:#fbfaff}.av-drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .av-drop{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:172px;border:2px dashed var(--line);border-radius:16px;padding:24px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg)}
+  .av-drop:hover,.av-drop.drag{border-color:var(--indigo);background:#fbfaff}.av-drop input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2}
+  .av-drop>*:not(input){position:relative;z-index:1;pointer-events:none}
   .av-drop .ic{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,var(--indigo),var(--violet));display:flex;align-items:center;justify-content:center;color:#fff;margin:0 auto 12px}
   .av-drop b{font-size:14px;font-weight:700}.av-drop small{display:block;color:var(--t2);font-size:12px;margin-top:3px}
   .av-prev{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--indigo);margin:0 auto 12px;display:block}
@@ -235,7 +236,7 @@
       <label class="av-drop">
         <input type="file" id="wzAvFile" accept="image/*" />
         <img id="wzAvPrev" class="av-prev" style="display:none" alt="" />
-        <div id="wzAvState"><div class="ic"><i data-lucide="upload" style="width:22px;height:22px"></i></div><b>Click to upload image</b><small>JPG, PNG or WEBP · max 5MB</small></div>
+        <div id="wzAvState"><div class="ic"><i data-lucide="upload" style="width:22px;height:22px"></i></div><b>Click or drop an image</b><small>JPG, PNG or WEBP · max 8MB</small></div>
       </label>
       <div class="av-or">or pick a starter</div>
       <div class="av-starts" id="wzStarts"></div>
@@ -340,17 +341,14 @@
     return s;
   }
 
-  // ── Voice library + languages (pin-to-pin labels) ──
-  var VOICES=[
-    {id:'ara',name:'Ara',gender:'Female',desc:'Warm and friendly',greet:"Hi there, I'm Ara. I'm really glad we get to talk today."},
-    {id:'eve',name:'Eve',gender:'Female',desc:'Energetic and upbeat',greet:"Hey, it's Eve! I love that you're here — let's make this fun."},
-    {id:'leo',name:'Leo',gender:'Male',desc:'Authoritative and strong',greet:"I'm Leo. Tell me what's on your mind and I'll take it from there."},
-    {id:'rex',name:'Rex',gender:'Male',desc:'Confident and clear',greet:"Rex here. Clear, confident, and ready whenever you are."},
-    {id:'sal',name:'Sal',gender:'Male',desc:'Smooth and balanced',greet:"Hi, I'm Sal. Smooth and easy — so, what's on your mind?"}
-  ];
+  // ── Full xAI voice library (pin-to-pin from the comfyAIcloud theme — 71 voices) ──
+  var VOICES=[{id:'ara',name:"Ara",gender:'Female',lang:'Multilingual',lc:'en'},{id:'eve',name:"Eve",gender:'Female',lang:'Multilingual',lc:'en'},{id:'leo',name:"Leo",gender:'Male',lang:'Multilingual',lc:'en'},{id:'rex',name:"Rex",gender:'Male',lang:'Multilingual',lc:'en'},{id:'sal',name:"Sal",gender:'Male',lang:'Multilingual',lc:'en'},{id:'jian',name:"Jian",gender:'Male',lang:'Chinese (China)',lc:'zh-CN'},{id:'hao',name:"Hao",gender:'Female',lang:'Chinese (China)',lc:'zh-CN'},{id:'xia',name:"Xia",gender:'Female',lang:'Chinese (China)',lc:'zh-CN'},{id:'pavel',name:"Pavel",gender:'Male',lang:'Russian',lc:'ru'},{id:'andrei',name:"Andrei",gender:'Male',lang:'Russian',lc:'ru'},{id:'dmitri',name:"Dmitri",gender:'Male',lang:'Russian',lc:'ru'},{id:'irina',name:"Irina",gender:'Female',lang:'Russian',lc:'ru'},{id:'enzo',name:"Enzo",gender:'Male',lang:'Italian',lc:'it'},{id:'matteo',name:"Matteo",gender:'Male',lang:'Italian',lc:'it'},{id:'luca',name:"Luca",gender:'Female',lang:'Italian',lc:'it'},{id:'alessandro',name:"Alessandro",gender:'Male',lang:'Italian',lc:'it'},{id:'karan',name:"Karan",gender:'Male',lang:'Hindi',lc:'hi'},{id:'ananya',name:"Ananya",gender:'Female',lang:'Hindi',lc:'hi'},{id:'remi',name:"Remi",gender:'Male',lang:'French',lc:'fr'},{id:'hugo',name:"Hugo",gender:'Male',lang:'French',lc:'fr'},{id:'camille',name:"Camille",gender:'Female',lang:'French',lc:'fr'},{id:'manuel',name:"Manuel",gender:'Male',lang:'Spanish',lc:'es-ES'},{id:'javier',name:"Javier",gender:'Male',lang:'Spanish',lc:'es-ES'},{id:'diego',name:"Diego",gender:'Male',lang:'Spanish',lc:'es-ES'},{id:'andres',name:"Andres",gender:'Male',lang:'Spanish',lc:'es-ES'},{id:'kasper',name:"Kasper",gender:'Male',lang:'Danish',lc:'da'},{id:'lars',name:"Lars",gender:'Male',lang:'Danish',lc:'da'},{id:'ida',name:"Ida",gender:'Female',lang:'Danish',lc:'da'},{id:'duc',name:"Duc",gender:'Male',lang:'Vietnamese',lc:'vi'},{id:'grace',name:"Grace",gender:'Female',lang:'English',lc:'en'},{id:'axel',name:"Axel",gender:'Male',lang:'Swedish',lc:'sv-SE'},{id:'valtteri',name:"Valtteri",gender:'Male',lang:'Finnish',lc:'fi'},{id:'aylin',name:"Aylin",gender:'Female',lang:'Turkish',lc:'tr'},{id:'sakura',name:"Sakura",gender:'Female',lang:'Japanese',lc:'ja'},{id:'helmi',name:"Helmi",gender:'Female',lang:'Finnish',lc:'fi'},{id:'jun-seo',name:"Jun-seo",gender:'Male',lang:'Korean',lc:'ko'},{id:'min-jun',name:"Min-jun",gender:'Male',lang:'Korean',lc:'ko'},{id:'ren',name:"Ren",gender:'Male',lang:'Japanese',lc:'ja'},{id:'mateus',name:"Mateus",gender:'Male',lang:'Portuguese',lc:'pt-BR'},{id:'thijs',name:"Thijs",gender:'Male',lang:'Dutch',lc:'nl'},{id:'seo-yeon',name:"Seo-yeon",gender:'Female',lang:'Korean',lc:'ko'},{id:'katarzyna',name:"Katarzyna",gender:'Female',lang:'Polish',lc:'pl'},{id:'daniel',name:"Daniel",gender:'Male',lang:'English',lc:'en'},{id:'krit',name:"Krit",gender:'Male',lang:'Thai',lc:'th'},{id:'eero',name:"Eero",gender:'Male',lang:'Finnish',lc:'fi'},{id:'minh',name:"Minh",gender:'Male',lang:'Vietnamese',lc:'vi'},{id:'claire',name:"Claire",gender:'Female',lang:'English',lc:'en'},{id:'james',name:"James",gender:'Male',lang:'English',lc:'en'},{id:'khalid',name:"Khalid",gender:'Male',lang:'Arabic',lc:'ar'},{id:'beatriz',name:"Beatriz",gender:'Female',lang:'Portuguese',lc:'pt-BR'},{id:'emre',name:"Emre",gender:'Male',lang:'Turkish',lc:'tr'},{id:'femke',name:"Femke",gender:'Female',lang:'Dutch',lc:'nl'},{id:'aroon',name:"Aroon",gender:'Male',lang:'Thai',lc:'th'},{id:'saga',name:"Saga",gender:'Female',lang:'Swedish',lc:'sv-SE'},{id:'clara',name:"Clara",gender:'Female',lang:'German',lc:'de'},{id:'moritz',name:"Moritz",gender:'Male',lang:'German',lc:'de'},{id:'niklas',name:"Niklas",gender:'Male',lang:'German',lc:'de'},{id:'rafael',name:"Rafael",gender:'Male',lang:'Portuguese',lc:'pt-BR'},{id:'lena',name:"Lena",gender:'Female',lang:'German',lc:'de'},{id:'mateusz',name:"Mateusz",gender:'Male',lang:'Polish',lc:'pl'},{id:'layla',name:"Layla",gender:'Female',lang:'Arabic',lc:'ar'},{id:'elina',name:"Elina",gender:'Female',lang:'Finnish',lc:'fi'},{id:'jakub',name:"Jakub",gender:'Male',lang:'Polish',lc:'pl'},{id:'noor',name:"Noor",gender:'Female',lang:'Dutch',lc:'nl'},{id:'ruben',name:"Ruben",gender:'Male',lang:'Dutch',lc:'nl'},{id:'ji-yeon',name:"Ji-yeon",gender:'Female',lang:'Korean',lc:'ko'},{id:'tariq',name:"Tariq",gender:'Male',lang:'Arabic',lc:'ar'},{id:'erik',name:"Erik",gender:'Male',lang:'Swedish',lc:'sv-SE'},{id:'aleksandra',name:"Aleksandra",gender:'Female',lang:'Polish',lc:'pl'},{id:'kaan',name:"Kaan",gender:'Male',lang:'Turkish',lc:'tr'},{id:'mai',name:"Mai",gender:'Female',lang:'Vietnamese',lc:'vi'}];
   function voiceName(id){for(var i=0;i<VOICES.length;i++)if(VOICES[i].id===id)return VOICES[i].name;return id;}
-  var LANGS=[['en','English (US)'],['en-GB','English (UK)'],['hi','Hindi'],['es-ES','Spanish'],['fr','French'],['de','German'],['it','Italian'],['pt-BR','Portuguese'],['ja','Japanese'],['ko','Korean'],['zh','Chinese'],['ru','Russian']];
-  var DURS=[['Short','~1 sentence',25],['Medium','a few lines',60],['Long','a full reply',120],['Detailed','in depth',220]];
+  function voiceGreet(v){return "Hi dear, this is "+v.name+". I hope you like my voice.";}
+  var LANGS=[['en','English'],['ar','Arabic'],['zh-CN','Chinese'],['da','Danish'],['nl','Dutch'],['fi','Finnish'],['fr','French'],['de','German'],['hi','Hindi'],['it','Italian'],['ja','Japanese'],['ko','Korean'],['pl','Polish'],['pt-BR','Portuguese'],['ru','Russian'],['es-ES','Spanish'],['sv-SE','Swedish'],['th','Thai'],['tr','Turkish'],['vi','Vietnamese']];
+  // Voice (TTS) duration tiers — [label, words, seconds, costKey, wordTarget]
+  var DURS=[['15-20s','~70 words',15,'cost_voice_15s',70],['30s','~150 words',30,'cost_voice_30s',150],['1 min','~300 words',60,'cost_voice_60s',300],['2 min','~600 words',120,'cost_voice_120s',600],['5 min','~1500 words',300,'cost_voice_300s',1500]];
+  var COSTS={};  // populated from /api/site/config
 
   // ── Sample friends ──
   var FRIENDS=[
@@ -365,10 +363,11 @@
 
   // ── Shared audio + TTS ──
   var TTS_CACHE={};
-  function synth(text,voice){
-    var key=voice+'|'+text;
+  function synth(text,voice,opts){
+    opts=opts||{};var dur=opts.duration||15;
+    var key=voice+'|'+dur+'|'+text;
     if(TTS_CACHE[key])return Promise.resolve(TTS_CACHE[key]);
-    return fetch('/api/site/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text,voice:voice})})
+    return fetch('/api/site/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text,voice:voice,duration:dur,preview:!!opts.preview})})
       .then(function(r){if(!r.ok)return r.json().catch(function(){return{}}).then(function(e){var er=new Error(e.detail||'Voice unavailable');er.status=r.status;throw er;});return r.blob();})
       .then(function(b){var u=URL.createObjectURL(b);TTS_CACHE[key]=u;return u;});
   }
@@ -427,20 +426,24 @@
   TRAIT_ORDER.forEach(function(t){var b=document.createElement('div');b.className='trait';b.innerHTML='<span class="tk"><i data-lucide="check"></i></span>'+t;b.onclick=function(){toggleTrait(t,b);};traitsBox.appendChild(b);});
   function toggleTrait(t,b){var i=wz.traits.indexOf(t);if(i>-1){wz.traits.splice(i,1);b.classList.remove('sel');}else{if(wz.traits.length>=2){toast('Pick up to 2 base traits');return;}wz.traits.push(t);b.classList.add('sel');}}
   // language
-  var langSel=document.getElementById('wzLang');LANGS.forEach(function(l){var o=document.createElement('option');o.value=l[0];o.textContent=l[1];langSel.appendChild(o);});langSel.onchange=function(){wz.lang=this.value;};
+  var langSel=document.getElementById('wzLang');LANGS.forEach(function(l){var o=document.createElement('option');o.value=l[0];o.textContent=l[1];langSel.appendChild(o);});langSel.onchange=function(){wz.lang=this.value;renderVoices();};
   // voices grouped
   var voicesBox=document.getElementById('wzVoices');
+  var BUILTIN=['ara','eve','leo','rex','sal'];
   function renderVoices(){
     voicesBox.innerHTML='';
+    var lc=wz.lang||'en';
+    var avail=VOICES.filter(function(v){return v.lc===lc||BUILTIN.indexOf(v.id)>-1;});
+    if(!avail.some(function(v){return v.id===wz.voice;}))wz.voice=(avail[0]||{id:'ara'}).id;
     ['Female','Male'].forEach(function(g){
-      var list=VOICES.filter(function(v){return v.gender===g;});if(!list.length)return;
-      var grp=document.createElement('div');grp.className='vgroup';grp.innerHTML='<div class="vgroup-t">'+g+'</div>';
+      var list=avail.filter(function(v){return v.gender===g;});if(!list.length)return;
+      var grp=document.createElement('div');grp.className='vgroup';grp.innerHTML='<div class="vgroup-t">'+g+' · '+list.length+'</div>';
       var gr=document.createElement('div');gr.className='vgrid';
       list.forEach(function(v){
         var c=document.createElement('label');c.className='vcard'+(v.id===wz.voice?' sel':'');c.dataset.voice=v.id;
-        c.innerHTML='<input type="radio" name="wzv" value="'+v.id+'"'+(v.id===wz.voice?' checked':'')+'>'
+        c.innerHTML='<input type="radio" name="wzv" value="'+esc(v.id)+'"'+(v.id===wz.voice?' checked':'')+'>'
           +'<span class="vwave"><i></i><i></i><i></i></span>'
-          +'<span class="vmeta"><strong>'+v.name+'</strong><small>'+v.gender+' · '+v.desc+'</small></span>'
+          +'<span class="vmeta"><strong>'+esc(v.name)+'</strong><small>'+esc(v.gender)+' · '+esc(v.lang)+'</small></span>'
           +'<button type="button" class="vplay" title="Play sample"><i data-lucide="play"></i><span class="sp"></span></button>';
         c.querySelector('input').onchange=function(){wz.voice=v.id;voicesBox.querySelectorAll('.vcard').forEach(function(x){x.classList.remove('sel')});c.classList.add('sel');};
         c.querySelector('.vplay').onclick=function(e){e.preventDefault();e.stopPropagation();previewVoice(v,this);};
@@ -454,7 +457,7 @@
     if(window.__OA_USER===false){toast('Please sign in to hear voices');return;}
     if(activeBtn===btn&&!audio.paused){audio.pause();resetActive();return;}
     btn.classList.add('loading');
-    synth(v.greet,v.id).then(function(u){btn.classList.remove('loading');playUrl(btn,u,null);}).catch(function(e){btn.classList.remove('loading');toast(e.message||'Voice unavailable');if(e.status===401){setTimeout(function(){location.href='/login?next=/ai-friends';},800);}});
+    synth(voiceGreet(v),v.id,{preview:true}).then(function(u){btn.classList.remove('loading');playUrl(btn,u,null);}).catch(function(e){btn.classList.remove('loading');toast(e.message||'Voice unavailable');if(e.status===401){setTimeout(function(){location.href='/login?next=/ai-friends';},800);}});
   }
   function setStep(n){
     wzStep=Math.max(1,Math.min(4,n));
@@ -539,7 +542,18 @@
 
   // voice-length popup
   var durPop=document.getElementById('cDurPop'),durOpts=document.getElementById('cDurOpts');
-  DURS.forEach(function(d,i){var o=document.createElement('div');o.className='aifc-duropt'+(i===0?' sel':'');o.innerHTML='<span>'+d[0]+'</span><small>'+d[1]+'</small>';o.onclick=function(){curDur=i;durOpts.querySelectorAll('.aifc-duropt').forEach(function(x){x.classList.remove('sel')});o.classList.add('sel');document.getElementById('cDurLabel').textContent=d[0];durPop.classList.remove('on');};durOpts.appendChild(o);});
+  function buildDurs(){
+    durOpts.innerHTML='';
+    DURS.forEach(function(d,i){
+      var o=document.createElement('div');o.className='aifc-duropt'+(i===curDur?' sel':'');
+      var cost=(COSTS[d[3]]!=null)?(' · '+COSTS[d[3]]+' Cr'):'';
+      o.innerHTML='<span>'+d[0]+'</span><small>'+d[1]+cost+'</small>';
+      o.onclick=function(){curDur=i;durOpts.querySelectorAll('.aifc-duropt').forEach(function(x){x.classList.remove('sel')});o.classList.add('sel');document.getElementById('cDurLabel').textContent=d[0];durPop.classList.remove('on');};
+      durOpts.appendChild(o);
+    });
+    document.getElementById('cDurLabel').textContent=DURS[curDur][0];
+  }
+  buildDurs();
   document.getElementById('cDurBtn').onclick=function(e){e.stopPropagation();durPop.classList.toggle('on');};
   document.addEventListener('click',function(e){if(durPop.classList.contains('on')&&!durPop.contains(e.target)&&e.target.id!=='cDurBtn'&&!document.getElementById('cDurBtn').contains(e.target))durPop.classList.remove('on');});
 
@@ -551,6 +565,7 @@
   function addLoader(){var m=document.createElement('div');m.className='aifc-msg';m.innerHTML='<div class="aifc-ai-row"><img class="aifc-ai-av" src="'+curFriend.img+'" alt=""><div class="aifc-ai-body"><div class="aifc-load"><i></i><i></i><i></i></div></div></div>';cInner.appendChild(m);scrollChat();return m;}
   function addNotice(text){var m=document.createElement('div');m.className='aifc-msg';m.innerHTML='<div class="aifc-ai-row"><img class="aifc-ai-av" src="'+curFriend.img+'" alt=""><div class="aifc-ai-body"><div class="aifc-notice"></div></div></div>';m.querySelector('.aifc-notice').textContent=text;cInner.appendChild(m);scrollChat();}
   function addAI(displayText,ttsText,autoplay){
+    var msgDur=DURS[curDur]?DURS[curDur][2]:15;   // voice tier for this reply's audio
     var m=document.createElement('div');m.className='aifc-msg';
     var row=document.createElement('div');row.className='aifc-ai-row';
     var av=document.createElement('img');av.className='aifc-ai-av';av.src=curFriend.img;av.alt='';
@@ -567,7 +582,7 @@
     function ensure(cb){
       if(pb.dataset.url){cb(pb.dataset.url);return;}
       pb.classList.add('pending');
-      synth(ttsText,curFriend.voice).then(function(u){pb.classList.remove('pending');pb.dataset.url=u;cb(u);})
+      synth(ttsText,curFriend.voice,{duration:msgDur}).then(function(u){pb.classList.remove('pending');pb.dataset.url=u;cb(u);})
         .catch(function(e){pb.classList.remove('pending');toast(e.message||'Voice unavailable');if(e.status===401)setTimeout(function(){location.href='/login?next=/ai-friends';},800);});
     }
     pb.onclick=function(){if(pb.dataset.url){playUrl(pb,pb.dataset.url,'.aifc-audio');}else{ensure(function(u){playUrl(pb,u,'.aifc-audio');});}};
@@ -585,7 +600,7 @@
     pending=true;cSend.disabled=true;var loader=addLoader();
     // length hint applied to the outgoing copy only (keeps display + history clean)
     var msgs=hist.slice(-12).map(function(m){return {role:m.role,content:m.content};});
-    if(msgs.length){var last=msgs[msgs.length-1];if(last.role==='user')last.content=last.content+"\n\n(Reply length: about "+DURS[curDur][2]+" spoken words.)";}
+    if(msgs.length){var last=msgs[msgs.length-1];if(last.role==='user')last.content=last.content+"\n\n(Reply length: about "+DURS[curDur][4]+" spoken words.)";}
     var body={messages:msgs};
     if(curFriend.id){body.friend_id=curFriend.id;}else{body.persona=curFriend.sys;}
     if(img){body.image=img;}
@@ -622,6 +637,7 @@
   fetch('/api/site/config').then(function(r){return r.json();}).then(function(c){
     window.__OA_USER=!!(c&&c.logged_in);
     document.getElementById('cr').textContent=(c.logged_in&&c.user)?c.user.credits:'Sign in';
+    if(c&&c.costs){COSTS=c.costs;buildDurs();}
     if(c&&c.logged_in)loadFriends();
   }).catch(function(){});
   icons();

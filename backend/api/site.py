@@ -284,7 +284,25 @@ _FRIEND_PRESETS = {
     "Shy":       {"traits": "reserved at first, hesitant, softer pacing", "voice": "ara"},
     "Caring":    {"traits": "nurturing, reassuring, supportive, comforting", "voice": "ara"},
 }
-_VALID_VOICES = {"ara", "eve", "leo", "rex", "sal"}
+# Full xAI voice library (slug → exact xAI voice_id), ported pin-to-pin from the
+# comfyAIcloud theme. The frontend sends the slug; TTS must send the exact id.
+_VOICE_ID_MAP = {"ara":"ara", "eve":"eve", "leo":"leo", "rex":"rex", "sal":"sal", "jian":"jpi39icg", "hao":"d18jlf6v", "xia":"33g9t0jl", "pavel":"26w6ihxi", "andrei":"dr8gqysu", "dmitri":"wy0m9l5w", "irina":"om17cury", "enzo":"x7avnu1k", "matteo":"bcs7l2c3", "luca":"hqxr4yub", "alessandro":"h27ltdnz", "karan":"89q2pnko", "ananya":"73xd5dum", "remi":"0p0rt7o1", "hugo":"hbxkrnwm", "camille":"69smp8rm", "manuel":"yis75yfp", "javier":"ekhwx401", "diego":"jupvcf34", "andres":"0hhfxxqq", "kasper":"0ih5oi34", "lars":"gwnexu6y", "ida":"97zmdc6s", "duc":"fc7de6afcf6c", "grace":"f8cf5c2c78d4", "axel":"e22152e06fd8", "valtteri":"dfe7b9e7d217", "aylin":"d634b6da3d3b", "sakura":"d0cb9ff07d95", "helmi":"c3a2c594479e", "jun-seo":"bf9fe5b5f981", "min-jun":"b5ae17439907", "ren":"b1a7441b97a1", "mateus":"abfbdf26f115", "thijs":"a13662ba951c", "seo-yeon":"a0401c9101f8", "katarzyna":"97fabd54445f", "daniel":"96819d0bd28d", "krit":"908c4626660f", "eero":"83c6f4fea98e", "minh":"7a9ee820b342", "claire":"79f3a8b96d43", "james":"78a495fdbb39", "khalid":"70013edeb8e8", "beatriz":"6da5baee46d0", "emre":"670a0c3ac005", "femke":"58d27475085e", "aroon":"4ff93971bfdc", "saga":"490ea3be50b1", "clara":"458705c07139", "moritz":"41321eb41295", "niklas":"40f31906b23d", "rafael":"3d030bc92a87", "lena":"3a7889066fa2", "mateusz":"37329fd8895a", "layla":"35c8d7f60dc8", "elina":"34fd4dce1ba3", "jakub":"34fd4dce1ba3", "noor":"247783ebdd51", "ruben":"244e27b39200", "ji-yeon":"23be42535a45", "tariq":"23468361b4ef", "erik":"1f046a033914", "aleksandra":"1b12d5daee6b", "kaan":"182a91893636", "mai":"0895a5b8ce5c"}
+_VALID_VOICES = set(_VOICE_ID_MAP)
+
+# Voice (TTS) duration tiers: seconds → settings key (mirrors cat_cost_voice_*).
+_VOICE_TIERS = {15: "cost_voice_15s", 30: "cost_voice_30s", 60: "cost_voice_60s",
+                120: "cost_voice_120s", 300: "cost_voice_300s"}
+_VOICE_TIER_DEFAULT = {15: "30", 30: "60", 60: "120", 120: "240", 300: "600"}
+
+
+def _voice_tier_cost(s: dict, duration) -> int:
+    try:
+        dur = int(duration or 15)
+    except Exception:
+        dur = 15
+    if dur not in _VOICE_TIERS:
+        dur = 15
+    return int(s.get(_VOICE_TIERS[dur], _VOICE_TIER_DEFAULT[dur]) or 0)
 
 
 def _friend_system_prompt(name, primary, secondary, custom, voice, lang):
@@ -449,6 +467,8 @@ def chat(body: ChatReq, user=Depends(auth.require_user), db: Session = Depends(g
 class TTSReq(BaseModel):
     text: str
     voice: str | None = "ara"
+    duration: int | None = 15     # voice tier (seconds): 15/30/60/120/300
+    preview: bool | None = False  # wizard voice sample — free, short
 
 
 @router.post("/tts")
@@ -458,14 +478,17 @@ def tts(body: TTSReq, user=Depends(auth.require_user), db: Session = Depends(get
     key = s.get("img_api_key")
     if not (base and key):
         raise HTTPException(503, "Voice isn't enabled yet. Add an AI provider in admin Settings.")
-    cost = int(s.get("cost_voice", "2") or 0)
+    cost = 0 if body.preview else _voice_tier_cost(s, body.duration)
     if (user.credits or 0) < cost:
         raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
+    slug = (body.voice or "ara").strip().lower()
+    voice_id = _VOICE_ID_MAP.get(slug, slug)          # exact xAI id
     try:
         import requests
-        say = _clean_tts(body.text)[:2000] or (body.text or "")[:2000]
+        cap = 200 if body.preview else 6000
+        say = _clean_tts(body.text)[:cap] or (body.text or "")[:cap]
         r = requests.post(base + "/tts", headers={"Authorization": f"Bearer {key}"},
-                          json={"text": say, "voice_id": body.voice or "ara", "language": "en"}, timeout=120)
+                          json={"text": say, "voice_id": voice_id, "language": "en"}, timeout=180)
         r.raise_for_status()
         if cost:
             _grant(db, user, -cost, "voice")
