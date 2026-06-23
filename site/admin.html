@@ -49,6 +49,7 @@
       <div class="field"><div class="lbl">Fast generation</div><input type="number" data-k="cost_gen_fast" /></div>
       <div class="field"><div class="lbl">Deconstruct</div><input type="number" data-k="cost_deconstruct" /></div>
       <div class="field"><div class="lbl">AI Friends chat (per message)</div><input type="number" data-k="cost_chat" /></div>
+      <div class="field"><div class="lbl">LinkedIn post (per draft)</div><input type="number" data-k="cost_linkedin" /></div>
       <div class="field"><div class="lbl">AI Friends voice — credits per spoken-reply length</div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
           <input type="number" data-k="cost_voice_15s" title="15-20s" />
@@ -84,6 +85,13 @@
       <div class="field"><div class="lbl">Client secret</div><input type="password" data-k="google_client_secret" placeholder="GOCSPX-…" /></div>
       <div class="field"><div class="lbl">Redirect URI (add this in Google Cloud)</div><input type="text" data-k="google_redirect_uri" /></div>
       <p style="font-size:12px;color:var(--faint)">In Google Cloud → Create OAuth client ID (Web): set JavaScript origin <b>https://onaiagents.com</b> and the redirect URI above. Paste the Client ID + secret here to turn on “Continue with Google”.</p>
+    </div>
+    <div class="panel">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17V7l8 5 8-5v10"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>LinkedIn Automation <span class="mut">(NVIDIA · gpt-oss-120b)</span></h3>
+      <div class="field"><div class="lbl">NVIDIA base URL</div><input type="text" data-k="nvidia_base_url" placeholder="https://integrate.api.nvidia.com/v1" /></div>
+      <div class="field"><div class="lbl">NVIDIA API key</div><input type="password" data-k="nvidia_api_key" placeholder="nvapi-…" /></div>
+      <div class="field"><div class="lbl">Model</div><input type="text" data-k="linkedin_model" placeholder="openai/gpt-oss-120b" /></div>
+      <p style="font-size:12px;color:var(--faint)">Leave the key blank to reuse the AgentStudio NVIDIA key. Visitors can also bring their own key in the tool.</p>
     </div>
   </div>
 

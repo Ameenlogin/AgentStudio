@@ -112,6 +112,7 @@ def config(user=Depends(auth.current_user), db: Session = Depends(get_db)):
         "img_ready": bool(s.get("img_base_url") and s.get("img_api_key")),
         "pay_ready": bool(s.get("razorpay_key_id") and s.get("razorpay_key_secret")),
         "google_ready": bool(s.get("google_client_id") and s.get("google_client_secret")),
+        "linkedin_ready": _linkedin_ready(s, db),
         "packages": PACKAGES,
         "site_name": s.get("site_name", "onaiagents"),
     }
@@ -575,6 +576,126 @@ def tts(body: TTSReq, user=Depends(auth.require_user), db: Session = Depends(get
         raise
     except Exception as e:
         raise HTTPException(502, f"Voice failed: {e}")
+
+
+# ── LinkedIn Automation (NVIDIA NIM · gpt-oss-120b) ───────────────────────────
+_LI_ARCHETYPES = ["Collaborative Article", "Poll", "Carousel", "Infographic",
+                  "Tool Spotlight", "Future-of-Work Take", "Performance Insight"]
+
+
+def _parse_json_array(raw: str):
+    text = (raw or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+        text = re.sub(r"\n?```$", "", text).strip()
+    data = None
+    try:
+        data = json.loads(text)
+    except Exception:
+        m = re.search(r"\[.*\]", text, re.S)
+        if m:
+            try:
+                data = json.loads(m.group(0))
+            except Exception:
+                data = None
+    if isinstance(data, dict):
+        for v in data.values():
+            if isinstance(v, list):
+                data = v
+                break
+    return data if isinstance(data, list) else []
+
+
+def _nvidia_creds(s: dict, body_key, db: Session):
+    """Resolve NVIDIA NIM base + key: BYOK → site setting → AgentStudio key."""
+    base = (s.get("nvidia_base_url") or "https://integrate.api.nvidia.com/v1").rstrip("/")
+    key = (body_key or "").strip() or (s.get("nvidia_api_key") or "").strip()
+    if not key:
+        try:
+            from database.models import Setting
+            row = db.query(Setting).first()
+            if row:
+                for k in (row.api_key, row.api_key_2, row.api_key_3):
+                    if k and k.strip():
+                        key = k.strip()
+                        break
+                if (row.base_url or "").strip() and not (s.get("nvidia_base_url") or "").strip():
+                    base = row.base_url.rstrip("/")
+        except Exception:
+            pass
+    return base, key
+
+
+def _linkedin_ready(s: dict, db: Session) -> bool:
+    if (s.get("nvidia_api_key") or "").strip():
+        return True
+    try:
+        from database.models import Setting
+        row = db.query(Setting).first()
+        return bool(row and (row.api_key or row.api_key_2 or row.api_key_3))
+    except Exception:
+        return False
+
+
+class LinkedInReq(BaseModel):
+    topic: str
+    tags: list | None = None
+    sources: list | None = None
+    count: int | None = 4
+    api_key: str | None = None     # optional BYOK NVIDIA key
+
+
+@router.post("/linkedin/run")
+def linkedin_run(body: LinkedInReq, user=Depends(auth.require_user), db: Session = Depends(get_db)):
+    s = _settings(db)
+    count = max(1, min(int(body.count or 4), 12))
+    cost = 0 if user.is_admin else count * int(s.get("cost_linkedin", "10") or 0)
+    if (user.credits or 0) < cost:
+        raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
+    topic = (body.topic or "").strip()[:300]
+    if not topic:
+        raise HTTPException(400, "Enter a topic to research.")
+    base, key = _nvidia_creds(s, body.api_key, db)
+    if not key:
+        raise HTTPException(503, "Add an NVIDIA key in this tool's settings (or set the AgentStudio key) to run the pipeline.")
+    model = s.get("linkedin_model") or "openai/gpt-oss-120b"
+    tags = ", ".join([str(t)[:40] for t in (body.tags or [])][:12])
+    sources = ", ".join([str(x)[:40] for x in (body.sources or [])][:10]) or "Reddit, AI newsletters, tech blogs, Product Hunt"
+    sys_prompt = (
+        "You are a senior LinkedIn ghostwriter for ambitious generalists who want to understand where AI and tech are going "
+        "and how to get ahead. Write in a clear, concrete, non-hype voice. No buzzwords, no 'game-changer' or 'revolutionize', "
+        "no emoji bullets. Every post is grounded in specific detail and ends with one genuine question. "
+        f"Draw on the style and topics of these sources: {sources}."
+    )
+    user_prompt = (
+        f"Topic to research and write about: {topic}\n"
+        f"Angle / tags: {tags or '(none)'}\n"
+        f"Produce exactly {count} distinct LinkedIn posts, each a DIFFERENT archetype chosen from: {', '.join(_LI_ARCHETYPES)}.\n"
+        "Return ONLY a JSON array, no prose. Each element must be:\n"
+        '{"archetype":"<one of the archetypes>","hook":"one-line scroll-stopper","body":"full post text, 110-220 words, '
+        'real line breaks allowed","hashtags":["#a","#b","#c"],"image_prompt":"a detailed prompt to generate a matching '
+        'LinkedIn visual — describe layout, composition, style, color palette, and any text overlay; no real brand logos"}\n'
+        "Rules: each post specific to the topic; vary archetypes; image_prompt is a PROMPT only (do not produce an image); JSON array only."
+    )
+    try:
+        import requests
+        r = requests.post(base + "/chat/completions", headers={"Authorization": f"Bearer {key}"},
+                          json={"model": model, "messages": [
+                              {"role": "system", "content": sys_prompt},
+                              {"role": "user", "content": user_prompt}],
+                              "temperature": 0.7, "max_tokens": 4000}, timeout=180)
+        r.raise_for_status()
+        raw = r.json()["choices"][0]["message"]["content"] or ""
+        posts = _parse_json_array(raw)[:count]
+        if not posts:
+            raise ValueError("model returned no usable posts")
+        if cost:
+            _grant(db, user, -cost, f"linkedin {len(posts)} posts")
+        return {"status": "ok", "posts": posts, "topic": topic, "credits": user.credits}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"Pipeline failed: {e}")
 
 
 # ── buy credits ───────────────────────────────────────────────────────────────

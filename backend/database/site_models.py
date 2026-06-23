@@ -116,5 +116,11 @@ DEFAULT_SETTINGS = {
     "google_client_id": "",
     "google_client_secret": "",
     "google_redirect_uri": "https://onaiagents.com/api/site/auth/google/callback",
+    # LinkedIn Automation — NVIDIA NIM (OpenAI-compatible) running gpt-oss-120b.
+    # Empty key falls back to the AgentStudio NVIDIA key; users can bring their own.
+    "nvidia_base_url": "https://integrate.api.nvidia.com/v1",
+    "nvidia_api_key": "",
+    "linkedin_model": "openai/gpt-oss-120b",
+    "cost_linkedin": "10",   # credits per generated post
     "site_name": "onaiagents",
 }

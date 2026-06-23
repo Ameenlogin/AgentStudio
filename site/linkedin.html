@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>LinkedIn Automation — onaiagents</title>
+<meta name="description" content="Research a topic and generate a batch of ready-to-post LinkedIn drafts — each with an image prompt you can turn into a visual on demand. Powered by NVIDIA gpt-oss-120b." />
+<meta name="theme-color" content="#F7F5EF" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --bg:#F7F5EF;--surf:#FFFFFF;--surf2:#F1EEE6;--line:#E4DFD3;--line2:#EEEAE0;
+    --text:#211E18;--t2:#6E6A5F;--faint:#A39E90;--ink:#211E18;--hdr:64px;
+    --indigo:#4F46E5;--violet:#7C3AED;--teal:#0E8C7F;--amber:#C8841F;--rose:#D5447A;--sky:#2D7FB8;--li:#0A66C2;
+    --fd:"Fraunces",Georgia,serif;--fs:"Inter",system-ui,sans-serif;--fu:"Space Grotesk",var(--fs);--fm:"JetBrains Mono",monospace;
+    --sh:0 1px 2px rgba(33,30,24,.05),0 14px 34px -18px rgba(33,30,24,.22);--sh-lg:0 30px 60px -28px rgba(33,30,24,.32);--ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}::selection{background:var(--ink);color:#fff}
+  html{background:var(--bg)}
+  body{font-family:var(--fs);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+  a{text-decoration:none;color:inherit}
+
+  .pg-nav{position:fixed;top:0;left:0;right:0;height:var(--hdr);background:rgba(247,245,239,.85);backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;padding:0 1.3rem;z-index:100}
+  .pg-brand{display:flex;align-items:center;gap:10px;font-family:var(--fu);font-weight:700;font-size:1.05rem;letter-spacing:-.01em}
+  .pg-brand img{width:24px;height:24px}.pg-brand .sep{color:var(--faint);font-weight:500}
+  .pg-links{display:flex;align-items:center;gap:10px}
+  .pg-links a{color:var(--t2);font-size:.9rem;font-weight:600;padding:8px 14px;border-radius:10px;transition:.2s}
+  .pg-links a:hover{color:var(--text);background:var(--surf2)}
+  .pg-credits{background:var(--ink);color:#fff;font-family:var(--fm);font-weight:600;font-size:.82rem;padding:8px 13px;border-radius:10px;display:flex;align-items:center;gap:6px}
+  .pg-credits svg{width:14px;height:14px}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:calc(var(--hdr) + 40px) 24px 80px}
+  .hero{text-align:center;max-width:680px;margin:0 auto 34px}
+  .kick{display:inline-flex;align-items:center;gap:8px;font-family:var(--fu);font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--li);background:rgba(10,102,194,.08);border:1px solid rgba(10,102,194,.16);padding:6px 13px;border-radius:99px}
+  .hero h1{font-family:var(--fd);font-weight:500;font-size:clamp(2.1rem,5vw,3.1rem);letter-spacing:-.025em;line-height:1.03;margin:16px 0 0}
+  .hero h1 em{font-style:italic;background:linear-gradient(100deg,var(--li),var(--indigo) 60%,var(--violet));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{color:var(--t2);font-size:16px;line-height:1.6;margin-top:14px}
+
+  /* setup card */
+  .setup{background:var(--surf);border:1px solid var(--line);border-radius:22px;box-shadow:var(--sh);padding:26px;max-width:760px;margin:0 auto}
+  .lbl{font-family:var(--fu);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);margin:0 0 9px;display:flex;align-items:center;gap:7px}.lbl svg{width:14px;height:14px}
+  .lbl .opt{margin-left:auto;font-weight:600;text-transform:none;letter-spacing:0;color:var(--faint);font-size:11px}
+  .ti{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px 16px;font:inherit;font-size:15px;color:var(--text);outline:none;transition:.18s}
+  .ti:focus{border-color:var(--li);background:#fff;box-shadow:0 0 0 3px rgba(10,102,194,.1)}
+  .ti.big{font-size:17px;font-weight:500}
+  .row{margin-bottom:20px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .tag{display:inline-flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--line);border-radius:99px;padding:6px 8px 6px 12px;font-size:13px;font-weight:600}
+  .tag button{background:none;border:none;cursor:pointer;color:var(--faint);display:flex;padding:1px;border-radius:50%}.tag button:hover{color:var(--rose)}.tag svg{width:13px;height:13px}
+  .srcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .src{display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:var(--bg);border-radius:13px;padding:12px 13px;cursor:pointer;transition:.18s var(--ease)}
+  .src:hover{border-color:#cfc8b6}
+  .src.on{border-color:var(--li);background:#f5f9fe}
+  .src .si{width:34px;height:34px;border-radius:10px;background:var(--surf2);display:flex;align-items:center;justify-content:center;color:var(--t2);flex-shrink:0}
+  .src.on .si{background:rgba(10,102,194,.12);color:var(--li)}.src .si svg{width:17px;height:17px}
+  .src .sn{font-size:13.5px;font-weight:700;line-height:1.1}.src .sd{font-size:11px;color:var(--faint);margin-top:2px}
+  .src .sw{margin-left:auto;width:36px;height:20px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex-shrink:0}.src.on .sw{background:var(--li)}.src .sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.src.on .sw::after{transform:translateX(16px)}
+  .counts{display:flex;gap:8px;flex-wrap:wrap}
+  .cnt{flex:1;min-width:60px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;text-align:center;cursor:pointer;font-family:var(--fu);font-weight:700;transition:.18s}
+  .cnt:hover{border-color:#cfc8b6}.cnt.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .cnt small{display:block;font-size:10px;font-weight:600;color:var(--faint);margin-top:2px}.cnt.on small{color:rgba(255,255,255,.7)}
+  .keybox{display:none;margin-top:12px}.keybox.on{display:block}
+  .keytoggle{font-size:12.5px;font-weight:600;color:var(--li);cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:4px}.keytoggle svg{width:13px;height:13px}
+  .run{width:100%;margin-top:8px;background:linear-gradient(120deg,var(--li),var(--indigo));color:#fff;border:none;border-radius:14px;padding:16px;font-family:var(--fu);font-weight:700;font-size:1.02rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:.25s var(--ease);box-shadow:0 16px 32px -16px rgba(10,102,194,.6)}
+  .run:hover{transform:translateY(-2px);box-shadow:0 20px 42px -16px rgba(10,102,194,.7)}.run:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .run .c{background:rgba(255,255,255,.2);font-family:var(--fm);padding:3px 9px;border-radius:7px;font-size:.8rem}
+
+  /* pipeline */
+  .pipe{display:none;max-width:760px;margin:0 auto}.pipe.on{display:block}
+  .pipe-head{text-align:center;margin-bottom:24px}
+  .pipe-head h2{font-family:var(--fd);font-weight:500;font-size:1.7rem}
+  .pipe-head .meta{font-family:var(--fm);font-size:12.5px;color:var(--t2);margin-top:6px}
+  .pbar{height:7px;background:var(--surf2);border-radius:99px;overflow:hidden;margin:18px 0 26px;border:1px solid var(--line)}
+  .pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--li),var(--indigo),var(--violet));border-radius:99px;transition:width .6s var(--ease)}
+  .steps{display:flex;flex-direction:column;gap:12px}
+  .step{display:flex;align-items:center;gap:15px;background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:16px 18px;opacity:.5;transition:.4s var(--ease);transform:translateY(6px)}
+  .step.active{opacity:1;border-color:var(--li);box-shadow:0 12px 28px -18px rgba(10,102,194,.5);transform:none}
+  .step.done{opacity:1;transform:none}
+  .step .ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surf2);color:var(--t2);transition:.3s}
+  .step.active .ic{background:linear-gradient(135deg,var(--li),var(--indigo));color:#fff}
+  .step.done .ic{background:rgba(14,140,127,.12);color:var(--teal)}
+  .step .ic svg{width:20px;height:20px}
+  .step .ic .spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;display:none}
+  .step.active .ic .glyph{display:none}.step.active .ic .spin{display:block}
+  .step .tx{flex:1;min-width:0}.step .tx b{font-size:14.5px;font-weight:700}.step .tx p{font-size:12.5px;color:var(--t2);margin-top:2px}
+  .step .pct{font-family:var(--fm);font-size:12px;color:var(--faint)}
+  .step.done .pct{color:var(--teal)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* output */
+  .out{display:none;margin-top:14px}.out.on{display:block}
+  .out-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .out-head h2{font-family:var(--fd);font-weight:500;font-size:1.8rem;letter-spacing:-.01em}
+  .out-head p{color:var(--t2);font-size:14px;margin-top:4px}
+  .out-head .again{background:var(--surf);border:1px solid var(--line);color:var(--text);font-family:var(--fu);font-weight:700;font-size:.88rem;padding:11px 18px;border-radius:12px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.18s}.out-head .again:hover{border-color:var(--ink)}.out-head .again svg{width:15px;height:15px}
+  .cards{columns:2;column-gap:18px}
+  @media(max-width:820px){.cards{columns:1}}
+  .card{break-inside:avoid;background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:var(--sh);opacity:0;transform:translateY(12px);animation:rise .5s var(--ease) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .card .arch{display:inline-flex;align-items:center;gap:6px;font-family:var(--fu);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#fff;padding:4px 10px;border-radius:7px}
+  .card .hook{font-family:var(--fd);font-weight:500;font-size:1.18rem;line-height:1.3;margin:13px 0 10px;letter-spacing:-.01em}
+  .card .body{font-size:14px;line-height:1.62;color:#34302a;white-space:pre-wrap;word-break:break-word}
+  .card .hash{margin-top:12px;font-size:12.5px;font-weight:600;color:var(--li);line-height:1.7}
+  .card .imgp{margin-top:14px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+  .card .imgp .h{display:flex;align-items:center;gap:6px;font-family:var(--fu);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t2);margin-bottom:7px}.card .imgp .h svg{width:13px;height:13px}
+  .card .imgp .h .cp{margin-left:auto;cursor:pointer;color:var(--li);display:flex;align-items:center;gap:4px;font-size:11px}
+  .card .imgp pre{font-family:var(--fm);font-size:11.5px;line-height:1.55;color:#4a463f;white-space:pre-wrap;word-break:break-word;max-height:96px;overflow:auto}
+  .card .imgwrap{margin-top:12px;border-radius:12px;overflow:hidden;border:1px solid var(--line);display:none}.card .imgwrap.on{display:block}.card .imgwrap img{width:100%;display:block}
+  .card .acts{display:flex;gap:8px;margin-top:14px}
+  .card .acts button,.card .acts a{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--fu);font-weight:700;font-size:.84rem;padding:10px;border-radius:11px;cursor:pointer;transition:.18s;border:1px solid var(--line);background:var(--surf);color:var(--text)}
+  .card .acts .gen{background:linear-gradient(120deg,var(--violet),var(--indigo));color:#fff;border:none}
+  .card .acts .gen:disabled{opacity:.6;cursor:not-allowed}
+  .card .acts button:hover{border-color:var(--ink)}.card .acts .gen:hover{filter:brightness(1.05)}
+  .card .acts svg{width:14px;height:14px}
+  .err{display:none;background:rgba(213,68,122,.07);border:1px solid rgba(213,68,122,.22);color:#a83a64;border-radius:13px;padding:14px 16px;font-size:14px;margin-top:16px}.err.on{display:block}
+
+  footer{margin-top:70px;border-top:1px solid var(--line2);padding:28px 0;color:var(--faint);font-size:13px}.foot{max-width:1120px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<script defer src="/nav.js"></script>
+</head>
+<body>
+<nav class="pg-nav">
+  <a class="pg-brand" href="/"><img src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents <span class="sep">/ LinkedIn Automation</span></a>
+  <div class="pg-links">
+    <a href="/"><i data-lucide="arrow-left" style="width:15px;height:15px;vertical-align:-3px"></i> Home</a>
+    <div class="pg-credits"><i data-lucide="gem"></i> <span id="cr">—</span></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="hero" id="hero">
+    <span class="kick"><i data-lucide="linkedin" style="width:14px;height:14px"></i> LinkedIn content pipeline</span>
+    <h1>Turn one topic into a <em>week of posts</em></h1>
+    <p>Pick a topic, choose your sources, and run the pipeline. You get a batch of ready-to-post drafts across proven formats — each with an image prompt you can turn into a visual only when a post is worth it. Powered by NVIDIA <b>gpt-oss-120b</b>.</p>
+  </div>
+
+  <!-- SETUP -->
+  <section class="setup" id="setup">
+    <div class="row">
+      <label class="lbl"><i data-lucide="search"></i> Topic to research</label>
+      <input class="ti big" id="topic" placeholder="e.g. AI agents replacing SaaS tools" />
+    </div>
+    <div class="row">
+      <label class="lbl"><i data-lucide="tags"></i> Tags / angle <span class="opt">press Enter to add</span></label>
+      <input class="ti" id="tagInput" placeholder="founders, future of work, automation…" />
+      <div class="tags" id="tags"></div>
+    </div>
+    <div class="row">
+      <label class="lbl"><i data-lucide="rss"></i> Sources <span class="opt">toggle what to draw from</span></label>
+      <div class="srcs" id="srcs"></div>
+    </div>
+    <div class="row">
+      <label class="lbl"><i data-lucide="layers"></i> How many posts</label>
+      <div class="counts" id="counts">
+        <div class="cnt" data-n="2">2<small>quick</small></div>
+        <div class="cnt on" data-n="4">4<small>balanced</small></div>
+        <div class="cnt" data-n="6">6<small>batch</small></div>
+        <div class="cnt" data-n="8">8<small>week</small></div>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:16px">
+      <span class="keytoggle" id="keyToggle"><i data-lucide="key-round"></i> Use my own NVIDIA key (optional)</span>
+      <div class="keybox" id="keyBox">
+        <input class="ti" id="nvkey" type="password" placeholder="nvapi-… (stored only in this browser)" style="margin-top:8px" />
+        <p style="font-size:11.5px;color:var(--faint);margin-top:6px">Leave blank to use the shared key. Your key never leaves your browser except to run your own pipeline.</p>
+      </div>
+    </div>
+    <button class="run" id="run"><i data-lucide="play" style="width:18px;height:18px"></i> Run pipeline <span class="c" id="runCost">≈ 40 CR</span></button>
+    <div class="err" id="setupErr"></div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section class="pipe" id="pipe">
+    <div class="pipe-head">
+      <h2>Running the pipeline</h2>
+      <div class="meta" id="pipeMeta">Topic · elapsed 0s</div>
+    </div>
+    <div class="pbar"><i id="pbar"></i></div>
+    <div class="steps" id="steps"></div>
+    <div class="err" id="pipeErr"></div>
+  </section>
+
+  <!-- OUTPUT -->
+  <section class="out" id="out">
+    <div class="out-head">
+      <div><h2 id="outTitle">Your drafts</h2><p id="outSub">Review, copy, and generate a visual only for the posts worth it.</p></div>
+      <button class="again" id="again"><i data-lucide="rotate-ccw"></i> New batch</button>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+</main>
+
+<footer><div class="foot"><span>© <span id="yr"></span> onaiagents · LinkedIn Automation</span><span><a href="/" style="color:var(--t2)">← All tools</a></span></div></footer>
+
+<script>
+(function(){
+  document.getElementById('yr').textContent=new Date().getFullYear();
+  function icons(){if(window.lucide)lucide.createIcons();}
+  function toast(m){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#211E18;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:300;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)';d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},2600);}
+
+  var COSTS={}, costLi=10, costImg=40;
+  var ARCH_COLORS={'Collaborative Article':'#0A66C2','Poll':'#7C3AED','Carousel':'#C8841F','Infographic':'#0E8C7F','Tool Spotlight':'#2D7FB8','Future-of-Work Take':'#D5447A','Performance Insight':'#4F46E5'};
+
+  // sources
+  var SOURCES=[
+    {id:'reddit',n:'Reddit',d:'real discussions',icon:'message-circle',on:true},
+    {id:'newsletters',n:'AI Newsletters',d:'what shipped',icon:'mail',on:true},
+    {id:'blogs',n:'Tech Blogs',d:'deeper takes',icon:'newspaper',on:true},
+    {id:'producthunt',n:'Product Hunt',d:'new launches',icon:'rocket',on:true},
+    {id:'x',n:'X / Twitter',d:'live signal',icon:'at-sign',on:false}
+  ];
+  var srcBox=document.getElementById('srcs');
+  SOURCES.forEach(function(s){
+    var el=document.createElement('div');el.className='src'+(s.on?' on':'');el.dataset.id=s.id;
+    el.innerHTML='<span class="si"><i data-lucide="'+s.icon+'"></i></span><div><div class="sn">'+s.n+'</div><div class="sd">'+s.d+'</div></div><span class="sw"></span>';
+    el.onclick=function(){s.on=!s.on;el.classList.toggle('on',s.on);};
+    srcBox.appendChild(el);
+  });
+
+  // tags
+  var tags=[],tagBox=document.getElementById('tags'),tagIn=document.getElementById('tagInput');
+  function renderTags(){tagBox.innerHTML='';tags.forEach(function(t,i){var s=document.createElement('span');s.className='tag';s.innerHTML=t+' <button aria-label="remove"><i data-lucide="x"></i></button>';s.querySelector('button').onclick=function(){tags.splice(i,1);renderTags();};tagBox.appendChild(s);});icons();}
+  tagIn.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();var v=tagIn.value.trim().replace(/,$/,'');if(v&&tags.indexOf(v)<0&&tags.length<12){tags.push(v);tagIn.value='';renderTags();}}});
+
+  // count
+  var count=4;
+  document.getElementById('counts').addEventListener('click',function(e){var c=e.target.closest('.cnt');if(!c)return;this.querySelectorAll('.cnt').forEach(function(x){x.classList.remove('on')});c.classList.add('on');count=parseInt(c.dataset.n,10);updateCost();});
+  function updateCost(){document.getElementById('runCost').textContent='≈ '+(count*costLi)+' CR';}
+
+  // byok key
+  var nvkey=document.getElementById('nvkey');
+  try{nvkey.value=localStorage.getItem('oa_nvkey')||'';}catch(e){}
+  if(nvkey.value)document.getElementById('keyBox').classList.add('on');
+  document.getElementById('keyToggle').onclick=function(){document.getElementById('keyBox').classList.toggle('on');};
+  nvkey.addEventListener('change',function(){try{localStorage.setItem('oa_nvkey',nvkey.value.trim());}catch(e){}});
+
+  // pipeline steps
+  var STEPS=[
+    {b:'Reading the brief',p:'Topic, tags & selected sources',icon:'clipboard-list'},
+    {b:'Researching the topic',p:'Pulling angles from your sources',icon:'radar'},
+    {b:'Drafting posts',p:'Writing across proven formats',icon:'pen-line'},
+    {b:'Writing image prompts',p:'A visual brief for each post',icon:'image'},
+    {b:'Composing your cards',p:'Formatting for review',icon:'layout-grid'}
+  ];
+  var stepsBox=document.getElementById('steps');
+  function buildSteps(){
+    stepsBox.innerHTML='';
+    STEPS.forEach(function(s){
+      var el=document.createElement('div');el.className='step';
+      el.innerHTML='<div class="ic"><span class="glyph"><i data-lucide="'+s.icon+'"></i></span><span class="spin"></span></div>'
+        +'<div class="tx"><b>'+s.b+'</b><p>'+s.p+'</p></div><div class="pct">—</div>';
+      stepsBox.appendChild(el);
+    });
+    icons();
+  }
+
+  var running=false, t0=0, timer=null, stepIdx=0, fetchDone=false, fetchResult=null, fetchErr=null;
+  function setView(v){
+    document.getElementById('hero').style.display=v==='setup'?'':'none';
+    document.getElementById('setup').style.display=v==='setup'?'':'none';
+    document.getElementById('pipe').classList.toggle('on',v==='pipe');
+    document.getElementById('out').classList.toggle('on',v==='out');
+  }
+
+  function runPipeline(){
+    if(window.__OA_USER===false){toast('Please sign in to run the pipeline');setTimeout(function(){location.href='/login?next=/linkedin';},800);return;}
+    var topic=document.getElementById('topic').value.trim();
+    if(!topic){document.getElementById('topic').focus();showSetupErr('Enter a topic to research.');return;}
+    var srcs=SOURCES.filter(function(s){return s.on;}).map(function(s){return s.n;});
+    if(!srcs.length){showSetupErr('Turn on at least one source.');return;}
+    running=true;fetchDone=false;fetchResult=null;fetchErr=null;stepIdx=0;
+    buildSteps();setView('pipe');document.getElementById('pipeErr').classList.remove('on');
+    document.getElementById('pipeMeta').textContent='“'+topic.slice(0,60)+'” · elapsed 0s';
+    t0=Date.now();
+    timer=setInterval(tick,250);
+    advanceStep(0);
+    // real work
+    var key=(nvkey.value||'').trim();
+    fetch('/api/site/linkedin/run',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({topic:topic,tags:tags,sources:srcs,count:count,api_key:key||undefined})})
+      .then(function(r){return r.json().then(function(d){return {s:r.status,d:d};});})
+      .then(function(o){
+        if(o.s===401){fetchErr='Please sign in to run the pipeline.';}
+        else if(o.s===402){fetchErr=(o.d&&o.d.detail)||'Not enough credits.';}
+        else if(o.s===503){fetchErr=(o.d&&o.d.detail)||'NVIDIA key not set.';}
+        else if(o.d&&o.d.status==='ok'){fetchResult=o.d;}
+        else {fetchErr=(o.d&&(o.d.detail||o.d.message))||'Pipeline failed.';}
+        fetchDone=true;
+      }).catch(function(){fetchErr='Network error. Please try again.';fetchDone=true;});
+  }
+
+  function advanceStep(i){
+    var els=stepsBox.children;
+    if(els[i-1]){els[i-1].classList.remove('active');els[i-1].classList.add('done');els[i-1].querySelector('.pct').textContent='done';}
+    if(els[i]){els[i].classList.add('active');els[i].querySelector('.pct').textContent='…';}
+    stepIdx=i;
+  }
+
+  function tick(){
+    var el=(Date.now()-t0)/1000;
+    var topic=document.getElementById('topic').value.trim();
+    document.getElementById('pipeMeta').textContent='“'+topic.slice(0,60)+'” · elapsed '+el.toFixed(0)+'s';
+    // progress: pace through steps; hold near 90% until the real call returns
+    var target;
+    if(!fetchDone){
+      // step through the first 4 stages on a gentle timeline
+      var planned=Math.min(4, Math.floor(el/3));   // ~3s per visible stage
+      if(planned>stepIdx) advanceStep(planned);
+      target=Math.min(90, 12+el*9);
+    } else {
+      // finish: complete all steps then go to output
+      if(fetchErr){clearInterval(timer);running=false;document.getElementById('pbar').style.width='100%';
+        var pe=document.getElementById('pipeErr');pe.textContent=fetchErr;pe.classList.add('on');
+        // restore to setup after a beat so the user can retry
+        return;}
+      // mark remaining steps done
+      var els=stepsBox.children;
+      for(var i=0;i<els.length;i++){els[i].classList.remove('active');els[i].classList.add('done');els[i].querySelector('.pct').textContent='done';}
+      target=100;
+      clearInterval(timer);
+      document.getElementById('pbar').style.width='100%';
+      setTimeout(function(){running=false;renderCards(fetchResult);},520);
+      return;
+    }
+    document.getElementById('pbar').style.width=target+'%';
+  }
+
+  function renderCards(res){
+    var posts=(res&&res.posts)||[];
+    if(res&&typeof res.credits==='number')document.getElementById('cr').textContent=res.credits;
+    var topic=document.getElementById('topic').value.trim();
+    document.getElementById('outTitle').textContent=posts.length+' drafts on “'+topic.slice(0,48)+'”';
+    var box=document.getElementById('cards');box.innerHTML='';
+    posts.forEach(function(p,i){
+      var arch=(p.archetype||'Post');var col=ARCH_COLORS[arch]||'#4F46E5';
+      var hashes=(p.hashtags||[]).map(function(h){return (''+h).charAt(0)==='#'?h:'#'+h;}).join('  ');
+      var imgp=(p.image_prompt||'').trim();
+      var card=document.createElement('article');card.className='card';card.style.animationDelay=(i*.07)+'s';
+      card.innerHTML=
+        '<span class="arch" style="background:'+col+'">'+esc(arch)+'</span>'
+        +(p.hook?'<div class="hook"></div>':'')
+        +'<div class="body"></div>'
+        +(hashes?'<div class="hash"></div>':'')
+        +(imgp?('<div class="imgp"><div class="h"><i data-lucide="image"></i> Image prompt <span class="cp" data-cp="img"><i data-lucide="copy"></i> copy</span></div><pre></pre></div>'):'')
+        +'<div class="imgwrap"><img alt=""></div>'
+        +'<div class="acts">'
+        +'<button class="cpost"><i data-lucide="clipboard"></i> Copy post</button>'
+        +(imgp?'<button class="gen"><i data-lucide="sparkles"></i> Generate image</button>':'')
+        +'</div>';
+      if(p.hook)card.querySelector('.hook').textContent=p.hook;
+      card.querySelector('.body').textContent=(p.body||'').trim();
+      if(hashes)card.querySelector('.hash').textContent=hashes;
+      if(imgp)card.querySelector('.imgp pre').textContent=imgp;
+      // copy post
+      var fullPost=(p.hook?p.hook+'\n\n':'')+(p.body||'').trim()+(hashes?'\n\n'+hashes:'');
+      card.querySelector('.cpost').onclick=function(){copy(fullPost);toast('Post copied');};
+      var cpImg=card.querySelector('[data-cp="img"]');if(cpImg)cpImg.onclick=function(){copy(imgp);toast('Image prompt copied');};
+      var gen=card.querySelector('.gen');
+      if(gen)gen.onclick=function(){genImage(imgp,gen,card.querySelector('.imgwrap'));};
+      box.appendChild(card);
+    });
+    setView('out');icons();
+  }
+
+  function genImage(prompt,btn,wrap){
+    btn.disabled=true;var orig=btn.innerHTML;btn.innerHTML='<span class="spin" style="width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .8s linear infinite"></span> Generating…';
+    fetch('/api/site/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'image',prompt:prompt,model_cost:costImg})})
+      .then(function(r){return r.json().then(function(d){return {s:r.status,d:d};});})
+      .then(function(o){btn.disabled=false;btn.innerHTML=orig;icons();
+        if(o.s===401){toast('Please sign in');return;}
+        if(o.s===402){toast(o.d.detail||'Not enough credits');return;}
+        if(o.d&&o.d.status==='ok'&&o.d.image){wrap.querySelector('img').src=o.d.image;wrap.classList.add('on');if(typeof o.d.credits==='number')document.getElementById('cr').textContent=o.d.credits;btn.innerHTML='<i data-lucide="check"></i> Image ready';icons();return;}
+        toast((o.d&&(o.d.detail||o.d.message))||'Image generation isn’t enabled yet');
+      }).catch(function(){btn.disabled=false;btn.innerHTML=orig;icons();toast('Something went wrong');});
+  }
+
+  function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function copy(t){try{navigator.clipboard.writeText(t);}catch(e){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}}
+  function showSetupErr(m){var e=document.getElementById('setupErr');e.textContent=m;e.classList.add('on');setTimeout(function(){e.classList.remove('on');},3500);}
+
+  document.getElementById('run').onclick=runPipeline;
+  document.getElementById('again').onclick=function(){setView('setup');window.scrollTo({top:0,behavior:'smooth'});};
+
+  fetch('/api/site/config').then(function(r){return r.json();}).then(function(c){
+    window.__OA_USER=!!(c&&c.logged_in);
+    document.getElementById('cr').textContent=(c.logged_in&&c.user)?c.user.credits:'Sign in';
+    if(c&&c.costs){COSTS=c.costs;costLi=COSTS.cost_linkedin||10;costImg=COSTS.cost_playground||40;updateCost();}
+  }).catch(function(){});
+  updateCost();icons();
+})();
+</script>
+</body>
+</html>
