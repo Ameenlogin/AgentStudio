@@ -215,6 +215,35 @@ def chat(body: ChatReq, user=Depends(auth.require_user), db: Session = Depends(g
         raise HTTPException(502, f"Chat failed: {e}")
 
 
+class TTSReq(BaseModel):
+    text: str
+    voice: str | None = "ara"
+
+
+@router.post("/tts")
+def tts(body: TTSReq, user=Depends(auth.require_user), db: Session = Depends(get_db)):
+    s = _settings(db)
+    base = (s.get("img_base_url") or "").rstrip("/")
+    key = s.get("img_api_key")
+    if not (base and key):
+        raise HTTPException(503, "Voice isn't enabled yet. Add an AI provider in admin Settings.")
+    cost = int(s.get("cost_voice", "2") or 0)
+    if (user.credits or 0) < cost:
+        raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
+    try:
+        import requests
+        r = requests.post(base + "/tts", headers={"Authorization": f"Bearer {key}"},
+                          json={"text": (body.text or "")[:2000], "voice_id": body.voice or "ara", "language": "en"}, timeout=120)
+        r.raise_for_status()
+        if cost:
+            _grant(db, user, -cost, "voice")
+        return Response(content=r.content, media_type=r.headers.get("content-type", "audio/mpeg"))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"Voice failed: {e}")
+
+
 # ── buy credits ───────────────────────────────────────────────────────────────
 class BuyReq(BaseModel):
     package: str

@@ -78,6 +78,7 @@ DEFAULT_SETTINGS = {
     "vision_model": "",   # vision model for Deconstruct, e.g. grok-2-vision-latest
     "chat_model": "",     # chat model for AI Friends, e.g. grok-2-latest
     "cost_chat": "1",
+    "cost_voice": "2",    # per voice (TTS) playback
     # Payment gateway keys (empty = "buy credits" shows coming-soon).
     "razorpay_key_id": "",
     "razorpay_key_secret": "",
