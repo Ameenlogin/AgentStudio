@@ -1,5 +1,6 @@
 """onaiagents.com site API: accounts, credits, admin settings, credit-gated tools."""
 import re
+import json
 import hmac
 import hashlib
 import base64
@@ -229,6 +230,45 @@ def generate(body: GenReq, user=Depends(auth.require_user), db: Session = Depend
     return {"status": "preview", "credits": user.credits, "message": _PREVIEW}
 
 
+# ── AI Friends reply parsing (the model returns the theme's JSON contract) ─────
+def _parse_friend_reply(raw: str):
+    """Extract (assistant_text, tts_script, message_kind) from the model output.
+
+    The friend system prompt asks for JSON {assistant_text, tts_script, ...}.
+    We parse it server-side so the chat shows a clean reply + speaks clean
+    speech — never raw JSON. Falls back to the raw text if it isn't JSON."""
+    text = (raw or "").strip()
+    if text.startswith("```"):                      # strip ```json fences
+        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+        text = re.sub(r"\n?```$", "", text).strip()
+    data = None
+    try:
+        data = json.loads(text)
+    except Exception:
+        m = re.search(r"\{.*\}", text, re.S)         # first {...} block
+        if m:
+            try:
+                data = json.loads(m.group(0))
+            except Exception:
+                data = None
+    if isinstance(data, dict):
+        at = str(data.get("assistant_text") or "").strip()
+        ts = str(data.get("tts_script") or "").strip()
+        kind = str(data.get("message_kind") or "voice").strip()
+        if at or ts:
+            return (at or ts), _clean_tts(ts or at), kind
+    return text, _clean_tts(text), "voice"
+
+
+def _clean_tts(t: str) -> str:
+    """Drop markup/cue tags (<soft>, [pause], *laughs*) so TTS speaks clean
+    prose instead of reading the tag words aloud."""
+    t = re.sub(r"<[^>\n]{0,40}>", " ", t or "")
+    t = re.sub(r"\[[^\]\n]{0,40}\]", " ", t)
+    t = re.sub(r"\*[^*\n]{0,40}\*", " ", t)
+    return re.sub(r"\s{2,}", " ", t).strip()
+
+
 class ChatReq(BaseModel):
     messages: list
     persona: str | None = None
@@ -256,10 +296,11 @@ def chat(body: ChatReq, user=Depends(auth.require_user), db: Session = Depends(g
                           json={"model": s.get("chat_model") or "grok-2-latest", "messages": msgs,
                                 "max_tokens": 700}, timeout=120)
         r.raise_for_status()
-        reply = r.json()["choices"][0]["message"]["content"]
+        raw = r.json()["choices"][0]["message"]["content"] or ""
+        reply, tts, kind = _parse_friend_reply(raw)
         if cost:
             _grant(db, user, -cost, "ai friends chat")
-        return {"status": "ok", "reply": reply, "credits": user.credits}
+        return {"status": "ok", "reply": reply, "tts": tts, "kind": kind, "credits": user.credits}
     except Exception as e:
         raise HTTPException(502, f"Chat failed: {e}")
 
@@ -281,8 +322,9 @@ def tts(body: TTSReq, user=Depends(auth.require_user), db: Session = Depends(get
         raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
     try:
         import requests
+        say = _clean_tts(body.text)[:2000] or (body.text or "")[:2000]
         r = requests.post(base + "/tts", headers={"Authorization": f"Bearer {key}"},
-                          json={"text": (body.text or "")[:2000], "voice_id": body.voice or "ara", "language": "en"}, timeout=120)
+                          json={"text": say, "voice_id": body.voice or "ara", "language": "en"}, timeout=120)
         r.raise_for_status()
         if cost:
             _grant(db, user, -cost, "voice")
