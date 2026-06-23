@@ -1,16 +1,21 @@
 """onaiagents.com site API: accounts, credits, admin settings, credit-gated tools."""
 import re
+import os
 import json
 import hmac
+import uuid
 import hashlib
 import base64
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database.database import get_db
-from database.site_models import SiteUser, CreditTxn, SiteSetting, Order, PACKAGES, DEFAULT_SETTINGS
+from database.site_models import SiteUser, CreditTxn, SiteSetting, Order, Friend, PACKAGES, DEFAULT_SETTINGS
 from services import site_auth as auth
+
+_UPLOAD_DIR = os.path.join(os.path.dirname(os.environ.get("AGENT_STUDIO_DB") or "/data/agent_studio.db") or ".", "uploads")
 
 router = APIRouter()
 _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -269,9 +274,131 @@ def _clean_tts(t: str) -> str:
     return re.sub(r"\s{2,}", " ", t).strip()
 
 
+# ── AI Friends: persistence + persona builder ─────────────────────────────────
+_FRIEND_PRESETS = {
+    "Dominant":  {"traits": "decisive, leads conversation, direct, confident", "voice": "leo"},
+    "Assertive": {"traits": "clear, confident, concise, expressive", "voice": "rex"},
+    "Fantasy":   {"traits": "imaginative, story-driven, whimsical or mystical", "voice": "eve"},
+    "Submissive":{"traits": "agreeable, gentle, asks for direction, non-sexual interpretation only", "voice": "ara"},
+    "Romantic":  {"traits": "affectionate, warm, connection-focused, keep within safe product boundaries", "voice": "sal"},
+    "Shy":       {"traits": "reserved at first, hesitant, softer pacing", "voice": "ara"},
+    "Caring":    {"traits": "nurturing, reassuring, supportive, comforting", "voice": "ara"},
+}
+_VALID_VOICES = {"ara", "eve", "leo", "rex", "sal"}
+
+
+def _friend_system_prompt(name, primary, secondary, custom, voice, lang):
+    """Server-side port of the theme's buildSys — the exact pin-to-pin contract."""
+    pt = _FRIEND_PRESETS.get(primary, {}).get("traits", primary)
+    st = _FRIEND_PRESETS.get(secondary, {}).get("traits", secondary) if secondary else ""
+    s = f"You are an AI Friend named {name}.\n\nIdentity:\n"
+    s += "- Keep the same personality, tone, and speaking style across messages.\n"
+    s += "- Use the selected personality as your emotional anchor in every reply.\n"
+    s += "- Sound human, fresh, and naturally varied instead of repeating the same catchphrases or reply rhythm.\n"
+    s += f"\nSelected personality:\n- Primary: {primary} ({pt})\n"
+    if secondary:
+        s += f"- Secondary: {secondary} ({st})\n"
+    if custom:
+        s += f"\nCustom personality:\n- {custom}\n"
+    s += f"\nVoice style:\n- Preferred voice: {voice or 'ara'}\n"
+    s += "- Match delivery to the emotional tone of the current reply; vary it across turns.\n"
+    s += f"\nBehavior rules:\n- Always respond in {lang or 'en'}.\n"
+    s += "- Keep the exchange moving with one natural follow-up question when it fits.\n"
+    s += "- Do not recycle the same opener, reassurance, or closing across nearby turns.\n"
+    s += "- Vary sentence length and phrasing while staying in character.\n"
+    s += "\nOUTPUT CONTRACT:\nReturn valid JSON only. No markdown. Use exactly these keys:\n"
+    s += '{"assistant_text":"spoken reply","tts_script":"voice-ready version of the same reply","turn_type":"dialogue","message_kind":"voice"}\n'
+    s += "Rules:\n- assistant_text and tts_script stay short and spoken, usually under 70 words.\n"
+    s += "- Write tts_script as plain natural speech: NO markup tags, NO bracketed cues, NO stage directions.\n"
+    s += "- Ask at most one fresh follow-up question specific to the user's latest topic.\n"
+    s += "- Avoid repeating phrasing from the last few turns."
+    return s
+
+
+def _friend_public(f: Friend):
+    return {"id": f.id, "name": f.name, "avatar_url": f.avatar_url, "tagline": f.tagline,
+            "primary": f.primary_personality, "secondary": f.secondary_personality,
+            "voice": f.voice_id, "language": f.language}
+
+
+class FriendReq(BaseModel):
+    name: str
+    avatar_url: str | None = ""
+    tagline: str | None = ""
+    primary: str | None = ""
+    secondary: str | None = ""
+    custom: str | None = ""
+    voice: str | None = "ara"
+    language: str | None = "en"
+
+
+@router.get("/friends")
+def friends_list(user=Depends(auth.require_user), db: Session = Depends(get_db)):
+    rows = db.query(Friend).filter(Friend.user_id == user.id).order_by(Friend.created_at.desc()).all()
+    return {"friends": [_friend_public(f) for f in rows]}
+
+
+@router.post("/friends")
+def friends_create(body: FriendReq, user=Depends(auth.require_user), db: Session = Depends(get_db)):
+    name = (body.name or "").strip()[:60]
+    if not name:
+        raise HTTPException(400, "Give your friend a name.")
+    primary = (body.primary or "Caring").strip()
+    secondary = (body.secondary or "").strip()
+    voice = (body.voice or "ara").strip().lower()
+    if voice not in _VALID_VOICES:
+        voice = "ara"
+    custom = (body.custom or "").strip()[:1200]
+    lang = (body.language or "en").strip()[:8]
+    avatar = (body.avatar_url or "").strip()[:600]
+    tagline = (body.tagline or "").strip()[:160] or (primary + (" & " + secondary if secondary else "") + " companion")
+    sys = _friend_system_prompt(name, primary, secondary, custom, voice, lang)
+    slug = (re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "friend") + "-" + uuid.uuid4().hex[:6]
+    f = Friend(user_id=user.id, slug=slug, name=name, avatar_url=avatar, tagline=tagline,
+               primary_personality=primary, secondary_personality=secondary, custom_personality=custom,
+               voice_id=voice, language=lang, system_prompt=sys)
+    db.add(f); db.commit(); db.refresh(f)
+    return {"status": "ok", "friend": _friend_public(f)}
+
+
+@router.delete("/friends/{fid}")
+def friends_delete(fid: int, user=Depends(auth.require_user), db: Session = Depends(get_db)):
+    f = db.query(Friend).filter(Friend.id == fid, Friend.user_id == user.id).first()
+    if not f:
+        raise HTTPException(404, "Friend not found.")
+    db.delete(f); db.commit()
+    return {"status": "ok"}
+
+
+# ── image upload (friend avatars + in-chat attachments) ───────────────────────
+@router.post("/upload")
+def upload_image(image: UploadFile = File(...), user=Depends(auth.require_user)):
+    ext = os.path.splitext(image.filename or "")[1].lower()
+    if ext not in (".jpg", ".jpeg", ".png", ".webp", ".gif"):
+        raise HTTPException(400, "Use a JPG, PNG, WEBP or GIF image.")
+    data = image.file.read(8 * 1024 * 1024 + 1)
+    if len(data) > 8 * 1024 * 1024:
+        raise HTTPException(400, "Image is too large (max 8MB).")
+    os.makedirs(_UPLOAD_DIR, exist_ok=True)
+    name = uuid.uuid4().hex + (ext if ext != ".jpeg" else ".jpg")
+    with open(os.path.join(_UPLOAD_DIR, name), "wb") as fh:
+        fh.write(data)
+    return {"status": "ok", "url": f"/api/site/uploads/{name}"}
+
+
+@router.get("/uploads/{name}")
+def serve_upload(name: str):
+    path = os.path.join(_UPLOAD_DIR, os.path.basename(name))
+    if not os.path.isfile(path):
+        raise HTTPException(404, "Not found.")
+    return FileResponse(path)
+
+
 class ChatReq(BaseModel):
     messages: list
     persona: str | None = None
+    friend_id: int | None = None     # if set + owned, server uses its stored persona
+    image: str | None = None         # data URL or /api/site/uploads/.. for in-chat vision
 
 
 @router.post("/chat")
@@ -284,17 +411,31 @@ def chat(body: ChatReq, user=Depends(auth.require_user), db: Session = Depends(g
     cost = int(s.get("cost_chat", "1") or 0)
     if (user.credits or 0) < cost:
         raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
+    # Persona: prefer a stored (saved) friend's prompt over any client-supplied one.
+    persona = body.persona
+    if body.friend_id:
+        fr = db.query(Friend).filter(Friend.id == body.friend_id, Friend.user_id == user.id).first()
+        if fr and fr.system_prompt:
+            persona = fr.system_prompt
     msgs = []
-    if body.persona:
-        msgs.append({"role": "system", "content": str(body.persona)[:2000]})
-    for m in (body.messages or [])[-12:]:
-        if isinstance(m, dict) and m.get("role") in ("user", "assistant") and m.get("content"):
-            msgs.append({"role": m["role"], "content": str(m["content"])[:4000]})
+    if persona:
+        msgs.append({"role": "system", "content": str(persona)[:4000]})
+    history = [m for m in (body.messages or [])[-12:]
+               if isinstance(m, dict) and m.get("role") in ("user", "assistant") and m.get("content")]
+    for i, m in enumerate(history):
+        content = str(m["content"])[:4000]
+        # attach the uploaded image to the latest user turn for in-chat vision
+        if body.image and m["role"] == "user" and i == len(history) - 1:
+            msgs.append({"role": "user", "content": [
+                {"type": "text", "text": content or "Look at this image and respond in character."},
+                {"type": "image_url", "image_url": {"url": body.image}}]})
+        else:
+            msgs.append({"role": m["role"], "content": content})
+    model = (s.get("vision_model") if body.image else None) or s.get("chat_model") or "grok-2-latest"
     try:
         import requests
         r = requests.post(base + "/chat/completions", headers={"Authorization": f"Bearer {key}"},
-                          json={"model": s.get("chat_model") or "grok-2-latest", "messages": msgs,
-                                "max_tokens": 700}, timeout=120)
+                          json={"model": model, "messages": msgs, "max_tokens": 700}, timeout=150)
         r.raise_for_status()
         raw = r.json()["choices"][0]["message"]["content"] or ""
         reply, tts, kind = _parse_friend_reply(raw)

@@ -51,6 +51,25 @@ PACKAGES = [
 ]
 
 
+class Friend(Base):
+    """A user-created AI Friend (companion). Persists per account so a visitor's
+    friends survive across sessions/devices, like the comfyAIcloud theme."""
+    __tablename__ = "ai_friends"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("site_users.id"), index=True)
+    slug = Column(String, index=True)
+    name = Column(String, default="")
+    avatar_url = Column(Text, default="")          # /api/site/uploads/.. or a starter path
+    tagline = Column(String, default="")
+    primary_personality = Column(String, default="")
+    secondary_personality = Column(String, default="")
+    custom_personality = Column(Text, default="")
+    voice_id = Column(String, default="ara")
+    language = Column(String, default="en")
+    system_prompt = Column(Text, default="")       # built server-side from the fields
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
 class SiteSetting(Base):
     """Key/value store for admin-tunable settings (costs, free credits, provider
     + payment keys). Strings; callers parse ints where needed."""
