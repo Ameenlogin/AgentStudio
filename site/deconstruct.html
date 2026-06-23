@@ -4,193 +4,170 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Visual Deconstruction — onaiagents</title>
-<meta name="description" content="Reverse-engineer images into pixel-perfect prompts." />
-<meta name="theme-color" content="#FAF9F5" />
+<meta name="description" content="Reverse-engineer any image into a pixel-perfect, editable prompt with grok-4.3 vision." />
+<meta name="theme-color" content="#F7F5EF" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/styles.css" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  .tw{max-width:1200px;margin:0 auto;padding:0 24px}
-  .crumb{display:flex;align-items:center;gap:8px;margin:30px 0 24px;font-size:12px;font-weight:600;color:var(--faint)}
-  .crumb a{color:var(--text);display:flex;align-items:center;gap:4px}
-  .crumb a:hover{color:var(--ink)}
-  /* glass header card */
-  .ghead{background:rgba(255,255,255,.72);backdrop-filter:blur(28px) saturate(1.4);border:1px solid var(--border);
-    border-radius:22px;padding:24px;box-shadow:var(--shadow-card);margin-bottom:26px}
-  .ghead .top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px}
-  .ghead h1{font-family:var(--font-display);font-weight:500;font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.02em;margin:0;line-height:1.05}
-  .ghead .lead{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:8px}
-  .lbadge{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--green);display:inline-flex;align-items:center;gap:6px}
-  .lbadge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s ease-in-out infinite}
-  @keyframes pulse{50%{opacity:.35}}
-  .desc{font-size:.9rem;color:var(--muted);margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-  .crbadge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:7px;background:var(--ink-wash);
-    border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text);font-family:"JetBrains Mono",monospace}
-  /* controls */
-  .ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:18px}
-  .ctrl{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--elevated);border:1px solid var(--border);border-radius:12px;min-height:44px}
-  .ctrl.click{cursor:pointer;transition:.16s}.ctrl.click:hover{border-color:var(--text)}
-  .tgl-l{font-size:12px;font-weight:700;transition:color .3s}
-  .tgl{position:relative;width:40px;height:20px;border-radius:9999px;background:var(--ink);border:none;cursor:pointer;padding:0;flex-shrink:0}
-  .tgl .knob{position:absolute;left:3px;top:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
-  .tgl.on .knob{transform:translateX(20px)}
-  .run{display:flex;align-items:center;gap:8px;padding:11px 20px;border-radius:12px;background:var(--ink);color:#fff;font-size:.875rem;font-weight:600;border:none;cursor:pointer;min-height:44px;transition:.18s}
-  .run:hover{background:var(--ink-lo);transform:translateY(-1px)}
-  .ghost2{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:12px;background:var(--elevated);border:1px solid var(--border);font-size:.85rem;font-weight:600;color:var(--text);cursor:pointer;min-height:44px}
-  .ghost2:hover{border-color:var(--text)}
-  .meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:16px}
-  .wbox{display:flex;align-items:center;gap:12px;min-width:min(100%,330px);padding:12px 14px;border-radius:14px;background:var(--bg);border:1px solid var(--border)}
-  .wbox .wt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-  .wbox .wm{font-size:11px;color:var(--muted);margin-top:3px}
-  .wbox input[type=range]{flex:1;accent-color:var(--ink);cursor:pointer}
-  .wcount{min-width:42px;padding:9px 10px;border-radius:10px;background:var(--ink-wash);border:1px solid var(--border);font-size:14px;font-weight:700;text-align:center;font-family:"JetBrains Mono",monospace}
-  .qsum{display:inline-flex;align-items:center;gap:8px;padding:12px 14px;border-radius:14px;background:var(--bg);border:1px solid var(--border);font-size:.8125rem;font-weight:600;color:var(--muted)}
-  /* drop zone */
-  .dz{cursor:pointer;text-align:center;padding:48px 20px;margin-bottom:24px;border:1.5px dashed var(--border);border-radius:18px;
-    background:var(--elevated);color:var(--faint);transition:.2s}
-  .dz:hover,.dz.drag{border-color:var(--ink);color:var(--ink);background:#fffdf8}
-  .dz svg{opacity:.7}
-  /* grid */
-  .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-  .rcard{background:var(--elevated);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-  .rthumb{aspect-ratio:1;background:var(--panel)}
-  .rmeta{padding:12px 14px;font-size:12px;color:var(--muted)}
-  .animate-scale-in{animation:scaleIn .6s cubic-bezier(.16,1,.3,1) both}
-  @keyframes scaleIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
-  .btn-spring:active{transform:scale(.96)}
-  @media(max-width:560px){.tw{padding:0 16px}.ghead{padding:18px}}
-  @media(prefers-reduced-motion:reduce){.animate-scale-in,.lbadge::before{animation:none}}
+  :root{
+    --bg:#F7F5EF;--surf:#FFFFFF;--surf2:#F1EEE6;--line:#E4DFD3;--line2:#EEEAE0;
+    --text:#211E18;--t2:#6E6A5F;--faint:#A39E90;--ink:#211E18;
+    --indigo:#4F46E5;--violet:#7C3AED;--teal:#0E8C7F;--amber:#C8841F;--rose:#D5447A;--sky:#2D7FB8;
+    --fd:"Fraunces",Georgia,serif;--fs:"Inter",system-ui,sans-serif;--fu:"Space Grotesk",var(--fs);--fm:"JetBrains Mono",monospace;
+    --sh:0 1px 2px rgba(33,30,24,.05),0 14px 34px -18px rgba(33,30,24,.22);--ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}::selection{background:var(--ink);color:#fff}
+  body{font-family:var(--fs);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+  a{text-decoration:none;color:inherit}.tw{max-width:1180px;margin:0 auto;padding:0 24px}
+
+  .nav{position:sticky;top:0;z-index:60;background:rgba(247,245,239,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--line2)}
+  .nav-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;height:64px;padding:0 24px;gap:14px}
+  .brand{display:flex;align-items:center;gap:9px;font-family:var(--fu);font-weight:700;font-size:17px}
+  .brand img{width:23px;height:23px}.brand .sep{color:var(--faint);font-weight:500}
+  .nav .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .home{color:var(--t2);font-size:.9rem;font-weight:600;padding:8px 12px;border-radius:10px}.home:hover{background:var(--surf2);color:var(--text)}
+  .cr{background:var(--ink);color:#fff;font-family:var(--fm);font-weight:600;font-size:.82rem;padding:8px 13px;border-radius:10px;display:flex;align-items:center;gap:6px}
+
+  .head{background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(45,127,184,.05));border:1px solid #e3ddef;border-radius:20px;padding:24px;margin:30px 0 24px;box-shadow:var(--sh)}
+  .head .top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:16px}
+  .head h1{font-family:var(--fd);font-weight:500;font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.02em;line-height:1.05;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .live{font-family:var(--fu);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);display:inline-flex;align-items:center;gap:6px}
+  .live::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.3}}
+  .desc{color:var(--t2);font-size:.95rem;margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .crb{font-family:var(--fm);font-size:11px;font-weight:600;color:var(--violet);background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);padding:3px 9px;border-radius:7px}
+  .ctrls{display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+  .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:4px;gap:2px}
+  .seg button{font:inherit;font-family:var(--fu);font-size:12.5px;font-weight:700;border:none;background:none;color:var(--t2);padding:7px 13px;border-radius:8px;cursor:pointer;transition:.16s}
+  .seg button.on{background:var(--ink);color:#fff}
+  .runall{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;border:none;font-family:var(--fu);font-weight:700;font-size:.9rem;padding:11px 18px;border-radius:11px;cursor:pointer;transition:.2s var(--ease);box-shadow:0 12px 26px -14px rgba(79,70,229,.6)}
+  .runall:hover{transform:translateY(-1px)}.runall:disabled{opacity:.55;cursor:not-allowed;transform:none}
+  .ghost{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line);color:var(--text);font-weight:600;font-size:.85rem;padding:11px 14px;border-radius:11px;cursor:pointer}
+  .ghost:hover{border-color:var(--ink)}
+
+  /* Drop zone (vanishes when images added) */
+  .drop{position:relative;border:1.5px dashed var(--line);border-radius:20px;background:var(--surf);padding:60px 24px;text-align:center;cursor:pointer;overflow:hidden;transition:.3s var(--ease);margin-bottom:24px}
+  .drop:hover,.drop.drag{border-color:var(--indigo);background:#fbfaff}
+  .drop .scan{position:absolute;left:0;right:0;top:-30%;height:60px;background:linear-gradient(180deg,transparent,rgba(79,70,229,.12),transparent);opacity:0;transition:.3s}
+  .drop:hover .scan{opacity:1;animation:drift 2.4s var(--ease) infinite}
+  @keyframes drift{0%{top:-30%}100%{top:120%}}
+  .drop .di{width:62px;height:62px;border-radius:18px;background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 16px 34px -14px rgba(79,70,229,.55)}
+  .drop .di svg{width:30px;height:30px}
+  .drop h2{font-family:var(--fd);font-weight:500;font-size:22px}
+  .drop p{color:var(--t2);font-size:13.5px;margin-top:4px}
+  .drop.gone{display:none}
+  .addbar{display:none;align-items:center;justify-content:space-between;gap:12px;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:20px}
+  .addbar.show{display:flex}
+  .addbar .qn{font-family:var(--fm);font-size:13px;color:var(--t2)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+  .card{background:var(--surf);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--sh);animation:rise .5s var(--ease) both}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1}}
+  .thumb{position:relative;aspect-ratio:16/10;background-size:cover;background-position:center;background-color:var(--surf2)}
+  .thumb .ov{position:absolute;inset:0;background:rgba(33,30,24,.42);display:none;align-items:center;justify-content:center;color:#fff;font-family:var(--fu);font-weight:600;font-size:13px;gap:8px}
+  .card.scanning .thumb .ov{display:flex}
+  .card.scanning .thumb::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,#fff,transparent);box-shadow:0 0 14px var(--indigo);animation:scan 1.3s var(--ease) infinite}
+  @keyframes scan{0%{top:0}100%{top:100%}}
+  .meta{padding:14px 16px}
+  .meta .nm{font-size:12px;font-weight:600;color:var(--faint);font-family:var(--fm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta .pr{font-size:13px;line-height:1.6;color:var(--text);margin-top:8px;max-height:180px;overflow:auto;white-space:pre-wrap}
+  .meta .copy{margin-top:10px;display:none;align-items:center;gap:6px;font-family:var(--fu);font-size:12px;font-weight:700;color:var(--indigo);cursor:pointer}
+  .card.done .meta .copy{display:inline-flex}
+
+  footer{margin-top:60px;border-top:1px solid var(--line2);padding:30px 0;color:var(--faint);font-size:13px}
+  .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  @media(prefers-reduced-motion:reduce){.drop:hover .scan,.card.scanning .thumb::after,.live::before{animation:none}}
+  @media(max-width:560px){.tw{padding:0 16px}.head{padding:18px}}
 </style>
-<script defer src="/nav.js"></script>
 </head>
 <body>
-<nav>
-  <div class="wrap nav-in">
-    <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
-    <div class="nav-links"><a href="/#tools" class="active">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a></div>
-    <div class="nav-right"><a class="btn-text" href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
-    <button class="menu-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
-  </div>
-  <div class="mobile-menu" id="mm"><a href="/#tools">Tools</a><a href="/agentstudio">AgentStudio</a><a href="/#why">Why</a><a href="/pricing">Pricing</a><a href="#">Sign in</a><a class="btn btn-primary" href="/agentstudio">Open AgentStudio</a></div>
-</nav>
+<nav class="nav"><div class="nav-in">
+  <a class="brand" href="/"><img src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents <span class="sep">/ Deconstruct</span></a>
+  <div class="right"><a class="home" href="/"><i data-lucide="arrow-left" style="width:15px;height:15px;vertical-align:-3px"></i> Home</a><div class="cr"><i data-lucide="gem" style="width:14px;height:14px"></i> <span id="crv">—</span></div></div>
+</div></nav>
 
-<main style="padding-bottom:60px">
-<div class="tw">
-  <div class="crumb">
-    <a href="/"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Home</a>
-    <span>›</span><span>Visual Deconstruction</span>
-  </div>
-
-  <div class="ghead animate-scale-in">
+<main class="tw" style="padding-bottom:40px">
+  <div class="head">
     <div class="top">
       <div>
-        <div class="lead">
-          <h1>Visual Deconstruction</h1>
-          <span class="lbadge">Live</span>
-        </div>
-        <p class="desc">Reverse-engineer images into pixel-perfect prompts with high-reasoning analysis.
-          <span class="crbadge" id="costBadge">5 Cr / Image</span></p>
+        <h1>Visual Deconstruction <span class="live">Live</span></h1>
+        <p class="desc">Reverse-engineer any image into a pixel-perfect, editable prompt with grok-4.3 vision. <span class="crb" id="costB">5 Cr / image</span></p>
       </div>
-      <div class="ctrls" style="margin-top:0">
-        <div class="ctrl click btn-spring" id="modeToggle">
-          <span class="tgl-l" id="lFast" style="color:var(--ink)">Fast</span>
-          <button class="tgl" id="tgl" aria-label="Toggle pro mode"><span class="knob"></span></button>
-          <span class="tgl-l" id="lPro" style="color:var(--faint)">Pro</span>
-        </div>
-        <button class="ghost2 btn-spring" id="exportBtn" style="display:none">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Export TXT
-        </button>
-        <button class="run btn-spring" id="runBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Deconstruct All
-        </button>
+      <div class="ctrls">
+        <div class="seg" id="mode"><button class="on" data-c="5">Fast</button><button data-c="10">Pro</button></div>
+        <button class="ghost" id="exportB" style="display:none"><i data-lucide="download" style="width:15px;height:15px"></i> Export</button>
+        <button class="runall" id="run"><i data-lucide="scan-line" style="width:16px;height:16px"></i> Deconstruct all</button>
       </div>
-    </div>
-    <div class="meta-row">
-      <div class="wbox">
-        <div style="min-width:74px"><div class="wt">Workers</div><div class="wm" id="wmeta">Auto sizing queue</div></div>
-        <input id="wrange" type="range" min="1" max="20" value="4" />
-        <div class="wcount" id="wcount">4</div>
-      </div>
-      <button class="ghost2 btn-spring" id="fxBtn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
-        <span id="fxLabel">Card FX On</span>
-      </button>
-      <div class="qsum" id="qsum">0 queued</div>
     </div>
   </div>
 
-  <div class="dz animate-scale-in" id="dz">
-    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.4"/><path d="M21 15l-4.7-4.7a1.6 1.6 0 0 0-2.2 0L5 19.4"/><path d="M12 6v6"/><path d="M9 9h6"/></svg>
-    <div style="margin-top:12px;font-size:14px;font-weight:600;color:var(--text)">Drop images or click to upload</div>
-    <div style="font-size:12.5px;margin-top:2px">PNG, JPG or WEBP — analyze as many as you like</div>
+  <div class="drop" id="drop">
+    <div class="scan"></div>
+    <div class="di"><i data-lucide="scan-search" style="width:30px;height:30px"></i></div>
+    <h2>Drop images to deconstruct</h2>
+    <p>PNG, JPG or WEBP — analyze as many as you like. Click or drag &amp; drop.</p>
   </div>
-  <input type="file" id="upload" multiple accept="image/*" hidden />
-  <div class="rgrid" id="grid"></div>
-</div>
+  <input type="file" id="file" accept="image/*" multiple hidden />
+
+  <div class="addbar" id="addbar">
+    <span class="qn" id="qn">0 queued</span>
+    <button class="ghost" id="addmore"><i data-lucide="plus" style="width:15px;height:15px"></i> Add more</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
 </main>
 
-<footer><div class="wrap foot-in"><span>© <span id="yr"></span> onaiagents · onaiagents.com</span><span><a href="/" style="color:var(--muted)">← Back to all tools</a></span></div></footer>
+<footer><div class="tw foot"><span>© <span id="yr"></span> onaiagents · Deconstruct</span><span><a href="/" style="color:var(--t2)">← All tools</a></span></div></footer>
 
 <script>
   document.getElementById('yr').textContent=new Date().getFullYear();
-  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mm');mb.onclick=function(){mm.classList.toggle('open')};
-  function toast(m){var d=document.createElement('div');d.className='toast';d.textContent=m;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},300)},2600)}
+  function toast(m){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#211E18;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:200;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)';d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},2800)}
+  fetch('/api/site/config').then(function(r){return r.json()}).then(function(c){window.__OA_USER=!!(c&&c.logged_in);document.getElementById('crv').textContent=(c.logged_in&&c.user)?c.user.credits:'Sign in'}).catch(function(){});
 
-  var pro=false;
-  document.getElementById('modeToggle').onclick=function(){
-    pro=!pro;document.getElementById('tgl').classList.toggle('on',pro);
-    document.getElementById('lFast').style.color=pro?'var(--faint)':'var(--ink)';
-    document.getElementById('lPro').style.color=pro?'var(--ink)':'var(--faint)';
-    document.getElementById('costBadge').textContent=(pro?10:5)+' Cr / Image';
-  };
-  var wr=document.getElementById('wrange');
-  wr.oninput=function(){document.getElementById('wcount').textContent=this.value;document.getElementById('wmeta').textContent=this.value+' parallel workers';};
-  var fx=true;document.getElementById('fxBtn').onclick=function(){fx=!fx;document.getElementById('fxLabel').textContent='Card FX '+(fx?'On':'Off')};
+  document.querySelectorAll('#mode button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#mode button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');document.getElementById('costB').textContent=b.dataset.c+' Cr / image'}});
 
-  var items=[];
-  function addThumbs(files){
-    var grid=document.getElementById('grid');
-    Array.prototype.forEach.call(files,function(f){
-      var c=document.createElement('div');c.className='rcard animate-scale-in';
-      var url=URL.createObjectURL(f);
-      c.innerHTML='<div class="rthumb" style="background-image:url('+url+');background-size:cover;background-position:center"></div><div class="rmeta">'+f.name.slice(0,28)+'</div>';
-      grid.appendChild(c);
-      items.push({file:f,card:c,done:false,prompt:''});
-    });
-    document.getElementById('qsum').textContent=items.length+' queued';
-    document.getElementById('exportBtn').style.display=items.length?'inline-flex':'none';
-  }
-  document.getElementById('dz').onclick=function(){document.getElementById('upload').click()};
-  document.getElementById('dz').ondragover=function(e){e.preventDefault();this.classList.add('drag')};
-  document.getElementById('dz').ondragleave=function(){this.classList.remove('drag')};
-  document.getElementById('dz').ondrop=function(e){e.preventDefault();this.classList.remove('drag');addThumbs(e.dataTransfer.files)};
-  document.getElementById('upload').onchange=function(){addThumbs(this.files)};
+  var items=[],drop=document.getElementById('drop'),grid=document.getElementById('grid'),fileIn=document.getElementById('file');
+  function refresh(){var n=items.length;document.getElementById('qn').textContent=n+(n===1?' image':' images')+' queued';
+    drop.classList.toggle('gone',n>0);document.getElementById('addbar').classList.toggle('show',n>0);
+    document.getElementById('exportB').style.display=items.some(function(i){return i.prompt})?'inline-flex':'none';}
+  function add(files){Array.prototype.forEach.call(files,function(f){
+    if(!/^image\//.test(f.type))return;
+    var url=URL.createObjectURL(f),card=document.createElement('div');card.className='card';
+    card.innerHTML='<div class="thumb" style="background-image:url('+url+')"><div class="ov"><i data-lucide="loader" style="width:16px;height:16px"></i> Analyzing…</div></div><div class="meta"><div class="nm">'+f.name+'</div><div class="pr" style="color:var(--faint)">Ready to deconstruct</div><span class="copy"><i data-lucide="copy" style="width:13px;height:13px"></i> Copy prompt</span></div>';
+    grid.appendChild(card);items.push({file:f,card:card,done:false,prompt:''});
+    card.querySelector('.copy').onclick=function(){var it=items.find(function(x){return x.card===card});if(it&&it.prompt){navigator.clipboard&&navigator.clipboard.writeText(it.prompt);toast('Prompt copied')}};
+  });refresh();if(window.lucide)lucide.createIcons();}
+  drop.onclick=function(){fileIn.click()};
+  document.getElementById('addmore').onclick=function(){fileIn.click()};
+  fileIn.onchange=function(){add(this.files);this.value=''};
+  drop.addEventListener('dragover',function(e){e.preventDefault();drop.classList.add('drag')});
+  drop.addEventListener('dragleave',function(){drop.classList.remove('drag')});
+  drop.addEventListener('drop',function(e){e.preventDefault();drop.classList.remove('drag');add(e.dataTransfer.files)});
+  // allow dropping onto the page once drop zone is gone
+  document.addEventListener('dragover',function(e){e.preventDefault()});
+  document.addEventListener('drop',function(e){if(items.length){e.preventDefault();add(e.dataTransfer.files)}});
+
   function toDataURL(f){return new Promise(function(res){var r=new FileReader();r.onload=function(){res(r.result)};r.readAsDataURL(f)})}
-  document.getElementById('runBtn').onclick=async function(){
+  document.getElementById('run').onclick=async function(){
     if(window.__OA_USER===false){location.href='/login?next=/deconstruct';return}
-    var pending=items.filter(function(i){return !i.done});
-    if(!pending.length){toast('Add some images first');return}
+    var pending=items.filter(function(i){return !i.done});if(!pending.length){toast('Add some images first');return}
     var btn=this;btn.disabled=true;
-    for(var i=0;i<pending.length;i++){var it=pending[i],meta=it.card.querySelector('.rmeta');
-      meta.innerHTML='<span style="color:var(--faint)">Analyzing…</span>';
-      try{var dataURL=await toDataURL(it.file);
-        var r=await fetch('/api/site/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'deconstruct',image:dataURL})});
-        var d=await r.json();
+    for(var i=0;i<pending.length;i++){var it=pending[i],pr=it.card.querySelector('.pr');
+      it.card.classList.add('scanning');pr.style.color='var(--faint)';pr.textContent='Analyzing…';
+      try{var url=await toDataURL(it.file);
+        var r=await fetch('/api/site/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'deconstruct',image:url})});
+        var d=await r.json();it.card.classList.remove('scanning');
         if(r.status===401){location.href='/login?next=/deconstruct';return}
-        if(r.status===402){toast(d.detail||'Not enough credits');meta.textContent='—';break}
-        if(d.status==='ok'&&d.text){it.done=true;it.prompt=d.text;
-          meta.innerHTML='<div style="font-size:12px;line-height:1.55;color:var(--text);max-height:140px;overflow:auto">'+d.text.replace(/[&<]/g,function(m){return m==='&'?'&amp;':'&lt;'})+'</div>';
-        }else{meta.innerHTML='<span style="color:var(--faint)">'+(d.message||'Preview — set a provider in admin')+'</span>';}
-      }catch(e){meta.textContent='Failed'}
+        if(r.status===402){toast(d.detail||'Not enough credits');pr.textContent='—';break}
+        if(d.status==='ok'&&d.text){it.done=true;it.prompt=d.text;it.card.classList.add('done');pr.style.color='var(--text)';pr.textContent=d.text;if(d.credits!=null)document.getElementById('crv').textContent=d.credits;}
+        else{pr.textContent=d.message||'Preview — set provider in admin';}
+      }catch(e){it.card.classList.remove('scanning');pr.textContent='Failed'}
     }
-    btn.disabled=false;
+    btn.disabled=false;refresh();if(window.lucide)lucide.createIcons();
   };
-  document.getElementById('exportBtn').onclick=function(){
-    var txt=items.filter(function(i){return i.prompt}).map(function(i,n){return '# '+(n+1)+' '+i.file.name+'\n'+i.prompt}).join('\n\n');
-    if(!txt){toast('Nothing to export yet');return}
-    var a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);a.download='prompts.txt';a.click();
-  };
+  document.getElementById('exportB').onclick=function(){var t=items.filter(function(i){return i.prompt}).map(function(i,n){return '# '+(n+1)+' '+i.file.name+'\n'+i.prompt}).join('\n\n');if(!t){toast('Nothing to export');return}var a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(t);a.download='prompts.txt';a.click()};
+  if(window.lucide)lucide.createIcons();
 </script>
 </body>
 </html>
