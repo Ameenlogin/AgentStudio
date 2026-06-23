@@ -6,8 +6,10 @@ import hmac
 import uuid
 import hashlib
 import base64
+import secrets
+from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -109,9 +111,83 @@ def config(user=Depends(auth.current_user), db: Session = Depends(get_db)):
         "costs": costs,
         "img_ready": bool(s.get("img_base_url") and s.get("img_api_key")),
         "pay_ready": bool(s.get("razorpay_key_id") and s.get("razorpay_key_secret")),
+        "google_ready": bool(s.get("google_client_id") and s.get("google_client_secret")),
         "packages": PACKAGES,
         "site_name": s.get("site_name", "onaiagents"),
     }
+
+
+# ── Google sign-in (OAuth 2.0 authorization-code flow) ────────────────────────
+def _find_or_create_google_user(db: Session, email: str, name: str) -> SiteUser:
+    email = (email or "").strip().lower()
+    u = db.query(SiteUser).filter(SiteUser.email == email).first()
+    if u:
+        return u
+    free = int(_settings(db).get("free_credits", "100") or 0)
+    u = SiteUser(email=email, name=(name or email.split("@")[0]),
+                 password_hash=auth.hash_password(secrets.token_urlsafe(24)), credits=0)
+    db.add(u); db.commit(); db.refresh(u)
+    if free:
+        _grant(db, u, free, "Welcome credits")
+    return u
+
+
+@router.get("/auth/google/start")
+def google_start(request: Request, next: str = "/", db: Session = Depends(get_db)):
+    s = _settings(db)
+    cid = s.get("google_client_id")
+    if not cid:
+        return RedirectResponse("/login?error=google_not_configured")
+    state = secrets.token_urlsafe(16)
+    nxt = next if (next or "").startswith("/") else "/"
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode({
+        "client_id": cid,
+        "redirect_uri": s.get("google_redirect_uri") or "https://onaiagents.com/api/site/auth/google/callback",
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "access_type": "online",
+        "prompt": "select_account",
+    })
+    resp = RedirectResponse(url)
+    resp.set_cookie("oa_oauth", state + "|" + nxt, max_age=600, httponly=True, samesite="lax", secure=True)
+    return resp
+
+
+@router.get("/auth/google/callback")
+def google_callback(request: Request, db: Session = Depends(get_db)):
+    s = _settings(db)
+    cid, csec = s.get("google_client_id"), s.get("google_client_secret")
+    code = request.query_params.get("code")
+    state = request.query_params.get("state")
+    cookie = request.cookies.get("oa_oauth") or ""
+    saved_state, _, nxt = cookie.partition("|")
+    if not (cid and csec):
+        return RedirectResponse("/login?error=google_not_configured")
+    if not code or not state or not hmac.compare_digest(state, saved_state):
+        return RedirectResponse("/login?error=google_state")
+    try:
+        import requests
+        tok = requests.post("https://oauth2.googleapis.com/token", data={
+            "code": code, "client_id": cid, "client_secret": csec,
+            "redirect_uri": s.get("google_redirect_uri") or "https://onaiagents.com/api/site/auth/google/callback",
+            "grant_type": "authorization_code"}, timeout=30)
+        tok.raise_for_status()
+        access = tok.json().get("access_token")
+        info = requests.get("https://www.googleapis.com/oauth2/v3/userinfo",
+                            headers={"Authorization": f"Bearer {access}"}, timeout=30).json()
+        email = info.get("email")
+        if not email:
+            return RedirectResponse("/login?error=google_email")
+        user = _find_or_create_google_user(db, email, info.get("name") or "")
+    except Exception:
+        return RedirectResponse("/login?error=google_failed")
+    dest = nxt if (nxt or "").startswith("/") else "/"
+    resp = RedirectResponse(dest)
+    resp.set_cookie(auth.COOKIE, auth.make_token(user.id), max_age=60*60*24*30,
+                    httponly=True, samesite="lax", secure=True)
+    resp.delete_cookie("oa_oauth")
+    return resp
 
 
 # ── credit-gated tool call ────────────────────────────────────────────────────
@@ -139,6 +215,8 @@ _PREVIEW = "Live generation isn't enabled yet. Add an AI provider in admin Setti
 def generate(body: GenReq, user=Depends(auth.require_user), db: Session = Depends(get_db)):
     s = _settings(db)
     cost = body.model_cost if body.model_cost else _cost_for(body.tool, body.scale, s)
+    if user.is_admin:
+        cost = 0   # admin = unlimited
     if (user.credits or 0) < cost:
         raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
     base = (s.get("img_base_url") or "").rstrip("/")
@@ -426,7 +504,7 @@ def chat(body: ChatReq, user=Depends(auth.require_user), db: Session = Depends(g
     key = s.get("img_api_key")
     if not (base and key):
         raise HTTPException(503, "Chat isn't enabled yet. Add an AI provider in admin Settings.")
-    cost = int(s.get("cost_chat", "1") or 0)
+    cost = 0 if user.is_admin else int(s.get("cost_chat", "1") or 0)
     if (user.credits or 0) < cost:
         raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
     # Persona: prefer a stored (saved) friend's prompt over any client-supplied one.
@@ -478,7 +556,7 @@ def tts(body: TTSReq, user=Depends(auth.require_user), db: Session = Depends(get
     key = s.get("img_api_key")
     if not (base and key):
         raise HTTPException(503, "Voice isn't enabled yet. Add an AI provider in admin Settings.")
-    cost = 0 if body.preview else _voice_tier_cost(s, body.duration)
+    cost = 0 if (body.preview or user.is_admin) else _voice_tier_cost(s, body.duration)
     if (user.credits or 0) < cost:
         raise HTTPException(402, f"Not enough credits. Need {cost}, you have {user.credits}.")
     slug = (body.voice or "ara").strip().lower()

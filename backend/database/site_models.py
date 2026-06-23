@@ -110,5 +110,11 @@ DEFAULT_SETTINGS = {
     "razorpay_key_secret": "",
     "stripe_pk": "",
     "stripe_sk": "",
+    # Google sign-in (OAuth 2.0). Paste the Client ID + secret from Google Cloud
+    # → "Create OAuth client ID" (Web application). The redirect URI below must be
+    # added there verbatim under "Authorized redirect URIs".
+    "google_client_id": "",
+    "google_client_secret": "",
+    "google_redirect_uri": "https://onaiagents.com/api/site/auth/google/callback",
     "site_name": "onaiagents",
 }

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact — onaiagents</title>
+<meta name="theme-color" content="#FAF9F5" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/styles.css" />
+<style>
+  .legal{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+  .legal h1{font-family:var(--font-display);font-weight:500;font-size:clamp(2rem,4vw,2.7rem);letter-spacing:-.02em}
+  .legal p{color:var(--muted);font-size:15px;line-height:1.7}
+  .legal a{color:var(--ink);text-decoration:underline}
+  .ccard{display:flex;align-items:center;gap:14px;background:var(--elevated,#fff);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-top:18px;max-width:460px}
+  .ccard .ic{width:42px;height:42px;border-radius:11px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ccard .ic svg{width:20px;height:20px}
+  .ccard .t{font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+  .ccard .v{font-weight:600;font-size:15px;margin-top:2px}
+</style>
+</head>
+<body>
+<nav><div class="wrap nav-in">
+  <a class="brand" href="/"><img class="spark" src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents</a>
+  <div class="nav-right"><a class="btn-text" href="/">← Back to site</a></div>
+</div></nav>
+
+<main class="legal">
+  <h1>Contact us</h1>
+  <p style="margin-top:10px">Questions, support, billing, or privacy requests — we’re happy to help. We usually reply within 1–2 business days.</p>
+
+  <a class="ccard" href="mailto:ameenpashasignin@gmail.com">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></span>
+    <span><span class="t">Email</span><span class="v">ameenpashasignin@gmail.com</span></span>
+  </a>
+
+  <div class="ccard">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+    <span><span class="t">Website</span><span class="v">onaiagents.com</span></span>
+  </div>
+
+  <p style="margin-top:26px;font-size:13.5px;color:var(--faint)">For refunds see our <a href="/refund">Refund Policy</a>. For data requests see our <a href="/privacy">Privacy Policy</a>.</p>
+</main>
+
+<footer><div class="wrap foot-in">
+  <span>© <span id="yr"></span> onaiagents · onaiagents.com</span>
+  <span><a href="/terms" style="color:var(--muted)">Terms</a> · <a href="/privacy" style="color:var(--muted)">Privacy</a> · <a href="/refund" style="color:var(--muted)">Refunds</a></span>
+</div></footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body>
+</html>

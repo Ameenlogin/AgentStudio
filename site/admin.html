@@ -78,6 +78,13 @@
       <div class="field"><div class="lbl">Stripe publishable key</div><input type="text" data-k="stripe_pk" placeholder="pk_live_…" /></div>
       <div class="field"><div class="lbl">Stripe secret key</div><input type="password" data-k="stripe_sk" /></div>
     </div>
+    <div class="panel">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 11v4"/><path d="M12 15h4"/><circle cx="12" cy="12" r="10"/></svg>Google sign-in <span class="mut">(OAuth)</span></h3>
+      <div class="field"><div class="lbl">Client ID</div><input type="text" data-k="google_client_id" placeholder="…apps.googleusercontent.com" /></div>
+      <div class="field"><div class="lbl">Client secret</div><input type="password" data-k="google_client_secret" placeholder="GOCSPX-…" /></div>
+      <div class="field"><div class="lbl">Redirect URI (add this in Google Cloud)</div><input type="text" data-k="google_redirect_uri" /></div>
+      <p style="font-size:12px;color:var(--faint)">In Google Cloud → Create OAuth client ID (Web): set JavaScript origin <b>https://onaiagents.com</b> and the redirect URI above. Paste the Client ID + secret here to turn on “Continue with Google”.</p>
+    </div>
   </div>
 
   <div class="savebar">
