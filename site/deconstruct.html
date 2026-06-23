@@ -49,9 +49,6 @@
   /* Drop zone (vanishes when images added) */
   .drop{position:relative;border:1.5px dashed var(--line);border-radius:20px;background:var(--surf);padding:60px 24px;text-align:center;cursor:pointer;overflow:hidden;transition:.3s var(--ease);margin-bottom:24px}
   .drop:hover,.drop.drag{border-color:var(--indigo);background:#fbfaff}
-  .drop .scan{position:absolute;left:0;right:0;top:-30%;height:60px;background:linear-gradient(180deg,transparent,rgba(79,70,229,.12),transparent);opacity:0;transition:.3s}
-  .drop:hover .scan{opacity:1;animation:drift 2.4s var(--ease) infinite}
-  @keyframes drift{0%{top:-30%}100%{top:120%}}
   .drop .di{width:62px;height:62px;border-radius:18px;background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 16px 34px -14px rgba(79,70,229,.55)}
   .drop .di svg{width:30px;height:30px}
   .drop h2{font-family:var(--fd);font-weight:500;font-size:22px}
@@ -67,8 +64,8 @@
   .thumb{position:relative;aspect-ratio:16/10;background-size:cover;background-position:center;background-color:var(--surf2)}
   .thumb .ov{position:absolute;inset:0;background:rgba(33,30,24,.42);display:none;align-items:center;justify-content:center;color:#fff;font-family:var(--fu);font-weight:600;font-size:13px;gap:8px}
   .card.scanning .thumb .ov{display:flex}
-  .card.scanning .thumb::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,#fff,transparent);box-shadow:0 0 14px var(--indigo);animation:scan 1.3s var(--ease) infinite}
-  @keyframes scan{0%{top:0}100%{top:100%}}
+  .card.scanning .ov svg{animation:dspin .9s linear infinite}
+  @keyframes dspin{to{transform:rotate(360deg)}}
   .meta{padding:14px 16px}
   .meta .nm{font-size:12px;font-weight:600;color:var(--faint);font-family:var(--fm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .meta .pr{font-size:13px;line-height:1.6;color:var(--text);margin-top:8px;max-height:180px;overflow:auto;white-space:pre-wrap}
@@ -77,13 +74,13 @@
 
   footer{margin-top:60px;border-top:1px solid var(--line2);padding:30px 0;color:var(--faint);font-size:13px}
   .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
-  @media(prefers-reduced-motion:reduce){.drop:hover .scan,.card.scanning .thumb::after,.live::before{animation:none}}
+  @media(prefers-reduced-motion:reduce){.card.scanning .ov svg,.live::before{animation:none}}
   @media(max-width:560px){.tw{padding:0 16px}.head{padding:18px}}
 </style>
 </head>
 <body>
 <nav class="nav"><div class="nav-in">
-  <a class="brand" href="/"><img src="/spark-ink.png" alt="" onerror="this.style.display='none'"/>onaiagents <span class="sep">/ Deconstruct</span></a>
+  <a class="brand" href="/"><img src="/favicon.svg" alt="" onerror="this.style.display='none'"/>onaiagents <span class="sep">/ Deconstruct</span></a>
   <div class="right"><a class="home" href="/"><i data-lucide="arrow-left" style="width:15px;height:15px;vertical-align:-3px"></i> Home</a><div class="cr"><i data-lucide="gem" style="width:14px;height:14px"></i> <span id="crv">—</span></div></div>
 </div></nav>
 
@@ -103,7 +100,6 @@
   </div>
 
   <div class="drop" id="drop">
-    <div class="scan"></div>
     <div class="di"><i data-lucide="scan-search" style="width:30px;height:30px"></i></div>
     <h2>Drop images to deconstruct</h2>
     <p>PNG, JPG or WEBP — analyze as many as you like. Click or drag &amp; drop.</p>

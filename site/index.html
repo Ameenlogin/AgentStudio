@@ -45,14 +45,11 @@
   .mobile a{padding:12px 0;font-weight:600;color:var(--t2);border-bottom:1px solid var(--line2)}.mobile a:last-child{border:0}.mobile.open{display:flex}
 
   /* hero */
-  .hero{position:relative;text-align:center;padding:84px 0 30px;overflow:hidden}
-  .glow{position:absolute;left:50%;top:-160px;width:920px;height:560px;transform:translateX(-50%);z-index:-1;
-    background:radial-gradient(closest-side,rgba(79,70,229,.14),transparent 70%),radial-gradient(closest-side,rgba(124,58,237,.12),transparent 70%),radial-gradient(closest-side,rgba(45,127,184,.10),transparent 70%);
-    background-position:25% 30%,72% 38%,50% 60%;background-repeat:no-repeat;background-size:55% 75%,55% 75%,50% 70%;filter:blur(14px)}
-  .kick{display:inline-flex;align-items:center;gap:9px;background:var(--surf);border:1px solid var(--line);border-radius:99px;padding:6px 12px 6px 8px;font-size:13px;font-weight:600;color:var(--t2);box-shadow:var(--sh)}
-  .kick .new{background:linear-gradient(120deg,var(--li),var(--indigo));color:#fff;font-family:var(--fu);font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.03em}
-  h1{font-family:var(--fd);font-weight:500;letter-spacing:-.025em;font-size:clamp(2.7rem,6.8vw,5rem);line-height:1.0;margin:24px auto 0;max-width:15ch}
-  h1 .it{font-style:italic;background:linear-gradient(100deg,var(--indigo),var(--violet) 55%,var(--rose));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero{position:relative;text-align:center;padding:96px 0 30px}
+  .hero::before{content:"";position:absolute;left:50%;top:-30px;width:660px;height:320px;transform:translateX(-50%);z-index:-1;background:radial-gradient(closest-side,rgba(79,70,229,.07),transparent 72%);pointer-events:none}
+  .eyebrow{font-family:var(--fu);font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+  h1{font-family:var(--fd);font-weight:500;letter-spacing:-.025em;font-size:clamp(2.7rem,6.8vw,5rem);line-height:1.0;margin:18px auto 0;max-width:15ch}
+  h1 .it{font-style:italic;background:linear-gradient(95deg,var(--indigo),var(--violet));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .sub{max-width:600px;margin:22px auto 0;color:var(--t2);font-size:clamp(1.05rem,1.8vw,1.22rem);line-height:1.6}
   .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
   .micro{margin-top:16px;font-size:13px;color:var(--faint)}
@@ -75,6 +72,8 @@
   @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){.grid{grid-template-columns:1fr}}
   .card{position:relative;display:block;background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:24px;transition:.28s var(--ease);overflow:hidden}
+  .card:not(.feat)::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--indigo),var(--violet));transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease)}
+  .card:hover::before{transform:scaleX(1)}
   .card:hover{transform:translateY(-5px);box-shadow:var(--sh-lg);border-color:#d9d3c5}
   .chip{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;color:#fff}
   .chip svg{width:24px;height:24px;stroke-width:2}
@@ -82,8 +81,8 @@
   .card p{color:var(--t2);font-size:14.5px;line-height:1.58}
   .go{margin-top:16px;font-family:var(--fu);font-size:13.5px;font-weight:700;color:var(--indigo);display:inline-flex;align-items:center;gap:6px}
   .card:hover .go{gap:10px}
-  .new-t{font-family:var(--fu);font-size:10.5px;font-weight:700;color:#fff;background:var(--li);border-radius:99px;padding:2px 9px;letter-spacing:.03em}
-  .free-t{font-family:var(--fu);font-size:10.5px;font-weight:700;color:var(--ink);background:#fff;border-radius:99px;padding:2px 9px}
+  .new-t{font-family:var(--fu);font-size:10px;font-weight:700;color:var(--li);background:transparent;border:1px solid rgba(10,102,194,.4);border-radius:6px;padding:2px 7px;letter-spacing:.04em;text-transform:uppercase}
+  .free-t{font-family:var(--fu);font-size:10px;font-weight:700;color:rgba(255,255,255,.9);background:transparent;border:1px solid rgba(255,255,255,.34);border-radius:6px;padding:2px 7px;letter-spacing:.04em;text-transform:uppercase}
 
   .feat{grid-column:span 3;display:flex;gap:32px;align-items:center;background:linear-gradient(115deg,#211E18,#2c2740 60%,#3a2f52);color:#fff;border:0;padding:38px 36px;border-radius:22px}
   @media(max-width:900px){.feat{grid-column:span 2;flex-direction:column;align-items:flex-start}}
@@ -118,26 +117,23 @@
 <nav id="nav">
   <div class="wrap nav-in">
     <a class="brand" href="/"><img src="/favicon.svg" alt=""/>onaiagents</a>
-    <div class="nav-links">
-      <a href="/playground">Generate</a><a href="/upscaler">Upscale</a><a href="/ai-friends">AI Friends</a><a href="/linkedin">LinkedIn</a><a href="/agentstudio">AgentStudio</a><a href="/pricing">Pricing</a>
-    </div>
     <div class="nav-right">
+      <a class="btn btn-ghost" href="/pricing">Pricing</a>
       <a class="btn btn-ghost" href="/account">Sign in</a>
       <a class="btn btn-ink" href="/agentstudio">Open AgentStudio</a>
     </div>
     <button class="menu-btn" id="mb" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
   </div>
   <div class="mobile" id="mm">
-    <a href="/playground">Generate</a><a href="/upscaler">Upscale</a><a href="/ai-friends">AI Friends</a><a href="/linkedin">LinkedIn Automation</a><a href="/agentstudio">AgentStudio</a><a href="/pricing">Pricing</a><a href="/account">Sign in</a>
+    <a href="/playground">Generate</a><a href="/upscaler">Upscale</a><a href="/ai-friends">AI Friends</a><a href="/linkedin">Social Media Automation</a><a href="/agentstudio">AgentStudio</a><a href="/pricing">Pricing</a><a href="/account">Sign in</a>
   </div>
 </nav>
 
 <header class="hero">
-  <div class="glow"></div>
   <div class="wrap">
-    <span class="kick"><span class="new">NEW</span> LinkedIn Automation — a topic in, a week of posts out</span>
+    <div class="eyebrow">Six AI tools · one workspace</div>
     <h1>AI tools that <span class="it">do the work</span></h1>
-    <p class="sub">Generate images, upscale to 8K, reverse-engineer any picture, build voice AI friends, automate your LinkedIn content, and run an autonomous coding agent. Six focused tools, one workspace.</p>
+    <p class="sub">Generate images, upscale to 8K, reverse-engineer any picture, build voice AI friends, automate your social content, and run an autonomous coding agent — each one fast, focused, and built to produce something you can use.</p>
     <div class="cta">
       <a class="btn btn-ink btn-lg" href="/agentstudio">Open AgentStudio — free</a>
       <a class="btn btn-line btn-lg" href="#tools">Explore the tools</a>
@@ -165,8 +161,8 @@
     </a>
     <a class="card reveal" href="/linkedin">
       <div class="chip" style="background:linear-gradient(135deg,var(--li),var(--indigo))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></div>
-      <h3>LinkedIn Automation <span class="new-t">NEW</span></h3>
-      <p>Give it a topic and your sources; get a batch of ready-to-post drafts across proven formats — each with an image prompt you generate only when a post is worth it. Runs on gpt-oss-120b.</p>
+      <h3>Social Media Automation <span class="new-t">New</span></h3>
+      <p>Give it a topic and your sources; get a batch of ready-to-post drafts across proven formats — each with an image prompt you generate only when a post earns it. Runs on gpt-oss-120b.</p>
       <span class="go">Run the pipeline →</span>
     </a>
     <a class="card reveal" href="/playground">
