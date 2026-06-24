@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Social Media Automation — onaiagents</title>
 <meta name="description" content="Research a topic and generate a batch of ready-to-post social drafts — each with an image prompt you can turn into a visual on demand. Powered by NVIDIA gpt-oss-120b." />
-<meta name="theme-color" content="#F7F5EF" />
+<meta name="theme-color" content="#070A14" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
   :root{
-    --bg:#F7F5EF;--surf:#FFFFFF;--surf2:#F1EEE6;--line:#E4DFD3;--line2:#EEEAE0;
-    --text:#211E18;--t2:#6E6A5F;--faint:#A39E90;--ink:#211E18;--hdr:64px;
-    --indigo:#4F46E5;--violet:#7C3AED;--teal:#0E8C7F;--amber:#C8841F;--rose:#D5447A;--sky:#2D7FB8;--li:#0A66C2;
+    --bg:#070A14;--surf:#0F121C;--surf2:#171B28;--line:#262D3E;--line2:#1B2130;
+    --text:#EDEFF8;--t2:#9CA3BB;--faint:#636A82;--ink:#5D5FEF;--hdr:64px;
+    --indigo:#818CF8;--violet:#C084FC;--teal:#2DD4BF;--amber:#FBBF40;--rose:#FB7BAC;--sky:#56C2F5;--li:#4D9BE8;
     --fd:"Fraunces",Georgia,serif;--fs:"Inter",system-ui,sans-serif;--fu:"Space Grotesk",var(--fs);--fm:"JetBrains Mono",monospace;
     --sh:0 1px 2px rgba(33,30,24,.05),0 14px 34px -18px rgba(33,30,24,.22);--sh-lg:0 30px 60px -28px rgba(33,30,24,.32);--ease:cubic-bezier(.16,1,.3,1);
   }
@@ -23,7 +23,7 @@
   body{font-family:var(--fs);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
   a{text-decoration:none;color:inherit}
 
-  .pg-nav{position:fixed;top:0;left:0;right:0;height:var(--hdr);background:rgba(247,245,239,.85);backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;padding:0 1.3rem;z-index:100}
+  .pg-nav{position:fixed;top:0;left:0;right:0;height:var(--hdr);background:rgba(7,10,20,.85);backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;padding:0 1.3rem;z-index:100}
   .pg-brand{display:flex;align-items:center;gap:10px;font-family:var(--fu);font-weight:700;font-size:1.05rem;letter-spacing:-.01em}
   .pg-brand img{width:24px;height:24px}.pg-brand .sep{color:var(--faint);font-weight:500}
   .pg-links{display:flex;align-items:center;gap:10px}
@@ -44,7 +44,7 @@
   .lbl{font-family:var(--fu);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t2);margin:0 0 9px;display:flex;align-items:center;gap:7px}.lbl svg{width:14px;height:14px}
   .lbl .opt{margin-left:auto;font-weight:600;text-transform:none;letter-spacing:0;color:var(--faint);font-size:11px}
   .ti{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:13px;padding:14px 16px;font:inherit;font-size:15px;color:var(--text);outline:none;transition:.18s}
-  .ti:focus{border-color:var(--li);background:#fff;box-shadow:0 0 0 3px rgba(10,102,194,.1)}
+  .ti:focus{border-color:var(--li);background:var(--surf);box-shadow:0 0 0 3px rgba(10,102,194,.1)}
   .ti.big{font-size:17px;font-weight:500}
   .row{margin-bottom:20px}
   .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
@@ -52,18 +52,18 @@
   .tag button{background:none;border:none;cursor:pointer;color:var(--faint);display:flex;padding:1px;border-radius:50%}.tag button:hover{color:var(--rose)}.tag svg{width:13px;height:13px}
   .srcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
   .src{display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:var(--bg);border-radius:13px;padding:12px 13px;cursor:pointer;transition:.18s var(--ease)}
-  .src:hover{border-color:#cfc8b6}
-  .src.on{border-color:var(--li);background:#f5f9fe}
+  .src:hover{border-color:var(--line)}
+  .src.on{border-color:var(--li);background:var(--surf2)}
   .src .si{width:34px;height:34px;border-radius:10px;background:var(--surf2);display:flex;align-items:center;justify-content:center;color:var(--t2);flex-shrink:0}
   .src.on .si{background:rgba(10,102,194,.12);color:var(--li)}.src .si svg{width:17px;height:17px}
   .src .sn{font-size:13.5px;font-weight:700;line-height:1.1}.src .sd{font-size:11px;color:var(--faint);margin-top:2px}
-  .src .sw{margin-left:auto;width:36px;height:20px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex-shrink:0}.src.on .sw{background:var(--li)}.src .sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.src.on .sw::after{transform:translateX(16px)}
+  .src .sw{margin-left:auto;width:36px;height:20px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex-shrink:0}.src.on .sw{background:var(--li)}.src .sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--surf);transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.src.on .sw::after{transform:translateX(16px)}
   .srcline{display:flex;flex-wrap:wrap;gap:8px}
   .srcchip{display:inline-flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--t2)}
   .srcchip svg{width:14px;height:14px;color:var(--li)}
   .counts{display:flex;gap:8px;flex-wrap:wrap}
   .cnt{flex:1;min-width:60px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;text-align:center;cursor:pointer;font-family:var(--fu);font-weight:700;transition:.18s}
-  .cnt:hover{border-color:#cfc8b6}.cnt.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .cnt:hover{border-color:var(--line)}.cnt.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .cnt small{display:block;font-size:10px;font-weight:600;color:var(--faint);margin-top:2px}.cnt.on small{color:rgba(255,255,255,.7)}
   .keybox{display:none;margin-top:12px}.keybox.on{display:block}
   .keytoggle{font-size:12.5px;font-weight:600;color:var(--li);cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:4px}.keytoggle svg{width:13px;height:13px}
@@ -126,10 +126,11 @@
   @media(prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 <script defer src="/nav.js"></script>
+<style>/*DARKOV*/.btn-ink{background:#F4F5FF!important;color:#070A14!important}.btn-ink:hover{background:#fff!important;box-shadow:0 10px 26px -12px rgba(255,255,255,.4)!important}.pg-credits,.cr{border-radius:999px!important}</style>
 </head>
 <body>
 <nav class="pg-nav">
-  <a class="pg-brand" href="/"><img src="/spark-ink.png" alt=""/>onaiagents <span class="sep">/ Social Media Automation</span></a>
+  <a class="pg-brand" href="/"><img src="/spark-white.svg" alt=""/>onaiagents <span class="sep">/ Social Media Automation</span></a>
   <div class="pg-links">
     <a href="/"><i data-lucide="arrow-left" style="width:15px;height:15px;vertical-align:-3px"></i> Home</a>
     <div class="pg-credits"><i data-lucide="gem"></i> <span id="cr">—</span></div>
@@ -205,7 +206,7 @@
 (function(){
   document.getElementById('yr').textContent=new Date().getFullYear();
   function icons(){if(window.lucide)lucide.createIcons();}
-  function toast(m){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#211E18;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:300;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)';d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},2600);}
+  function toast(m){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#171B28;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;z-index:300;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)';d.textContent=m;document.body.appendChild(d);setTimeout(function(){d.remove()},2600);}
 
   var COSTS={}, costLi=10, costImg=40;
   var ARCH_COLORS={'Collaborative Article':'#0A66C2','Poll':'#7C3AED','Carousel':'#C8841F','Infographic':'#0E8C7F','Tool Spotlight':'#2D7FB8','Future-of-Work Take':'#D5447A','Performance Insight':'#4F46E5'};
