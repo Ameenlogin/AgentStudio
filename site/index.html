@@ -248,7 +248,13 @@
   }
   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
   geo.setAttribute('color',new THREE.BufferAttribute(col,3));
-  var mat=new THREE.PointsMaterial({size:0.14,vertexColors:true,transparent:true,opacity:0.92,blending:THREE.AdditiveBlending,depthWrite:false});
+  // soft ROUND sprite so particles are glowing dots, never squares
+  var spr=document.createElement('canvas');spr.width=spr.height=64;var sx=spr.getContext('2d');
+  var sg=sx.createRadialGradient(32,32,0,32,32,32);
+  sg.addColorStop(0,'rgba(255,255,255,1)');sg.addColorStop(0.35,'rgba(255,255,255,0.55)');sg.addColorStop(1,'rgba(255,255,255,0)');
+  sx.fillStyle=sg;sx.beginPath();sx.arc(32,32,32,0,Math.PI*2);sx.fill();
+  var sprite=new THREE.CanvasTexture(spr);
+  var mat=new THREE.PointsMaterial({size:0.5,map:sprite,vertexColors:true,transparent:true,opacity:0.95,blending:THREE.AdditiveBlending,depthWrite:false});
   var pts=new THREE.Points(geo,mat);scene.add(pts);
   var ico=new THREE.Mesh(new THREE.IcosahedronGeometry(5.2,1),new THREE.MeshBasicMaterial({color:0x7c83ff,wireframe:true,transparent:true,opacity:0.13}));
   scene.add(ico);

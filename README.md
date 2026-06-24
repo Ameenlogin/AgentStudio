@@ -30,6 +30,15 @@ Agent Studio is **free & open source**. If it helps you, **please support the cr
 
 ---
 
+> **📦 This repo is also the full source of [onaiagents.com](https://onaiagents.com)** — a hosted
+> suite of six AI tools (Image Generation, 8K Upscaler, Deconstruct, AI Friends, Social Media
+> Automation, and this Agent Studio). The site front-end is in `site/`, the API is in `backend/`,
+> and this Agent Studio UI is in `frontend/`. **If you're an AI or a developer who wants to
+> understand or edit the whole project, start with [`ARCHITECTURE.md`](ARCHITECTURE.md)** — it maps
+> every tool, endpoint, data model, and the deploy.
+
+---
+
 ## ⚡ Install in one line
 
 You only need **Python 3.10+** installed. Then paste **one command** into your terminal:
