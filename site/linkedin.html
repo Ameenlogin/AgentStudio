@@ -243,7 +243,7 @@
   // pipeline steps
   var STEPS=[
     {b:'Reading the brief',p:'Topic, tags & selected sources',icon:'clipboard-list'},
-    {b:'Researching the topic',p:'Pulling angles from your sources',icon:'radar'},
+    {b:'Searching your sources',p:'Pulling real, current items',icon:'radar'},
     {b:'Drafting posts',p:'Writing across proven formats',icon:'pen-line'},
     {b:'Writing image prompts',p:'A visual brief for each post',icon:'image'},
     {b:'Composing your cards',p:'Formatting for review',icon:'layout-grid'}
@@ -260,13 +260,17 @@
     icons();
   }
 
-  var running=false, t0=0, timer=null, stepIdx=0, fetchDone=false, fetchResult=null, fetchErr=null;
+  var running=false, t0=0, timer=null;
   function setView(v){
     document.getElementById('hero').style.display=v==='setup'?'':'none';
     document.getElementById('setup').style.display=v==='setup'?'':'none';
     document.getElementById('pipe').classList.toggle('on',v==='pipe');
     document.getElementById('out').classList.toggle('on',v==='out');
   }
+  function setStep(i,state,detail){var el=stepsBox.children[i];if(!el)return;el.classList.remove('active','done');el.classList.add(state);el.querySelector('.pct').textContent=state==='done'?'done':'…';if(detail)el.querySelector('.tx p').textContent=detail;}
+  function bar(p){document.getElementById('pbar').style.width=p+'%';}
+  function setMeta(topic){document.getElementById('pipeMeta').textContent='“'+topic.slice(0,60)+'” · elapsed '+((Date.now()-t0)/1000).toFixed(0)+'s';}
+  function pipeFail(msg){if(timer)clearInterval(timer);running=false;bar(100);var pe=document.getElementById('pipeErr');pe.textContent=msg;pe.classList.add('on');}
 
   function runPipeline(){
     if(window.__OA_USER===false){toast('Please sign in to run the pipeline');setTimeout(function(){location.href='/login?next=/linkedin';},800);return;}
@@ -274,62 +278,40 @@
     if(!topic){document.getElementById('topic').focus();showSetupErr('Enter a topic to research.');return;}
     var srcs=SOURCES.filter(function(s){return s.on;}).map(function(s){return s.n;});
     if(!srcs.length){showSetupErr('Turn on at least one source.');return;}
-    running=true;fetchDone=false;fetchResult=null;fetchErr=null;stepIdx=0;
-    buildSteps();setView('pipe');document.getElementById('pipeErr').classList.remove('on');
-    document.getElementById('pipeMeta').textContent='“'+topic.slice(0,60)+'” · elapsed 0s';
-    t0=Date.now();
-    if(timer)clearInterval(timer);
-    timer=setInterval(tick,250);
-    advanceStep(0);
-    // real work
     var key=(nvkey.value||'').trim();
+    running=true;buildSteps();setView('pipe');document.getElementById('pipeErr').classList.remove('on');
+    t0=Date.now();if(timer)clearInterval(timer);timer=setInterval(function(){setMeta(topic);},250);setMeta(topic);
+    setStep(0,'active');bar(8);
+    setTimeout(function(){setStep(0,'done');doResearch(topic,srcs,key);},520);
+  }
+  function doResearch(topic,srcs,key){
+    setStep(1,'active');bar(22);
+    fetch('/api/site/linkedin/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:topic,sources:srcs})})
+      .then(function(r){return r.json().catch(function(){return{};});})
+      .then(function(d){
+        var items=(d&&d.items)||[],n=items.length,by=(d&&d.by_source)||{};
+        var detail=n?('Found '+n+' items · '+Object.keys(by).map(function(k){return k+' '+by[k];}).join(', ')):'No live items — writing from the topic';
+        setStep(1,'done',detail);bar(44);doGenerate(topic,srcs,key,items);
+      })
+      .catch(function(){setStep(1,'done','Research skipped — writing from the topic');bar(44);doGenerate(topic,srcs,key,[]);});
+  }
+  function doGenerate(topic,srcs,key,research){
+    setStep(2,'active');bar(58);
     fetch('/api/site/linkedin/run',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({topic:topic,tags:tags,sources:srcs,count:count,api_key:key||undefined})})
+      body:JSON.stringify({topic:topic,tags:tags,sources:srcs,count:count,research:research,api_key:key||undefined})})
       .then(function(r){return r.json().then(function(d){return {s:r.status,d:d};});})
       .then(function(o){
-        if(o.s===401){fetchErr='Please sign in to run the pipeline.';}
-        else if(o.s===402){fetchErr=(o.d&&o.d.detail)||'Not enough credits.';}
-        else if(o.s===503){fetchErr=(o.d&&o.d.detail)||'NVIDIA key not set.';}
-        else if(o.d&&o.d.status==='ok'){fetchResult=o.d;}
-        else {fetchErr=(o.d&&(o.d.detail||o.d.message))||'Pipeline failed.';}
-        fetchDone=true;
-      }).catch(function(){fetchErr='Network error. Please try again.';fetchDone=true;});
-  }
-
-  function advanceStep(i){
-    var els=stepsBox.children;
-    if(els[i-1]){els[i-1].classList.remove('active');els[i-1].classList.add('done');els[i-1].querySelector('.pct').textContent='done';}
-    if(els[i]){els[i].classList.add('active');els[i].querySelector('.pct').textContent='…';}
-    stepIdx=i;
-  }
-
-  function tick(){
-    var el=(Date.now()-t0)/1000;
-    var topic=document.getElementById('topic').value.trim();
-    document.getElementById('pipeMeta').textContent='“'+topic.slice(0,60)+'” · elapsed '+el.toFixed(0)+'s';
-    // progress: pace through steps; hold near 90% until the real call returns
-    var target;
-    if(!fetchDone){
-      // step through the first 4 stages on a gentle timeline
-      var planned=Math.min(4, Math.floor(el/3));   // ~3s per visible stage
-      if(planned>stepIdx) advanceStep(planned);
-      target=Math.min(90, 12+el*9);
-    } else {
-      // finish: complete all steps then go to output
-      if(fetchErr){clearInterval(timer);running=false;document.getElementById('pbar').style.width='100%';
-        var pe=document.getElementById('pipeErr');pe.textContent=fetchErr;pe.classList.add('on');
-        // restore to setup after a beat so the user can retry
-        return;}
-      // mark remaining steps done
-      var els=stepsBox.children;
-      for(var i=0;i<els.length;i++){els[i].classList.remove('active');els[i].classList.add('done');els[i].querySelector('.pct').textContent='done';}
-      target=100;
-      clearInterval(timer);
-      document.getElementById('pbar').style.width='100%';
-      setTimeout(function(){running=false;renderCards(fetchResult);},520);
-      return;
-    }
-    document.getElementById('pbar').style.width=target+'%';
+        if(o.s===401){pipeFail('Please sign in to run the pipeline.');return;}
+        if(o.s===402){pipeFail((o.d&&o.d.detail)||'Not enough credits.');return;}
+        if(o.s===503){pipeFail((o.d&&o.d.detail)||'Add an NVIDIA key in settings to generate.');return;}
+        if(o.d&&o.d.status==='ok'){
+          setStep(2,'done');setStep(3,'done');setStep(4,'active');bar(92);
+          if(timer)clearInterval(timer);
+          setTimeout(function(){setStep(4,'done');bar(100);running=false;renderCards(o.d);},520);
+          return;
+        }
+        pipeFail((o.d&&(o.d.detail||o.d.message))||'Pipeline failed.');
+      }).catch(function(){pipeFail('Network error. Please try again.');});
   }
 
   function renderCards(res){

@@ -637,12 +637,81 @@ def _linkedin_ready(s: dict, db: Session) -> bool:
         return False
 
 
+def _research_sources(topic: str, source_labels):
+    """Best-effort REAL research from public, keyless sources (Reddit search +
+    Google News RSS). Resilient: any source failing is skipped. Returns a list
+    of {source, title, url} used to ground generation."""
+    items, seen = [], set()
+    labels = [str(x).lower() for x in (source_labels or [])]
+    try:
+        import requests
+        from urllib.parse import quote_plus
+    except Exception:
+        return items
+    H = {"User-Agent": "Mozilla/5.0 (onaiagents-research)"}
+    q = quote_plus(topic)
+
+    def add(src, title, url):
+        t = (title or "").strip()
+        if t and t.lower() not in seen:
+            seen.add(t.lower())
+            items.append({"source": src, "title": t[:200], "url": (url or "")[:400]})
+
+    if any("reddit" in l for l in labels):
+        try:
+            r = requests.get(f"https://www.reddit.com/search.json?q={q}&sort=top&t=year&limit=7",
+                             headers=H, timeout=12)
+            for c in r.json().get("data", {}).get("children", [])[:7]:
+                d = c.get("data", {})
+                add("Reddit", d.get("title"), "https://reddit.com" + (d.get("permalink") or ""))
+        except Exception:
+            pass
+
+    news = []
+    if any(("newsletter" in l or "blog" in l or "news" in l) for l in labels):
+        news.append((topic, "News & blogs"))
+    if any("product" in l for l in labels):
+        news.append((topic + " new launch", "Product Hunt"))
+    for term, label in news:
+        try:
+            import requests
+            from urllib.parse import quote_plus
+            from bs4 import BeautifulSoup
+            rr = requests.get(
+                f"https://news.google.com/rss/search?q={quote_plus(term)}+when:45d&hl=en-US&gl=US&ceid=US:en",
+                headers=H, timeout=12)
+            soup = BeautifulSoup(rr.content, "xml")
+            for it in soup.find_all("item")[:7]:
+                add(label, it.title.text if it.title else "", it.link.text if it.link else "")
+        except Exception:
+            pass
+    return items[:26]
+
+
+class ResearchReq(BaseModel):
+    topic: str
+    sources: list | None = None
+
+
+@router.post("/linkedin/research")
+def linkedin_research(body: ResearchReq, user=Depends(auth.require_user)):
+    topic = (body.topic or "").strip()[:300]
+    if not topic:
+        raise HTTPException(400, "Enter a topic.")
+    items = _research_sources(topic, body.sources)
+    by_src = {}
+    for it in items:
+        by_src[it["source"]] = by_src.get(it["source"], 0) + 1
+    return {"status": "ok", "items": items, "count": len(items), "by_source": by_src}
+
+
 class LinkedInReq(BaseModel):
     topic: str
     tags: list | None = None
     sources: list | None = None
     count: int | None = 4
     api_key: str | None = None     # optional BYOK NVIDIA key
+    research: list | None = None   # items from /linkedin/research (server re-fetches if absent)
 
 
 @router.post("/linkedin/run")
@@ -661,6 +730,20 @@ def linkedin_run(body: LinkedInReq, user=Depends(auth.require_user), db: Session
     model = s.get("linkedin_model") or "openai/gpt-oss-120b"
     tags = ", ".join([str(t)[:40] for t in (body.tags or [])][:12])
     sources = ", ".join([str(x)[:40] for x in (body.sources or [])][:10]) or "Reddit, AI newsletters, tech blogs, Product Hunt"
+    # Real research: prefer what the client gathered; otherwise fetch now.
+    research = body.research if isinstance(body.research, list) else None
+    if not research:
+        research = _research_sources(topic, body.sources)
+    research_block = ""
+    if research:
+        lines = []
+        for it in research[:18]:
+            if isinstance(it, dict) and it.get("title"):
+                lines.append(f"- [{it.get('source','web')}] {it['title']}")
+        if lines:
+            research_block = ("REAL, CURRENT SOURCE MATERIAL gathered for this topic — ground every post in "
+                              "these real items; reference concrete specifics, never contradict them:\n"
+                              + "\n".join(lines) + "\n\n")
     sys_prompt = (
         "You are a senior LinkedIn ghostwriter for ambitious generalists who want to understand where AI and tech are going "
         "and how to get ahead. Write in a clear, concrete, non-hype voice. No buzzwords, no 'game-changer' or 'revolutionize', "
@@ -668,6 +751,7 @@ def linkedin_run(body: LinkedInReq, user=Depends(auth.require_user), db: Session
         f"Draw on the style and topics of these sources: {sources}."
     )
     user_prompt = (
+        research_block +
         f"Topic to research and write about: {topic}\n"
         f"Angle / tags: {tags or '(none)'}\n"
         f"Produce exactly {count} distinct LinkedIn posts, each a DIFFERENT archetype chosen from: {', '.join(_LI_ARCHETYPES)}.\n"
@@ -691,7 +775,8 @@ def linkedin_run(body: LinkedInReq, user=Depends(auth.require_user), db: Session
             raise ValueError("model returned no usable posts")
         if cost:
             _grant(db, user, -cost, f"linkedin {len(posts)} posts")
-        return {"status": "ok", "posts": posts, "topic": topic, "credits": user.credits}
+        return {"status": "ok", "posts": posts, "topic": topic,
+                "researched": len(research or []), "credits": user.credits}
     except HTTPException:
         raise
     except Exception as e:
