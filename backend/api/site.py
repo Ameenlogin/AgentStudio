@@ -421,10 +421,13 @@ def _friend_public(f: Friend):
 def _friend_rules_block(s: dict) -> str:
     """Admin-editable system-prompt rules appended live to every friend persona."""
     out = []
-    for key, label in (("friend_identity_rules", "Studio identity rules"),
-                       ("friend_conversation_rules", "Studio conversation rules"),
-                       ("friend_voice_rules", "Studio voice rules"),
-                       ("friend_output_rules", "Studio output rules")):
+    for key, label in (("friend_identity_rules", "Identity rules"),
+                       ("friend_conversation_rules", "Conversation rules"),
+                       ("friend_voice_rules", "Voice rules"),
+                       ("friend_effect_inventory", "Approved delivery cues"),
+                       ("friend_vision_rules", "Vision rules"),
+                       ("friend_sound_rules", "Sound & action rules"),
+                       ("friend_output_rules", "Output rules")):
         v = (s.get(key) or "").strip()
         if v:
             out.append(f"\n\n{label}:\n{v}")
@@ -622,8 +625,12 @@ def _parse_json_array(raw: str):
 
 
 def _nvidia_creds(s: dict, body_key, db: Session):
-    """Resolve NVIDIA NIM base + key: BYOK → site setting → AgentStudio key."""
+    """Resolve the generation provider for Social Media Automation, in order:
+    BYOK NVIDIA key → site NVIDIA key → AgentStudio NVIDIA key (all → gpt-oss-120b),
+    then a final fallback to the site's configured provider (e.g. xAI/grok) so the
+    tool works out of the box. Returns (base_url, key, model)."""
     base = (s.get("nvidia_base_url") or "https://integrate.api.nvidia.com/v1").rstrip("/")
+    model = s.get("linkedin_model") or "openai/gpt-oss-120b"
     key = (body_key or "").strip() or (s.get("nvidia_api_key") or "").strip()
     if not key:
         try:
@@ -634,16 +641,23 @@ def _nvidia_creds(s: dict, body_key, db: Session):
                     if k and k.strip():
                         key = k.strip()
                         break
-                if (row.base_url or "").strip() and not (s.get("nvidia_base_url") or "").strip():
+                if key and (row.base_url or "").strip() and not (s.get("nvidia_base_url") or "").strip():
                     base = row.base_url.rstrip("/")
         except Exception:
             pass
-    return base, key
+    if not key:
+        # Final fallback: the site's main provider (xAI/grok) — already configured.
+        xbase, xkey = (s.get("img_base_url") or "").strip(), (s.get("img_api_key") or "").strip()
+        if xbase and xkey:
+            return xbase.rstrip("/"), xkey, (s.get("chat_model") or "grok-4.3")
+    return base, key, model
 
 
 def _linkedin_ready(s: dict, db: Session) -> bool:
     if (s.get("nvidia_api_key") or "").strip():
         return True
+    if (s.get("img_base_url") or "").strip() and (s.get("img_api_key") or "").strip():
+        return True   # falls back to the site provider (xAI/grok)
     try:
         from database.models import Setting
         row = db.query(Setting).first()
@@ -739,10 +753,9 @@ def linkedin_run(body: LinkedInReq, user=Depends(auth.require_user), db: Session
     topic = (body.topic or "").strip()[:300]
     if not topic:
         raise HTTPException(400, "Enter a topic to research.")
-    base, key = _nvidia_creds(s, body.api_key, db)
-    if not key:
-        raise HTTPException(503, "Add an NVIDIA key in this tool's settings (or set the AgentStudio key) to run the pipeline.")
-    model = s.get("linkedin_model") or "openai/gpt-oss-120b"
+    base, key, model = _nvidia_creds(s, body.api_key, db)
+    if not (base and key):
+        raise HTTPException(503, "Add an NVIDIA key in this tool's settings (or configure a provider) to run the pipeline.")
     tags = ", ".join([str(t)[:40] for t in (body.tags or [])][:12])
     sources = ", ".join([str(x)[:40] for x in (body.sources or [])][:10]) or "Reddit, AI newsletters, tech blogs, Product Hunt"
     # Real research: prefer what the client gathered; otherwise fetch now.

@@ -58,6 +58,9 @@
   .src.on .si{background:rgba(10,102,194,.12);color:var(--li)}.src .si svg{width:17px;height:17px}
   .src .sn{font-size:13.5px;font-weight:700;line-height:1.1}.src .sd{font-size:11px;color:var(--faint);margin-top:2px}
   .src .sw{margin-left:auto;width:36px;height:20px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex-shrink:0}.src.on .sw{background:var(--li)}.src .sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.src.on .sw::after{transform:translateX(16px)}
+  .srcline{display:flex;flex-wrap:wrap;gap:8px}
+  .srcchip{display:inline-flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--t2)}
+  .srcchip svg{width:14px;height:14px;color:var(--li)}
   .counts{display:flex;gap:8px;flex-wrap:wrap}
   .cnt{flex:1;min-width:60px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;text-align:center;cursor:pointer;font-family:var(--fu);font-weight:700;transition:.18s}
   .cnt:hover{border-color:#cfc8b6}.cnt.on{background:var(--ink);border-color:var(--ink);color:#fff}
@@ -152,8 +155,8 @@
       <div class="tags" id="tags"></div>
     </div>
     <div class="row">
-      <label class="lbl"><i data-lucide="rss"></i> Sources <span class="opt">toggle what to draw from</span></label>
-      <div class="srcs" id="srcs"></div>
+      <label class="lbl"><i data-lucide="radar"></i> Sources <span class="opt">searched automatically for every topic</span></label>
+      <div class="srcline" id="srcs"></div>
     </div>
     <div class="row">
       <label class="lbl"><i data-lucide="layers"></i> How many posts</label>
@@ -207,21 +210,21 @@
   var COSTS={}, costLi=10, costImg=40;
   var ARCH_COLORS={'Collaborative Article':'#0A66C2','Poll':'#7C3AED','Carousel':'#C8841F','Infographic':'#0E8C7F','Tool Spotlight':'#2D7FB8','Future-of-Work Take':'#D5447A','Performance Insight':'#4F46E5'};
 
-  // sources
+  // sources — searched automatically for every topic (no toggles)
   var SOURCES=[
-    {id:'reddit',n:'Reddit',d:'real discussions',icon:'message-circle',on:true},
-    {id:'newsletters',n:'AI Newsletters',d:'what shipped',icon:'mail',on:true},
-    {id:'blogs',n:'Tech Blogs',d:'deeper takes',icon:'newspaper',on:true},
-    {id:'producthunt',n:'Product Hunt',d:'new launches',icon:'rocket',on:true},
-    {id:'x',n:'X / Twitter',d:'live signal',icon:'at-sign',on:false}
+    {n:'Reddit',icon:'message-circle'},
+    {n:'AI Newsletters',icon:'mail'},
+    {n:'Tech Blogs',icon:'newspaper'},
+    {n:'Product Hunt',icon:'rocket'},
+    {n:'Google News',icon:'globe'}
   ];
   var srcBox=document.getElementById('srcs');
   SOURCES.forEach(function(s){
-    var el=document.createElement('div');el.className='src'+(s.on?' on':'');el.dataset.id=s.id;
-    el.innerHTML='<span class="si"><i data-lucide="'+s.icon+'"></i></span><div><div class="sn">'+s.n+'</div><div class="sd">'+s.d+'</div></div><span class="sw"></span>';
-    el.onclick=function(){s.on=!s.on;el.classList.toggle('on',s.on);};
+    var el=document.createElement('span');el.className='srcchip';
+    el.innerHTML='<i data-lucide="'+s.icon+'"></i> '+s.n;
     srcBox.appendChild(el);
   });
+  function allSources(){return SOURCES.map(function(s){return s.n;});}
 
   // tags
   var tags=[],tagBox=document.getElementById('tags'),tagIn=document.getElementById('tagInput');
@@ -276,8 +279,7 @@
     if(window.__OA_USER===false){toast('Please sign in to run the pipeline');setTimeout(function(){location.href='/login?next=/linkedin';},800);return;}
     var topic=document.getElementById('topic').value.trim();
     if(!topic){document.getElementById('topic').focus();showSetupErr('Enter a topic to research.');return;}
-    var srcs=SOURCES.filter(function(s){return s.on;}).map(function(s){return s.n;});
-    if(!srcs.length){showSetupErr('Turn on at least one source.');return;}
+    var srcs=allSources();
     var key=(nvkey.value||'').trim();
     running=true;buildSteps();setView('pipe');document.getElementById('pipeErr').classList.remove('on');
     t0=Date.now();if(timer)clearInterval(timer);timer=setInterval(function(){setMeta(topic);},250);setMeta(topic);
