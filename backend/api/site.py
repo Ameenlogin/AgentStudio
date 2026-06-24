@@ -418,6 +418,19 @@ def _friend_public(f: Friend):
             "voice": f.voice_id, "language": f.language}
 
 
+def _friend_rules_block(s: dict) -> str:
+    """Admin-editable system-prompt rules appended live to every friend persona."""
+    out = []
+    for key, label in (("friend_identity_rules", "Studio identity rules"),
+                       ("friend_conversation_rules", "Studio conversation rules"),
+                       ("friend_voice_rules", "Studio voice rules"),
+                       ("friend_output_rules", "Studio output rules")):
+        v = (s.get(key) or "").strip()
+        if v:
+            out.append(f"\n\n{label}:\n{v}")
+    return "".join(out)
+
+
 class FriendReq(BaseModel):
     name: str
     avatar_url: str | None = ""
@@ -514,9 +527,11 @@ def chat(body: ChatReq, user=Depends(auth.require_user), db: Session = Depends(g
         fr = db.query(Friend).filter(Friend.id == body.friend_id, Friend.user_id == user.id).first()
         if fr and fr.system_prompt:
             persona = fr.system_prompt
+    if persona:
+        persona = str(persona) + _friend_rules_block(s)   # live admin rules
     msgs = []
     if persona:
-        msgs.append({"role": "system", "content": str(persona)[:4000]})
+        msgs.append({"role": "system", "content": persona[:5000]})
     history = [m for m in (body.messages or [])[-12:]
                if isinstance(m, dict) and m.get("role") in ("user", "assistant") and m.get("content")]
     for i, m in enumerate(history):

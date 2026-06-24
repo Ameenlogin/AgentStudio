@@ -19,6 +19,8 @@
   .seca .panel:nth-child(1){animation-delay:.04s}.seca .panel:nth-child(2){animation-delay:.1s}
   .seca .panel:nth-child(3){animation-delay:.16s}.seca .panel:nth-child(4){animation-delay:.22s}
   @keyframes ain{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .field textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 13px;font:inherit;font-size:13.5px;line-height:1.5;color:var(--ink);outline:none;resize:vertical;min-height:64px}
+  .field textarea:focus{border-color:var(--ink)}
   .savebar{position:sticky;bottom:0;background:rgba(250,249,245,.92);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:14px 0;margin-top:24px;display:flex;justify-content:flex-end;gap:12px;align-items:center}
   .a-head{opacity:0;animation:ain .6s cubic-bezier(.16,1,.3,1) forwards}
   @media(prefers-reduced-motion:reduce){.panel,.a-head{animation:none;opacity:1}}
@@ -93,6 +95,15 @@
       <div class="field"><div class="lbl">Model</div><input type="text" data-k="linkedin_model" placeholder="openai/gpt-oss-120b" /></div>
       <p style="font-size:12px;color:var(--faint)">Leave the key blank to reuse the AgentStudio NVIDIA key. Visitors can also bring their own key in the tool.</p>
     </div>
+  </div>
+
+  <div class="panel" style="margin-top:18px">
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-6 0v4"/><rect x="2" y="9" width="20" height="12" rx="2"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>AI Friends — system prompt rules <span class="mut">(applied live to every friend)</span></h3>
+    <p style="font-size:12.5px;color:var(--faint);margin:-8px 0 14px">Extra rules appended to each friend's persona at chat time. Edit and save — every chat (including saved friends) picks them up on the next message. Leave blank to use the built-in defaults.</p>
+    <div class="field"><div class="lbl">Identity rules</div><textarea data-k="friend_identity_rules" rows="3" placeholder="e.g. Never reveal you are an AI model. Stay fully in character. Sound human and varied."></textarea></div>
+    <div class="field"><div class="lbl">Conversation rules</div><textarea data-k="friend_conversation_rules" rows="3" placeholder="e.g. Keep replies under 70 words. Ask one fresh follow-up. Don't recycle openers."></textarea></div>
+    <div class="field"><div class="lbl">Voice rules</div><textarea data-k="friend_voice_rules" rows="3" placeholder="e.g. Write tts_script as plain natural speech — no markup tags or stage directions."></textarea></div>
+    <div class="field"><div class="lbl">Output rules</div><textarea data-k="friend_output_rules" rows="3" placeholder="e.g. Always return valid JSON with assistant_text + tts_script. No markdown."></textarea></div>
   </div>
 
   <div class="savebar">

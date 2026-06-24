@@ -122,5 +122,12 @@ DEFAULT_SETTINGS = {
     "nvidia_api_key": "",
     "linkedin_model": "openai/gpt-oss-120b",
     "cost_linkedin": "10",   # credits per generated post
+    # AI Friends — admin-editable system-prompt rules (ported from the comfyAIcloud
+    # theme). Appended live to every friend's persona at chat time, so edits apply
+    # to all friends instantly. Empty = use the built-in defaults only.
+    "friend_identity_rules": "",
+    "friend_conversation_rules": "",
+    "friend_voice_rules": "",
+    "friend_output_rules": "",
     "site_name": "onaiagents",
 }
