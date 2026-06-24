@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Settings as Cog, MessageSquare, Trash2, Cpu, PanelLeftClose, PanelLeft, Puzzle, Heart } from 'lucide-react';
+import { Plus, Settings as Cog, MessageSquare, Trash2, Cpu, PanelLeftClose, PanelLeft, Puzzle, Heart, User } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Message } from '../store/useStore';
 import { api } from '../lib/api';
@@ -14,7 +14,7 @@ export default function Sidebar() {
   const {
     view, setView, newChat, conversations, setConversations,
     currentId, setCurrentId, loadMessages, swarmStatus, selectedModel,
-    skills, setSkills,
+    skills, setSkills, account,
   } = useStore();
   const [collapsed, setCollapsed] = useState(false);
   const [showSkills, setShowSkills] = useState(false);
@@ -150,6 +150,20 @@ export default function Sidebar() {
         >
           <Cog className="w-4 h-4" /> Settings
         </button>
+        {account && (
+          <a
+            href="/account"
+            title="Your account · credits"
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-[var(--color-muted)] hover:bg-[var(--color-elevated)]/60 hover:text-[var(--color-text)] transition"
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <User className="w-4 h-4 flex-shrink-0" /> <span className="truncate">Account</span>
+            </span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-[var(--color-copper-wash)] text-[var(--color-copper-lo)] flex-shrink-0">
+              {account.credits.toLocaleString()} cr
+            </span>
+          </a>
+        )}
         <a
           href={SUPPORT_URL}
           target="_blank"

@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from database.database import get_db
 from database.site_models import SiteUser, CreditTxn, SiteSetting, Order, Friend, PACKAGES, DEFAULT_SETTINGS
 from services import site_auth as auth
+from services.studio_billing import usage_by_user
 
 _UPLOAD_DIR = os.path.join(os.path.dirname(os.environ.get("AGENT_STUDIO_DB") or "/data/agent_studio.db") or ".", "uploads")
 
@@ -115,6 +116,10 @@ def config(user=Depends(auth.current_user), db: Session = Depends(get_db)):
         "linkedin_ready": _linkedin_ready(s, db),
         "packages": PACKAGES,
         "site_name": s.get("site_name", "onaiagents"),
+        # Hosted Agent Studio is login-gated + billed per session; the app reads
+        # this to decide whether to bounce signed-out visitors to /login.
+        "studio_requires_login": bool(os.environ.get("AGENT_STUDIO_HOSTED")),
+        "cost_agentstudio_session": int(s.get("cost_agentstudio_session", "10") or 0),
     }
 
 
@@ -891,7 +896,16 @@ def admin_settings_save(body: SettingsUpdate, admin=Depends(auth.require_admin),
 @router.get("/admin/users")
 def admin_users(admin=Depends(auth.require_admin), db: Session = Depends(get_db)):
     rows = db.query(SiteUser).order_by(SiteUser.created_at.desc()).limit(500).all()
-    return {"users": [{**_public_user(u), "created_at": u.created_at.isoformat() if u.created_at else None} for u in rows]}
+    usage = usage_by_user(db)
+    out = []
+    for u in rows:
+        us = usage.get(u.id, {})
+        out.append({**_public_user(u),
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
+                    "studio_sessions": us.get("sessions", 0),
+                    "studio_credits": us.get("credits", 0),
+                    "studio_last_active": us.get("last_active")})
+    return {"users": out}
 
 
 class GrantReq(BaseModel):

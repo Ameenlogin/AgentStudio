@@ -35,6 +35,10 @@ class Setting(Base):
 class Conversation(Base):
     __tablename__ = "conversations"
     id = Column(Integer, primary_key=True, index=True)
+    # Owner account (site_users.id). Nullable for the keyless desktop install and
+    # for rows created before multi-tenant isolation; the hosted site always sets
+    # it and every conversation query is filtered by the signed-in user.
+    user_id = Column(Integer, index=True, nullable=True)
     title = Column(String, default="New chat")
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)

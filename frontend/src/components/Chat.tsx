@@ -8,6 +8,7 @@ import {
 import { useStore } from '../store/useStore';
 import type { Message, Block, ToolBlock } from '../store/useStore';
 import { api, getCreds, credKeys, hasLocalKey } from '../lib/api';
+import { loginUrl } from '../lib/session';
 import Blocks from './Blocks';
 import AgentOrb from './AgentOrb';
 import PermissionDialog from './PermissionDialog';
@@ -244,11 +245,12 @@ export default function Chat() {
       const res = await fetch(api('/api/chat/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',   // carry the site session cookie (hosted login)
         body: JSON.stringify({
           messages: history,
           model_name: selectedModel,
           skill,
-          // Browser-local credentials travel with the request (no shared key).
+          // Your own NVIDIA key travels with the request (no shared key).
           api_keys: credKeys(),
           base_url: getCreds().base_url || undefined,
         }),
@@ -256,9 +258,15 @@ export default function Chat() {
       });
 
       if (!res.ok) {
+        // Session expired / signed out → back to sign-in.
+        if (res.status === 401) { location.href = loginUrl(); return; }
         const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
-        appendText(aid, `**Can't reach the model.** ${err.detail || ''}`);
-        if (res.status === 400) setHasKey(false);
+        if (res.status === 402) {
+          appendText(aid, `**Out of credits.** ${err.detail || ''}\n\n[Get more credits →](/pricing)`);
+        } else {
+          appendText(aid, `**Can't reach the model.** ${err.detail || ''}`);
+          if (res.status === 400) setHasKey(false);
+        }
         setBusy(false);
         return;
       }

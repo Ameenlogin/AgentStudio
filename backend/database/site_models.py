@@ -70,6 +70,22 @@ class Friend(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
+class AgentStudioSession(Base):
+    """One Agent Studio working session for a logged-in account.
+
+    A session opens on the user's first agent run and stays current until they go
+    idle for the gap window (see ``services.studio_billing``). The per-session
+    credit cost is charged once, when the session opens — reloads inside the
+    window don't re-charge. Doubles as the admin usage ledger (count + recency +
+    credits spent in Agent Studio)."""
+    __tablename__ = "agentstudio_sessions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("site_users.id"), index=True)
+    cost = Column(Integer, default=0)            # credits charged to open it
+    started_at = Column(DateTime, default=datetime.datetime.utcnow)
+    last_active_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+
+
 class SiteSetting(Base):
     """Key/value store for admin-tunable settings (costs, free credits, provider
     + payment keys). Strings; callers parse ints where needed."""
@@ -88,6 +104,10 @@ DEFAULT_SETTINGS = {
     "cost_upscale_4x": "60",
     "cost_upscale_8x": "90",
     "cost_deconstruct": "5",
+    # Agent Studio: login-gated, billed once per working session (first run, then
+    # again only after the user is idle past the gap window). Admins are free.
+    "cost_agentstudio_session": "10",
+    "agentstudio_session_gap_hours": "12",
     # AI provider (OpenAI-compatible — works with xAI/Grok, NVIDIA NIM, etc.).
     # One base URL + key powers image, vision (deconstruct) and chat (AI friends).
     # Empty = those tools run in preview mode until configured in admin Settings.

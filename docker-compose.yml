@@ -3,9 +3,10 @@
 #   docker compose up -d --build
 #
 # Serves the app behind Caddy with automatic HTTPS (Let's Encrypt) for
-# onaiagents.com. Each visitor brings their own NVIDIA NIM API key in the
-# browser (no login, no shared server key). Point the domain's A record at
-# this server first so Caddy can issue the certificate.
+# onaiagents.com. Agent Studio is login-gated and billed per session; each
+# signed-in account gets its OWN isolated workspace under /data/workspaces and
+# still brings its own NVIDIA NIM key in the browser. Point the domain's A
+# record at this server first so Caddy can issue the certificate.
 
 services:
   app:
@@ -15,6 +16,10 @@ services:
     restart: unless-stopped
     environment:
       - AGENT_STUDIO_DB=/data/agent_studio.db
+      # Hosted mode: require sign-in, bill 10 cr/session, isolate each account.
+      - AGENT_STUDIO_HOSTED=1
+      # Per-user workspaces live on the persistent volume (survive redeploys).
+      - AGENT_STUDIO_WORKSPACES=/data/workspaces
     volumes:
       - app_data:/data
     expose:

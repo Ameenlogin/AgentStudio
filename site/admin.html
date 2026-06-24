@@ -52,6 +52,8 @@
       <div class="field"><div class="lbl">Deconstruct</div><input type="number" data-k="cost_deconstruct" /></div>
       <div class="field"><div class="lbl">AI Friends chat (per message)</div><input type="number" data-k="cost_chat" /></div>
       <div class="field"><div class="lbl">LinkedIn post (per draft)</div><input type="number" data-k="cost_linkedin" /></div>
+      <div class="field"><div class="lbl">Agent Studio (per session)</div><input type="number" data-k="cost_agentstudio_session" /></div>
+      <div class="field"><div class="lbl">Agent Studio — new session after idle (hours)</div><input type="number" data-k="agentstudio_session_gap_hours" /></div>
       <div class="field"><div class="lbl">AI Friends voice — credits per spoken-reply length</div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
           <input type="number" data-k="cost_voice_15s" title="15-20s" />
@@ -116,8 +118,9 @@
 
   <div class="hr"></div>
   <div class="panel" style="margin-top:8px;opacity:1;animation:none">
-    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users &amp; credits</h3>
-    <table class="utbl"><thead><tr><th>Email</th><th>Name</th><th>Credits</th><th>Grant</th></tr></thead><tbody id="users"></tbody></table>
+    <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Users, credits &amp; Agent Studio usage</h3>
+    <p style="font-size:12.5px;color:var(--faint);margin:-8px 0 14px">Every account is tracked here. <b>Studio</b> = Agent Studio sessions · credits spent there. Each account runs in its own isolated workspace.</p>
+    <table class="utbl"><thead><tr><th>Email</th><th>Name</th><th>Credits</th><th>Studio</th><th>Last active</th><th>Grant</th></tr></thead><tbody id="users"></tbody></table>
   </div>
 </main>
 
@@ -144,11 +147,14 @@
       .catch(()=>{b.disabled=false;toast('Save failed')});
   };
 
+  function fmtDate(s){if(!s)return '—';try{var d=new Date(s);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}catch(e){return '—'}}
   function loadUsers(){fetch('/api/site/admin/users').then(r=>r.json()).then(d=>{
     var tb=document.getElementById('users');tb.innerHTML='';
     (d.users||[]).forEach(function(u){
       var tr=document.createElement('tr');
+      var studio=(u.studio_sessions||0)+(u.studio_credits?' · '+Number(u.studio_credits).toLocaleString()+' cr':'');
       tr.innerHTML='<td>'+u.email+(u.is_admin?' <span class="tag" style="color:var(--violet)">admin</span>':'')+'</td><td>'+(u.name||'—')+'</td><td>'+u.credits.toLocaleString()+'</td>'+
+        '<td>'+studio+'</td><td style="color:var(--muted);font-size:12.5px">'+fmtDate(u.studio_last_active)+'</td>'+
         '<td><div style="display:flex;gap:6px"><input type="number" value="100" style="width:80px;padding:6px 8px" id="g'+u.id+'"><button class="btn btn-ghost" style="padding:6px 12px" data-u="'+u.id+'">Add</button></div></td>';
       tb.appendChild(tr);
     });

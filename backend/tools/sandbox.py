@@ -33,18 +33,33 @@ def get_workspace() -> str:
     return root
 
 
+def _workspaces_base() -> str:
+    """Root that holds every per-user workspace. A path on the persistent volume
+    in the hosted deployment (``AGENT_STUDIO_WORKSPACES``), else ``./workspaces``."""
+    return os.environ.get("AGENT_STUDIO_WORKSPACES") or os.path.abspath("./workspaces")
+
+
+def workspace_for_user(user_id) -> str:
+    """Map a *logged-in* site account to its own private, persistent workspace.
+
+    This is the authoritative isolation key on the hosted site: the user's id
+    comes from the signed session cookie (server-side), so two accounts can never
+    land in the same folder — each one has its own files and 'computer' memory.
+    """
+    return os.path.join(_workspaces_base(), f"u{int(user_id)}")
+
+
 def workspace_for_client(client_id: str | None) -> str | None:
     """Map a browser's anonymous client id to its own private workspace dir.
 
     Returns ``None`` when there is no client id (the desktop app), so callers
-    fall back to the configured single-user workspace. The base dir comes from
-    ``AGENT_STUDIO_WORKSPACES`` (set to a path on the persistent volume in the
-    hosted deployment) and defaults to ``./workspaces`` otherwise."""
+    fall back to the configured single-user workspace. Kept for the keyless
+    desktop/legacy path; the hosted site keys off the account via
+    ``workspace_for_user`` instead."""
     cid = re.sub(r"[^A-Za-z0-9_-]", "", (client_id or ""))[:64]
     if not cid:
         return None
-    base = os.environ.get("AGENT_STUDIO_WORKSPACES") or os.path.abspath("./workspaces")
-    return os.path.join(base, cid)
+    return os.path.join(_workspaces_base(), cid)
 
 
 def resolve(path: str) -> str:

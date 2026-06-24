@@ -7,19 +7,30 @@ from sqlalchemy.orm import Session
 
 from database.database import get_db
 from database.models import Setting
-from tools.sandbox import set_workspace, get_workspace, resolve, rel
+from tools.sandbox import set_workspace, get_workspace, resolve, rel, workspace_for_user
+from services import site_auth as auth
 
 router = APIRouter()
 
+# Hosted: the file browser shows the signed-in account's OWN workspace, never the
+# shared one. Desktop: the single configured workspace.
+HOSTED = bool(os.environ.get("AGENT_STUDIO_HOSTED"))
 
-def _sync_workspace(db: Session):
+
+def _sync_workspace(db: Session, user):
+    if HOSTED:
+        if not user:
+            raise HTTPException(status_code=401, detail="Please sign in.")
+        set_workspace(workspace_for_user(user.id))
+        return
     s = db.query(Setting).first()
     set_workspace((s.workspace_path if s else None) or "./workspace")
 
 
 @router.post("/upload")
-async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    _sync_workspace(db)
+async def upload(file: UploadFile = File(...), db: Session = Depends(get_db),
+                 user=Depends(auth.current_user)):
+    _sync_workspace(db, user)
     safe_name = os.path.basename(file.filename or "upload.bin")
     dest = resolve(safe_name)
     try:
@@ -31,8 +42,9 @@ async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
 
 @router.get("/download")
-def download(path: str = Query(...), db: Session = Depends(get_db)):
-    _sync_workspace(db)
+def download(path: str = Query(...), db: Session = Depends(get_db),
+             user=Depends(auth.current_user)):
+    _sync_workspace(db, user)
     try:
         p = resolve(path)
     except PermissionError as e:
@@ -43,10 +55,11 @@ def download(path: str = Query(...), db: Session = Depends(get_db)):
 
 
 @router.get("/raw")
-def raw(path: str = Query(...), db: Session = Depends(get_db)):
+def raw(path: str = Query(...), db: Session = Depends(get_db),
+        user=Depends(auth.current_user)):
     """Serve a file inline with its real content-type — used by the Agent Computer
     to render browser screenshots (and other images) inside the timeline."""
-    _sync_workspace(db)
+    _sync_workspace(db, user)
     try:
         p = resolve(path)
     except PermissionError as e:
@@ -58,9 +71,10 @@ def raw(path: str = Query(...), db: Session = Depends(get_db)):
 
 
 @router.get("/read")
-def read_text(path: str = Query(...), db: Session = Depends(get_db)):
+def read_text(path: str = Query(...), db: Session = Depends(get_db),
+              user=Depends(auth.current_user)):
     """Return a text file's contents (capped) for the Agent Computer previewer."""
-    _sync_workspace(db)
+    _sync_workspace(db, user)
     try:
         p = resolve(path)
     except PermissionError as e:
@@ -77,8 +91,9 @@ def read_text(path: str = Query(...), db: Session = Depends(get_db)):
 
 
 @router.get("/list")
-def list_files(path: str = ".", db: Session = Depends(get_db)):
-    _sync_workspace(db)
+def list_files(path: str = ".", db: Session = Depends(get_db),
+               user=Depends(auth.current_user)):
+    _sync_workspace(db, user)
     try:
         p = resolve(path)
     except PermissionError as e:
@@ -98,8 +113,15 @@ def list_files(path: str = ".", db: Session = Depends(get_db)):
 
 
 @router.get("/paths")
-def system_paths():
-    """Suggested locations for granting workspace access."""
+def system_paths(db: Session = Depends(get_db), user=Depends(auth.current_user)):
+    """Suggested locations for granting workspace access (desktop only). On the
+    hosted site there's nothing to grant — each account is locked to its own
+    workspace — so we only return that."""
+    if HOSTED:
+        if not user:
+            raise HTTPException(status_code=401, detail="Please sign in.")
+        ws = workspace_for_user(user.id)
+        return {"workspace": ws, "current": ws}
     home = os.path.expanduser("~")
     candidates = {
         "home": home,

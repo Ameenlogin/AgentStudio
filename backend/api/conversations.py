@@ -1,21 +1,41 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database.database import get_db
 from database.models import Conversation, Message, message_hash
+from services import site_auth as auth
 
 router = APIRouter()
 
+# Hosted: conversations are private per account. Desktop: single-user, open.
+HOSTED = bool(os.environ.get("AGENT_STUDIO_HOSTED"))
+
+
+def _guard(user):
+    if HOSTED and not user:
+        raise HTTPException(401, "Please sign in.")
+
+
+def _mine(query, user):
+    """Restrict a Conversation query to the caller's own rows when hosted."""
+    if HOSTED and user:
+        return query.filter(Conversation.user_id == user.id)
+    return query
+
 
 @router.get("/")
-def list_conversations(db: Session = Depends(get_db)):
-    rows = db.query(Conversation).order_by(Conversation.updated_at.desc()).all()
+def list_conversations(db: Session = Depends(get_db), user=Depends(auth.current_user)):
+    _guard(user)
+    rows = _mine(db.query(Conversation), user).order_by(Conversation.updated_at.desc()).all()
     return [{"id": c.id, "title": c.title,
              "updated_at": c.updated_at.isoformat() if c.updated_at else None} for c in rows]
 
 
 @router.get("/{cid}")
-def get_conversation(cid: int, db: Session = Depends(get_db)):
-    c = db.query(Conversation).get(cid)
+def get_conversation(cid: int, db: Session = Depends(get_db), user=Depends(auth.current_user)):
+    _guard(user)
+    c = _mine(db.query(Conversation).filter(Conversation.id == cid), user).first()
     if not c:
         raise HTTPException(404, "Conversation not found")
     msgs = []
@@ -29,9 +49,10 @@ def get_conversation(cid: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{cid}/verify")
-def verify_conversation(cid: int, db: Session = Depends(get_db)):
+def verify_conversation(cid: int, db: Session = Depends(get_db), user=Depends(auth.current_user)):
     """Re-hash every message and report any integrity mismatches."""
-    c = db.query(Conversation).get(cid)
+    _guard(user)
+    c = _mine(db.query(Conversation).filter(Conversation.id == cid), user).first()
     if not c:
         raise HTTPException(404, "Conversation not found")
     tampered = []
@@ -43,19 +64,20 @@ def verify_conversation(cid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/")
-async def save_conversation(request: Request, db: Session = Depends(get_db)):
+async def save_conversation(request: Request, db: Session = Depends(get_db),
+                            user=Depends(auth.current_user)):
+    _guard(user)
     data = await request.json()
     cid = data.get("id")
     title = (data.get("title") or "New chat")[:80]
     messages = data.get("messages", [])
+    owner = user.id if user else None
 
+    c = None
     if cid:
-        c = db.query(Conversation).get(cid)
-        if not c:
-            c = Conversation(title=title)
-            db.add(c)
-    else:
-        c = Conversation(title=title)
+        c = _mine(db.query(Conversation).filter(Conversation.id == cid), user).first()
+    if not c:
+        c = Conversation(title=title, user_id=owner)
         db.add(c)
     db.commit()
     db.refresh(c)
@@ -73,8 +95,9 @@ async def save_conversation(request: Request, db: Session = Depends(get_db)):
 
 
 @router.delete("/{cid}")
-def delete_conversation(cid: int, db: Session = Depends(get_db)):
-    c = db.query(Conversation).get(cid)
+def delete_conversation(cid: int, db: Session = Depends(get_db), user=Depends(auth.current_user)):
+    _guard(user)
+    c = _mine(db.query(Conversation).filter(Conversation.id == cid), user).first()
     if c:
         db.delete(c)
         db.commit()

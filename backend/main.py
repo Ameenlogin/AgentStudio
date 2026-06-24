@@ -39,6 +39,8 @@ with engine.begin() as _conn:
         ("settings", "swarm_mode", "VARCHAR DEFAULT 'auto'"),
         ("settings", "mode", "VARCHAR DEFAULT 'sandbox'"),
         ("settings", "custom_models", "TEXT DEFAULT '[]'"),
+        # Multi-tenant Agent Studio: conversations are owned by a site account.
+        ("conversations", "user_id", "INTEGER"),
     ]:
         try:
             _cols = [r[1] for r in _conn.execute(_sql_text(f"PRAGMA table_info({_table})"))]

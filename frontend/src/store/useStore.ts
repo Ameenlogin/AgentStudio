@@ -65,9 +65,15 @@ export interface SwarmPlan {
   subtasks: { id: string; role: string; title: string }[];
 }
 
+export interface Account { email: string; credits: number; is_admin: boolean; }
+
 interface State {
   view: 'chat' | 'settings';
   setView: (v: 'chat' | 'settings') => void;
+
+  // Signed-in site account (hosted). null on the keyless desktop install.
+  account: Account | null;
+  setAccount: (a: Account | null) => void;
 
   pendingPermission: PermissionRequest | null;
   setPendingPermission: (p: PermissionRequest | null) => void;
@@ -118,6 +124,9 @@ const updateMsg = (msgs: Message[], id: string, fn: (b: Block[]) => Block[]) =>
 export const useStore = create<State>((set) => ({
   view: 'chat',
   setView: (v) => set({ view: v }),
+
+  account: null,
+  setAccount: (account) => set({ account }),
 
   pendingPermission: null,
   setPendingPermission: (p) => set({ pendingPermission: p }),
