@@ -4,10 +4,10 @@ import sys
 # Make the backend directory importable no matter where the process is launched.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 
 app = FastAPI(title="Agent Studio API")
 
@@ -126,11 +126,17 @@ if os.path.isdir(frontend_dist):
 
     @app.get("/agentstudio")
     @app.get("/agentstudio/{full_path:path}")
-    async def serve_studio(full_path: str = ""):
+    async def serve_studio(request: Request, full_path: str = ""):
         if full_path:
             target = os.path.join(frontend_dist, full_path)
             if os.path.isfile(target):
                 return FileResponse(target)
+        # Hosted mode: require a signed-in site user before the app shell loads.
+        if os.environ.get("AGENT_STUDIO_HOSTED"):
+            from services.site_auth import COOKIE as _C, parse_token as _P
+            tok = request.cookies.get(_C)
+            if not (tok and _P(tok)):
+                return RedirectResponse("/login?next=/agentstudio")
         index = os.path.join(frontend_dist, "index.html")
         if os.path.isfile(index):
             return FileResponse(index)
